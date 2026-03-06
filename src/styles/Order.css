@@ -1,0 +1,249 @@
+/* ========================= GLOBAL ========================= */
+body, html {
+  margin: 0;
+  padding: 0;
+  font-family: 'Arial', sans-serif;
+}
+
+.order-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  display: flex;           /* FLEX pour pizzas et panier côte à côte */
+  gap: 20px;               /* espace entre sections */
+  align-items: flex-start;
+  flex-wrap: nowrap;       /* <-- empêche le panier de passer en dessous */
+}
+
+/* ========================= TOAST ========================= */
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #ff6b6b;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  z-index: 1000;
+  animation: fadein 0.3s, fadeout 0.3s 2.7s;
+}
+
+@keyframes fadein { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeout { from { opacity: 1; } to { opacity: 0; } }
+
+/* ========================= PIZZA SECTION ========================= */
+.pizza-section {
+  flex: 0 0 60%;           /* prend 60% de la largeur */
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.pizza-card {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.2s ease, box-shadow 0.2s ease; /* ajout de la transition */
+}
+
+.pizza-card:hover {
+  transform: translateY(-4px); /* léger soulèvement */
+  box-shadow: 0 6px 16px rgba(0,0,0,0.12); /* ombre plus marquée */
+}
+
+.pizza-card h2 {
+  margin: 0 0 8px 0;
+  font-size: 1.3em;
+}
+
+.pizza-card p {
+  margin: 4px 0;
+}
+
+.pizza-ingredients {
+  font-style: italic;
+  color: #555;
+}
+
+.pizza-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+  align-items: center;
+}
+
+.pizza-actions input[type="number"] {
+  width: 60px;
+  padding: 6px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+/* ========================= BUTTONS ========================= */
+button {
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: none;
+  background-color: #4caf50;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+button:hover {
+  background-color: #45a049;
+}
+
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+button.btn-cancel {
+  background-color: #ff6b6b;
+}
+
+button.btn-cancel:hover {
+  background-color: #f85c5c;
+}
+
+
+/* ========================= CART SECTION ========================= */
+.cart-section {
+  flex: 0 0 40%;           /* prend 40% de la largeur */
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  background: #fefefe;
+  padding: 16px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.cart-item {
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  flex-direction: column;   /* vertical global */
+  gap: 6px;                 /* espace entre header et content */
+}
+
+.cart-item-header {
+  display: flex;
+  justify-content: space-between; /* nom à gauche, bouton à droite */
+  align-items: center;
+}
+
+.cart-item-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px; /* petits espacements entre lignes */
+}
+
+.cart-item-remove {
+  background: none;
+  border: none;
+  color: black;
+  font-size: 1.2em;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.cart-item-remove:hover {
+  background: none;
+  color: black;
+}
+
+.cart-item:last-child {
+  border-bottom: none;
+}
+
+.cart-modifications ul {
+  margin: 4px 0 0 0;
+  padding-left: 20px;
+}
+
+.cart-modifications li {
+  font-size: 0.9em;
+}
+
+/* ========================= TIMESLOT ========================= */
+.timeslot-section {
+  margin-top: 20px;
+  padding: 16px;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  background: #f9f9f9;
+}
+
+.timeslot-section select, .timeslot-section input[type="date"] {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  margin-top: 6px;
+  margin-bottom: 12px;
+}
+
+/* ========================= MODAL ========================= */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 500;
+}
+
+.modal-content {
+  background: #fff;
+  padding: 24px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+}
+
+.modal-section {
+  margin-bottom: 16px;
+}
+
+.modal-section label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* ========================= RESPONSIVE ========================= */
+@media (max-width: 1024px) {
+  .order-page {
+    flex-direction: column; /* sur tablette, le panier passe sous les pizzas */
+  }
+  
+  .pizza-section, .cart-section {
+    flex: 1 1 100%;        /* prennent toute la largeur */
+  }
+
+  .pizza-actions {
+    flex-direction: column;
+    gap: 6px;
+  }
+}

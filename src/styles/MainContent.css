@@ -1,0 +1,9 @@
+.main-content {
+  max-width: 80%;      /* contenu limité à 80% de la largeur */
+  margin: 2rem auto;   /* centré horizontalement + marge verticale */
+  display: flex;
+  flex-direction: column;
+  background-color: #fdf6f0;
+  align-items: center; /* centre le contenu horizontalement */
+  gap: 1.5rem;         /* espace entre les éléments */
+}

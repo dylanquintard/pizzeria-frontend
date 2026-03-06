@@ -1,0 +1,96 @@
+/* Header général */
+header {
+  background-color: #fff; /* fond clair épuré */
+  padding: 1rem 2rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+/* Nav flex horizontal */
+header nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+/* Logo */
+header .logo {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #ff4d4d; /* rouge pizza */
+}
+
+/* Menu liens */
+header nav .menu-links {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+header nav .menu-links a {
+  color: #333;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+header nav .menu-links a:hover {
+  color: #ff4d4d;
+}
+
+/* Boutons / actions */
+header nav .actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+header nav .actions a,
+header nav .actions button {
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  padding: 0.4rem 0.9rem;
+  border-radius: 5px;
+  transition: all 0.2s ease;
+}
+
+/* Déconnexion bouton */
+header nav .actions button {
+  background-color: #ff4d4d;
+  color: #fff;
+}
+
+header nav .actions button:hover {
+  background-color: #e03e3e;
+}
+
+/* Admin lien style bouton épuré */
+header nav .actions a.admin-link {
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+header nav .actions a.admin-link:hover {
+  background-color: #ffe8e8;
+  color: #ff4d4d;
+}
+
+/* Responsive simple */
+@media (max-width: 768px) {
+  header nav {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  header nav .actions {
+    margin-top: 0.5rem;
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
