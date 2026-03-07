@@ -1,5 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { io } from "socket.io-client";
 import { getAdminThreads, getMyThreads } from "../api/message.api";
+import { SOCKET_URL } from "../config/env";
 import { AuthContext } from "./AuthContext";
 
 const INITIAL_STATE = {
@@ -56,6 +58,7 @@ export function MessageNotificationsProvider({ children }) {
   const { token, user, loading: authLoading } = useContext(AuthContext);
   const [state, setState] = useState(INITIAL_STATE);
   const requestInFlightRef = useRef(false);
+  const socketRef = useRef(null);
   const viewerRole = user?.role;
 
   const syncUnreadCountsFromThreads = useCallback((threads) => {
@@ -139,6 +142,31 @@ export function MessageNotificationsProvider({ children }) {
     return () => {
       window.removeEventListener("focus", handleFocus);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [token, user, refreshUnreadCounts]);
+
+  useEffect(() => {
+    if (!token || !user) return undefined;
+
+    const socket = io(SOCKET_URL, {
+      transports: ["websocket"],
+    });
+    socketRef.current = socket;
+
+    const onMessageNew = () => {
+      refreshUnreadCounts();
+    };
+
+    const joinEvent = user?.role === "ADMIN" ? "joinAdminRoom" : "joinUserRoom";
+    socket.emit(joinEvent, { token }, () => {});
+    socket.on("message:new", onMessageNew);
+
+    return () => {
+      socket.off("message:new", onMessageNew);
+      socket.disconnect();
+      if (socketRef.current === socket) {
+        socketRef.current = null;
+      }
     };
   }, [token, user, refreshUnreadCounts]);
 
