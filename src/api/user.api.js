@@ -25,19 +25,6 @@ export const loginUser = async ({ email, password }) => {
   return response.data;
 };
 
-export const startUserVerification = async ({ email }) => {
-  const response = await axios.post(`${API_USERS}/verification/start`, { email });
-  return response.data;
-};
-
-export const confirmUserVerification = async ({ email, emailCode }) => {
-  const response = await axios.post(`${API_USERS}/verification/confirm`, {
-    email,
-    emailCode,
-  });
-  return response.data;
-};
-
 export const getMe = async (token) => {
   const response = await axios.get(`${API_USERS}/me`, {
     headers: authHeaders(token),

@@ -25,7 +25,6 @@ import Register from "./pages/Register";
 import TimeslotsAdmin from "./pages/Timeslots";
 import Users from "./pages/Users";
 import UserOrders from "./pages/UsersOrders";
-import VerifyAccount from "./pages/VerifyAccount";
 
 const PrivateRoute = ({ children }) => {
   const { token, loading } = useContext(AuthContext);
@@ -64,7 +63,6 @@ function AppRoutes() {
         <Route path="/menu" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/verify-account" element={<VerifyAccount />} />
 
         <Route
           path="/order"

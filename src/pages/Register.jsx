@@ -57,25 +57,14 @@ export default function Register() {
     }
 
     try {
-      const response = await registerUser({
+      const { user: registeredUser, token } = await registerUser({
         name: name.trim(),
         email: normalizedEmail,
         phone: normalizedPhone,
         password,
       });
-
-      if (response?.token && response?.user) {
-        login(response.user, response.token);
-        navigate("/profile");
-        return;
-      }
-
-      navigate("/verify-account", {
-        state: {
-          email: response?.user?.email || normalizedEmail,
-          debugCodes: response?.debugCodes || null,
-        },
-      });
+      login(registeredUser, token);
+      navigate("/profile");
     } catch (err) {
       setError(err.response?.data?.error || tr("Erreur lors de l'inscription", "Registration error"));
     } finally {

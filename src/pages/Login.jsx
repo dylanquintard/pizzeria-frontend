@@ -26,16 +26,6 @@ export default function Login() {
       navigate("/profile");
     } catch (err) {
       const apiError = err.response?.data;
-      if (apiError?.code === "ACCOUNT_NOT_VERIFIED" || apiError?.verificationRequired) {
-        navigate("/verify-account", {
-          state: {
-            email: apiError?.email || email.trim().toLowerCase(),
-            debugCodes: apiError?.debugCodes || null,
-          },
-        });
-        return;
-      }
-
       setError(apiError?.error || tr("Erreur de connexion", "Login error"));
     }
   };
