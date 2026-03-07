@@ -1,465 +1,743 @@
-import React, { useEffect, useState, useContext, useMemo, useCallback } from "react";
-import { AuthContext } from "../context/AuthContext";
-import {
-  getAllPizzasClient,
-  getAllIngredients,
-  getCart,
-  addToCart,
-  removeFromCart,
-  finalizeOrder,
-} from "../api/user.api";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { getCategories } from "../api/category.api";
+import { getLocations } from "../api/location.api";
 import { getActiveTimeSlots } from "../api/timeslot.api";
-import "../styles/Order.css";
+import { addToCart, finalizeOrder, getAllIngredients, getAllPizzasClient } from "../api/user.api";
+import { AuthContext } from "../context/AuthContext";
+import { CartContext } from "../context/CartContext";
+import { useLanguage } from "../context/LanguageContext";
 
-/* ========================= TOAST ========================= */
-function Toast({ message, onClose }) {
-  useEffect(() => {
-    const timer = setTimeout(onClose, 3000);
-    return () => clearTimeout(timer);
-  }, [onClose]);
-
-  if (!message) return null;
-
-  return <div className="toast">{message}</div>;
+function toLocalIsoDate(dateValue) {
+  const date = new Date(dateValue);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
-/* ========================= MODAL COMPOSANT ========================= */
-function PizzaModal({ pizza, ingredients, selectedExtras, removedIngredients, onClose, onAdd, quantities }) {
-  return (
-    <div className="modal">
-      <div className="modal-content" style={{ maxHeight: "80vh", overflowY: "auto" }}>
-        <h3>Modifier {pizza.name}</h3>
-
-        <div className="modal-section">
-          <p>Suppléments :</p>
-          {ingredients.map((ing) => (
-            <label key={ing.id}>
-              <input
-                type="checkbox"
-                checked={selectedExtras.some((e) => e.id === ing.id)}
-                onChange={(e) => onAdd("extras", ing, e.target.checked)}
-              />
-              {ing.name} (+{Number(ing.price || 0).toFixed(2)} €)
-            </label>
-          ))}
-        </div>
-
-        <div className="modal-section">
-          <p>Retirer ingrédients :</p>
-          {pizza.ingredients.map((ing) => (
-            <label key={ing.ingredient.id}>
-              <input
-                type="checkbox"
-                checked={removedIngredients.some((r) => r.id === ing.ingredient.id)}
-                onChange={(e) => onAdd("removed", ing.ingredient, e.target.checked)}
-              />
-              {ing.ingredient.name}
-            </label>
-          ))}
-        </div>
-
-<div className="modal-actions">
-  <div className="modal-section">
-    <p>Quantité :</p>
-    <input
-      type="number"
-      min={1}
-      value={quantities[pizza.id] || 1}
-      onChange={(e) => onAdd("quantity", Number(e.target.value))}
-    />
-  </div>
-
-  <button onClick={() => onAdd("confirm")}>Ajouter au panier</button>
-  <button className="btn-cancel" onClick={onClose}>Annuler</button>
-</div>
-      </div>
-    </div>
-  );
+function getSlotServiceDate(slot) {
+  return slot.serviceDate ? toLocalIsoDate(slot.serviceDate) : toLocalIsoDate(slot.startTime);
 }
 
-/* ========================= CART ITEM COMPOSANT ========================= */
-function CartItem({ item, onRemove, loading }) {
-  const total = useMemo(
-    () => ((item.totalPrice || item.unitPrice || 0) * item.quantity).toFixed(2),
-    [item]
-  );
+function formatPrice(value) {
+  const parsed = Number(value);
+  return Number.isNaN(parsed) ? value : parsed.toFixed(2);
+}
+
+function getCartItemProduct(item) {
+  return item?.pizza || item?.product || item?.menuItem || null;
+}
+
+function getCartItemName(item) {
+  return getCartItemProduct(item)?.name || item?.name || `Produit #${item?.id ?? "?"}`;
+}
+
+function getCartIngredientName(ingredient) {
+  return ingredient?.name || ingredient?.ingredient?.name || "";
+}
+
+function normalizeText(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+function isPizzaCategoryLabel(value) {
+  return normalizeText(value).includes("pizza");
+}
+
+function formatPickupAddress(location, tr) {
+  if (!location) return tr("Adresse de retrait non disponible", "Pickup address unavailable");
+  const cityLine = `${location.postalCode || ""} ${location.city || ""}`.trim();
+  return [location.addressLine1, cityLine].filter(Boolean).join(", ");
+}
+
+function PizzaCustomizerModal({
+  pizza,
+  ingredients,
+  selectedExtras,
+  removedIngredients,
+  quantity,
+  onClose,
+  onExtrasChange,
+  onRemovedChange,
+  onQuantityChange,
+  onConfirm,
+  tr,
+}) {
+  const baseIngredients = Array.isArray(pizza.ingredients) ? pizza.ingredients : [];
 
   return (
-    <div className="cart-item">
-      {/* HEADER : nom + bouton */}
-<div className="cart-item-header">
-  <strong>{item.pizza.name}</strong>
-  <button
-    onClick={() => onRemove(item.id)}
-    disabled={loading}
-    className="cart-item-remove"
-  >
-    ×
-  </button>
-</div>
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-4">
+      <div className="w-full max-w-2xl rounded-2xl bg-white p-6 text-stone-900 shadow-2xl">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-xl font-bold">{tr("Personnaliser", "Customize")}: {pizza.name}</h3>
+          <button type="button" onClick={onClose} className="rounded-md border border-stone-300 px-3 py-1 text-sm">
+            {tr("Fermer", "Close")}
+          </button>
+        </div>
 
-      {/* CONTENU : quantité, modifications, total */}
-      <div className="cart-item-content">
-        <p>Quantité : {item.quantity}</p>
-
-        {(item.addedIngredients?.length || item.removedIngredients?.length) > 0 && (
-          <div className="cart-modifications">
-            <p><strong>Modifications :</strong></p>
-            <ul>
-              {item.addedIngredients?.map((ing) => (
-                <li key={`add-${ing.id}`}>+ {ing.name}</li>
+        <div className="grid gap-6 md:grid-cols-2">
+          <div>
+            <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-stone-500">{tr("Supplements", "Extras")}</p>
+            <div className="space-y-2">
+              {ingredients.map((ingredient) => (
+                <label key={ingredient.id} className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={selectedExtras.some((entry) => entry.id === ingredient.id)}
+                    onChange={(event) => onExtrasChange(ingredient, event.target.checked)}
+                  />
+                  <span>
+                    {ingredient.name} (+{formatPrice(ingredient.price)} EUR)
+                  </span>
+                </label>
               ))}
-              {item.removedIngredients?.map((ing) => (
-                <li key={`rm-${ing.id}`}>- {ing.name}</li>
-              ))}
-            </ul>
+            </div>
           </div>
-        )}
 
-        <p>Total : {total} €</p>
+          <div>
+            <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-stone-500">{tr("Retirer ingredients", "Remove ingredients")}</p>
+            <div className="space-y-2">
+              {baseIngredients.length === 0 && (
+                <p className="text-xs text-stone-500">{tr("Aucun ingredient a retirer pour ce produit.", "No ingredient can be removed for this product.")}</p>
+              )}
+              {baseIngredients.map((entry) => (
+                <label key={entry.ingredient.id} className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={removedIngredients.some((ingredient) => ingredient.id === entry.ingredient.id)}
+                    onChange={(event) => onRemovedChange(entry.ingredient, event.target.checked)}
+                  />
+                  <span>{entry.ingredient.name}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-stone-200 pt-4">
+          <label className="text-sm">
+            {tr("Quantite", "Quantity")}
+            <input
+              type="number"
+              min={1}
+              value={quantity}
+              onChange={(event) => onQuantityChange(Number(event.target.value || 1))}
+              className="ml-2 w-20 rounded-md border border-stone-300 px-2 py-1"
+            />
+          </label>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className="rounded-full bg-ember px-5 py-2 text-sm font-semibold text-white hover:bg-tomato"
+          >
+            {tr("Ajouter au panier", "Add to cart")}
+          </button>
+        </div>
       </div>
     </div>
   );
 }
 
-/* ========================= MAIN ORDER ========================= */
 export default function Order() {
   const { token } = useContext(AuthContext);
+  const { tr, locale } = useLanguage();
+  const navigate = useNavigate();
+  const { cartItems, itemCount, cartTotal, setCartFromResponse, refreshCart, removeItem, clearCart, loading: cartLoading } =
+    useContext(CartContext);
 
   const [pizzas, setPizzas] = useState([]);
-  const [ingredients, setIngredients] = useState([]);
-  const [cart, setCart] = useState([]);
-  const [quantities, setQuantities] = useState({});
-  const [loading, setLoading] = useState(false);
-  const [finalizing, setFinalizing] = useState(false);
-  const [timeSlots, setTimeSlots] = useState([]);
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState(null);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
+  const [categories, setCategories] = useState([]);
+  const [extras, setExtras] = useState([]);
+  const [locations, setLocations] = useState([]);
+  const [availableLocations, setAvailableLocations] = useState([]);
+  const [slots, setSlots] = useState([]);
+  const [selectedDate, setSelectedDate] = useState(toLocalIsoDate(new Date()));
+  const [selectedLocationId, setSelectedLocationId] = useState("");
+  const [selectedSlotId, setSelectedSlotId] = useState("");
   const [editingPizza, setEditingPizza] = useState(null);
   const [selectedExtras, setSelectedExtras] = useState([]);
   const [removedIngredients, setRemovedIngredients] = useState([]);
-  const [toastMessage, setToastMessage] = useState("");
+  const [quantity, setQuantity] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [validatedCartSignature, setValidatedCartSignature] = useState("");
 
-  /* ========================= HELPERS ========================= */
-  const generateItemKey = useCallback((pizzaId, extras = [], removed = []) => {
-    const extrasKey = extras.map((i) => i.id).sort().join(",");
-    const removedKey = removed.map((i) => i.id).sort().join(",");
-    return `${pizzaId}-${extrasKey}-${removedKey}`;
-  }, []);
+  const cartSignature = useMemo(
+    () =>
+      cartItems
+        .map((item) => {
+          const added = (item.addedIngredients || []).map((entry) => getCartIngredientName(entry)).join(",");
+          const removed = (item.removedIngredients || []).map((entry) => getCartIngredientName(entry)).join(",");
+          return `${item.id}:${item.quantity}:${item.unitPrice}:${added}:${removed}`;
+        })
+        .join("|"),
+    [cartItems]
+  );
 
-  const showToast = (message) => setToastMessage(message);
+  const isCartValidated = cartItems.length > 0 && validatedCartSignature !== "" && validatedCartSignature === cartSignature;
 
-  /* ========================= FETCH INITIAL DATA ========================= */
   useEffect(() => {
-    if (!token) return;
     let cancelled = false;
 
-    const fetchData = async () => {
+    async function fetchInitialData() {
       try {
-        const [pizzaData, ingredientData, cartData] = await Promise.all([
+        const [pizzaData, categoryData, ingredientData, locationData] = await Promise.all([
           getAllPizzasClient(),
+          getCategories({ active: true }),
           getAllIngredients(token),
-          getCart(token),
+          getLocations({ active: true }),
         ]);
-        if (cancelled) return;
-        setPizzas(pizzaData);
-        setIngredients(ingredientData.filter((i) => i.isExtra));
-        setCart(cartData.items || []);
+
+        if (!cancelled) {
+          setPizzas(Array.isArray(pizzaData) ? pizzaData : []);
+          setCategories(Array.isArray(categoryData) ? categoryData : []);
+          setExtras((Array.isArray(ingredientData) ? ingredientData : []).filter((entry) => entry.isExtra));
+          setLocations(Array.isArray(locationData) ? locationData : []);
+        }
       } catch (err) {
-        console.error(err);
-        showToast(err.message || "Erreur lors du chargement");
+        if (!cancelled) {
+          setMessage(err.response?.data?.error || tr("Erreur lors du chargement de la page commande", "Error while loading order page"));
+        }
       }
+    }
+
+    fetchInitialData();
+    return () => {
+      cancelled = true;
     };
+  }, [token, tr]);
 
-    fetchData();
-    return () => { cancelled = true; };
-  }, [token]);
-
-  /* ========================= FETCH CRENEAUX ========================= */
-  useEffect(() => {
-    if (!finalizing || !token) return;
-    let cancelled = false;
-
-    const fetchSlots = async () => {
-      try {
-        const allSlots = await getActiveTimeSlots(token);
-        const totalPizzas = cart.reduce((sum, item) => sum + item.quantity, 0);
-        const now = new Date();
-        const availableSlots = allSlots.filter((slot) => {
-          const slotStart = new Date(slot.startTime);
-          const slotDate = slotStart.toISOString().split("T")[0];
-          return (
-            slotDate === selectedDate &&
-            slot.maxPizzas - slot.currentPizzas >= totalPizzas &&
-            slotStart - now >= 15 * 60000
-          );
-        });
-        if (!cancelled) setTimeSlots(availableSlots);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-
-    fetchSlots();
-    const interval = setInterval(fetchSlots, 15000);
-    return () => { clearInterval(interval); cancelled = true; };
-  }, [finalizing, token, cart, selectedDate]);
-
-  /* ========================= CART ACTIONS ========================= */
-  const handleAddToCart = async (pizza, extras = selectedExtras, removed = removedIngredients) => {
-    const qty = Number(quantities[pizza.id] || 1);
-    if (qty <= 0) return showToast("Quantité invalide !");
-    setLoading(true);
+  const refreshSlots = useCallback(async () => {
+    if (!isCartValidated || itemCount <= 0) {
+      setSlots([]);
+      setAvailableLocations([]);
+      setSelectedLocationId("");
+      setSelectedSlotId("");
+      return;
+    }
 
     try {
-      const customizations = {
-        addedIngredients: extras.map((i) => i.id),
-        removedIngredients: removed.map((i) => i.id),
-      };
-      const qty = Number(quantities[pizza.id] || 1);
-      const updatedCart = await addToCart(token, pizza.id, qty, customizations);
+      const allSlots = await getActiveTimeSlots(token, {});
+      const now = new Date();
+      const eligibleSlots = allSlots.filter((slot) => {
+        const locationId = slot.location?.id ?? slot.locationId;
+        if (!locationId) return false;
 
-      // Merge côté client
-      const mergedCartMap = new Map();
-      [...updatedCart.items].forEach((item) => {
-        const key = generateItemKey(item.pizza.id, item.addedIngredients || [], item.removedIngredients || []);
-        if (mergedCartMap.has(key)) {
-          mergedCartMap.get(key).quantity += item.quantity;
-        } else {
-          mergedCartMap.set(key, {
-            ...item,
-            addedIngredients: item.addedIngredients || [],
-            removedIngredients: item.removedIngredients || [],
-          });
-        }
+        const slotStart = new Date(slot.startTime);
+        return (
+          getSlotServiceDate(slot) === selectedDate &&
+          slot.maxPizzas - slot.currentPizzas >= itemCount &&
+          slotStart - now >= 15 * 60_000
+        );
       });
 
-      setCart(Array.from(mergedCartMap.values()));
+      const availableLocationIds = new Set(
+        eligibleSlots
+          .map((slot) => slot.location?.id ?? slot.locationId)
+          .filter((entry) => entry !== null && entry !== undefined)
+          .map((entry) => String(entry))
+      );
 
-      // Reset modal state
-      setQuantities((prev) => ({ ...prev, [pizza.id]: 1 }));
+      const nextAvailableLocations = locations.filter((location) =>
+        availableLocationIds.has(String(location.id))
+      );
+      setAvailableLocations(nextAvailableLocations);
+
+      const selectedIsAvailable = availableLocationIds.has(String(selectedLocationId));
+      const nextLocationId = selectedIsAvailable ? String(selectedLocationId) : "";
+
+      if (String(selectedLocationId || "") !== String(nextLocationId || "")) {
+        setSelectedLocationId(nextLocationId);
+      }
+
+      const slotsForSelectedLocation = nextLocationId
+        ? eligibleSlots.filter(
+            (slot) => String(slot.location?.id ?? slot.locationId) === String(nextLocationId)
+          )
+        : [];
+
+      setSlots(slotsForSelectedLocation);
+      if (!slotsForSelectedLocation.find((slot) => String(slot.id) === String(selectedSlotId))) {
+        setSelectedSlotId("");
+      }
+    } catch (err) {
+      setMessage(err.response?.data?.error || tr("Impossible de recuperer les creneaux", "Unable to fetch timeslots"));
+    }
+  }, [isCartValidated, itemCount, locations, selectedDate, selectedLocationId, selectedSlotId, token, tr]);
+
+  useEffect(() => {
+    refreshSlots();
+  }, [refreshSlots]);
+
+  useEffect(() => {
+    if (cartItems.length === 0) {
+      setValidatedCartSignature("");
+      setSelectedSlotId("");
+    }
+  }, [cartItems.length]);
+
+  const selectedSlot = useMemo(
+    () => slots.find((slot) => String(slot.id) === String(selectedSlotId)) || null,
+    [slots, selectedSlotId]
+  );
+
+  const menuByCategory = useMemo(() => {
+    const grouped = categories.map((category) => ({
+      key: `category-${category.id}`,
+      title: category.name,
+      description: category.description,
+      items: pizzas.filter((pizza) => String(pizza.categoryId ?? "") === String(category.id)),
+    }));
+
+    const uncategorized = pizzas.filter((pizza) => !pizza.categoryId);
+    if (uncategorized.length > 0) {
+      grouped.push({
+        key: "category-uncategorized",
+        title: tr("Autres produits", "Other products"),
+        description: "",
+        items: uncategorized,
+      });
+    }
+
+    if (grouped.length === 0 && pizzas.length > 0) {
+      grouped.push({
+        key: "category-default",
+        title: tr("Le menu", "Menu"),
+        description: "",
+        items: pizzas,
+      });
+    }
+
+    return grouped
+      .filter((entry) => entry.items.length > 0)
+      .map((entry, index) => ({ entry, index }))
+      .sort((left, right) => {
+        const leftPriority = normalizeText(left.entry.title).includes("pizza") ? 0 : 1;
+        const rightPriority = normalizeText(right.entry.title).includes("pizza") ? 0 : 1;
+        if (leftPriority !== rightPriority) return leftPriority - rightPriority;
+        return left.index - right.index;
+      })
+      .map(({ entry }) => ({
+        ...entry,
+        isPizzaCategory: isPizzaCategoryLabel(entry.title),
+      }));
+  }, [categories, pizzas, tr]);
+
+  const openPizzaModal = (pizza) => {
+    setEditingPizza(pizza);
+    setSelectedExtras([]);
+    setRemovedIngredients([]);
+    setQuantity(1);
+  };
+
+  const handleQuickAdd = async (product) => {
+    if (!product?.id) return;
+
+    try {
+      setLoading(true);
+      const response = await addToCart(token, product.id, 1, {
+        addedIngredients: [],
+        removedIngredients: [],
+      });
+      setCartFromResponse(response);
+      setMessage(`${product.name} ${tr("ajoute au panier", "added to cart")}`);
+    } catch (err) {
+      setMessage(err.response?.data?.error || tr("Impossible d'ajouter au panier", "Unable to add to cart"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddToCart = async () => {
+    if (!editingPizza) return;
+    if (!Number.isInteger(quantity) || quantity <= 0) {
+      setMessage(tr("Quantite invalide", "Invalid quantity"));
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await addToCart(token, editingPizza.id, quantity, {
+        addedIngredients: selectedExtras.map((entry) => entry.id),
+        removedIngredients: removedIngredients.map((entry) => entry.id),
+      });
+      setCartFromResponse(response);
       setEditingPizza(null);
-      setSelectedExtras([]);
-      setRemovedIngredients([]);
+      setMessage(tr("Pizza ajoutee au panier", "Pizza added to cart"));
     } catch (err) {
-      console.error(err);
-      showToast(err.message || "Impossible d'ajouter au panier");
+      setMessage(err.response?.data?.error || tr("Impossible d'ajouter au panier", "Unable to add to cart"));
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
-  const handleRemoveItem = async (itemId) => {
-    setLoading(true);
-    try {
-      const updatedCart = await removeFromCart(token, itemId);
-      setCart(updatedCart.items || []);
-    } catch (err) {
-      console.error(err);
-      showToast(err.message || "Impossible de supprimer l'item");
+  const handleFinalize = async () => {
+    if (!isCartValidated) {
+      setMessage(tr("Validez d'abord le panier avant de choisir le retrait.", "Validate the cart before selecting pickup."));
+      return;
     }
-    setLoading(false);
-  };
 
-  const handleClearCart = async () => {
-    if (!cart.length) return;
-    setLoading(true);
-    try {
-      await Promise.all(cart.map((item) => removeFromCart(token, item.id)));
-      setCart([]);
-    } catch (err) {
-      console.error(err);
-      showToast("Impossible de vider le panier");
+    if (!selectedLocationId) {
+      setMessage(tr("Selectionnez un emplacement disponible", "Select an available location"));
+      return;
     }
-    setLoading(false);
+
+    if (!selectedSlot) {
+      setMessage(tr("Selectionnez un creneau", "Select a timeslot"));
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const locationForSummary =
+        selectedSlot.location ||
+        availableLocations.find((location) => String(location.id) === String(selectedLocationId)) ||
+        locations.find((location) => String(location.id) === String(selectedLocationId)) ||
+        null;
+      const pickupLocationName = locationForSummary?.name || tr("Emplacement", "Location");
+      const pickupAddress = formatPickupAddress(locationForSummary, tr);
+      const pickupTime = selectedSlot.startTime;
+
+      const finalizedOrder = await finalizeOrder(token, selectedSlot.id);
+      const orderId = finalizedOrder?.id ?? finalizedOrder?.order?.id ?? finalizedOrder?.orderId ?? null;
+
+      await refreshCart();
+      setSlots([]);
+      setSelectedLocationId("");
+      setSelectedSlotId("");
+      setValidatedCartSignature("");
+      setMessage("");
+
+      navigate("/order/confirmation", {
+        state: {
+          orderId,
+          pickupTime,
+          pickupLocationName,
+          pickupAddress,
+        },
+      });
+    } catch (err) {
+      setMessage(err.response?.data?.error || tr("Erreur lors de la finalisation", "Error while finalizing order"));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleValidateCart = () => {
-    if (!cart.length) return showToast("Votre panier est vide !");
-    setFinalizing(true);
+    if (cartItems.length === 0) {
+      setMessage(tr("Votre panier est vide", "Your cart is empty"));
+      return;
+    }
+
+    setValidatedCartSignature(cartSignature);
+    setMessage(tr("Panier valide. Choisissez la date, l'emplacement et l'heure de retrait.", "Cart validated. Choose date, location and pickup time."));
   };
 
-  const handleFinalizeOrder = async () => {
-    if (!selectedTimeSlot) return showToast("Veuillez sélectionner un créneau");
-    setLoading(true);
+  const handleRemoveCartItem = async (itemId) => {
     try {
-      await finalizeOrder(token, selectedTimeSlot.id);
-      showToast("Commande finalisée !");
-      const refreshedCart = await getCart(token);
-      setCart(refreshedCart.items || []);
-      setSelectedTimeSlot(null);
-      setTimeSlots([]);
-      setFinalizing(false);
+      await removeItem(itemId);
+      setMessage(tr("Article retire du panier", "Item removed from cart"));
     } catch (err) {
-      console.error(err);
-      showToast(err.message || "Impossible de finaliser la commande");
-    }
-    setLoading(false);
-  };
-
-  const handleModalExtras = (type, ingredient, checked = false) => {
-    if (type === "extras") {
-      setSelectedExtras((prev) =>
-        checked ? [...prev, ingredient] : prev.filter((i) => i.id !== ingredient.id)
-      );
-    } else if (type === "removed") {
-      setRemovedIngredients((prev) =>
-        checked ? [...prev, ingredient] : prev.filter((i) => i.id !== ingredient.id)
-      );
-      } else if (type === "quantity") {
-      setQuantities((prev) => ({
-        ...prev,
-        [editingPizza.id]: ingredient
-      }));
-    } else if (type === "confirm") {
-      handleAddToCart(editingPizza);
+      setMessage(err.response?.data?.error || tr("Impossible de retirer l'article du panier", "Unable to remove the item from cart"));
     }
   };
 
-  const cartTotal = useMemo(
-    () => cart.reduce((acc, item) => acc + (item.totalPrice || item.unitPrice || 0) * item.quantity, 0),
-    [cart]
-  );
-  const today = new Date().toISOString().split("T")[0];
+  const handleClearCart = async () => {
+    try {
+      await clearCart();
+      setValidatedCartSignature("");
+      setSelectedSlotId("");
+      setMessage(tr("Panier vide", "Cart cleared"));
+    } catch (err) {
+      setMessage(err.response?.data?.error || tr("Impossible de vider le panier", "Unable to clear cart"));
+    }
+  };
 
   return (
-    <div className="order-page">
-      {toastMessage && <Toast message={toastMessage} onClose={() => setToastMessage("")} />}
-
-      {/* ========================= PIZZAS ========================= */}
-      <div className="pizza-section">
-        {pizzas.map((pizza) => (
-<div
-  className="pizza-card"
-  key={pizza.id}
-  onClick={() => {
-    setEditingPizza(pizza);          // ouvre la modal
-    setSelectedExtras([]);
-    setRemovedIngredients([]);
-    setQuantities((prev) => ({ ...prev, [pizza.id]: prev[pizza.id] || 1 }));
-  }}
-  style={{ cursor: "pointer" }}       // indique que c'est cliquable
->
-  <h2>{pizza.name}</h2>
-  <p>{pizza.description}</p>
-  <p style={{ fontStyle: "italic", color: "#555" }}>
-    {pizza.ingredients.map((i) => i.ingredient.name).join(", ")}
-  </p>
-  <p>
-    Prix : <strong>
-      {pizza.basePrice !== undefined && pizza.basePrice !== null 
-        ? Number(pizza.basePrice).toFixed(2) 
-        : "N/A"} €
-    </strong>
-  </p>
-</div>
-        ))}
+    <div className="section-shell pb-16">
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-sm uppercase tracking-[0.25em] text-saffron">{tr("Commande en ligne", "Online ordering")}</p>
+          <h1 className="font-display text-4xl uppercase tracking-wide text-white">{tr("Composez votre commande", "Build your order")}</h1>
+        </div>
+        <div className="rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-sm text-stone-200">
+          <p>{tr("Articles dans le panier", "Items in cart")}: <strong>{itemCount}</strong></p>
+          <p>{tr("Total", "Total")}: <strong>{Number(cartTotal).toFixed(2)} EUR</strong></p>
+        </div>
       </div>
 
-      {/* ========================= PANIER / CRENEAU ========================= */}
-      <div className="cart-section">
-        {!finalizing ? (
-          <>
-            <h2>Mon panier</h2>
-            {!cart.length && <p>Votre panier est vide</p>}
-            {cart.map((item) => (
-              <CartItem
-                key={generateItemKey(item.pizza.id, item.addedIngredients, item.removedIngredients)}
-                item={item}
-                onRemove={handleRemoveItem}
-                loading={loading}
-              />
-            ))}
+      {message && (
+        <div className="mb-6 rounded-xl border border-saffron/50 bg-saffron/10 px-4 py-3 text-sm text-saffron">
+          {message}
+        </div>
+      )}
 
-            {cart.length > 0 && (
-              <>
-                <h3>Total du panier : {cartTotal.toFixed(2)} €</h3>
-                <button onClick={handleClearCart} disabled={loading}>Vider le panier</button>
-                <button onClick={handleValidateCart} disabled={loading}>
-                  Valider le panier
+      <div className="grid gap-8 xl:grid-cols-[1.65fr_1fr]">
+        <section className="space-y-4">
+          <h2 className="text-xl font-bold text-white">{tr("Nos produits", "Our products")}</h2>
+          {menuByCategory.length === 0 ? (
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-5 text-sm text-stone-300">
+              {tr("Aucun produit disponible pour le moment.", "No products available right now.")}
+            </div>
+          ) : (
+            <div className="space-y-8">
+              {menuByCategory.map((group) => (
+                <article key={group.key} className="rounded-3xl border border-white/10 bg-charcoal/35 p-5 sm:p-7">
+                  <div className="mb-4 border-b border-white/10 pb-3">
+                    <h3 className="font-display text-3xl uppercase tracking-[0.08em] text-crust sm:text-4xl">
+                      {group.title}
+                    </h3>
+                    {group.description && <p className="mt-1 text-sm text-stone-400">{group.description}</p>}
+                  </div>
+
+                  <div>
+                    {group.items.map((product) => (
+                      <div key={product.id} className="border-b border-white/10 py-4 last:border-b-0">
+                        <div className="flex items-start gap-3">
+                          <h4 className="text-base font-semibold uppercase tracking-wide text-white sm:text-lg">
+                            {product.name}
+                          </h4>
+                          <div className="mt-3 hidden h-px flex-1 border-t border-dashed border-stone-500/70 sm:block" />
+                          <span className="whitespace-nowrap text-sm font-extrabold uppercase tracking-wide text-saffron sm:text-base">
+                            {formatPrice(product.basePrice)} EUR
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              group.isPizzaCategory ? openPizzaModal(product) : handleQuickAdd(product)
+                            }
+                            disabled={loading}
+                            title={
+                              group.isPizzaCategory
+                                ? tr("Configurer et ajouter", "Customize and add")
+                                : tr("Ajouter au panier", "Add to cart")
+                            }
+                            aria-label={
+                              group.isPizzaCategory
+                                ? `${tr("Configurer", "Customize")} ${product.name}`
+                                : `${tr("Ajouter", "Add")} ${product.name}`
+                            }
+                            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-saffron/70 text-sm font-bold text-saffron transition hover:bg-saffron/15 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            +
+                          </button>
+                        </div>
+
+                        {product.description && <p className="mt-1 text-sm text-stone-300">{product.description}</p>}
+
+                        {product.ingredients?.length > 0 && (
+                          <p className="mt-2 text-xs uppercase tracking-[0.14em] text-stone-400">
+                            {product.ingredients.map((entry) => entry.ingredient.name).join(" - ")}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="space-y-4">
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h2 className="text-xl font-bold text-white">{tr("Mon panier", "My cart")}</h2>
+              {isCartValidated && (
+                <span className="rounded-full bg-emerald-500/20 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-emerald-300">
+                  {tr("Panier valide", "Cart validated")}
+                </span>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              {cartLoading && <p className="text-sm text-stone-300">{tr("Chargement du panier...", "Loading cart...")}</p>}
+              {!cartLoading && cartItems.length === 0 && (
+                <p className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-stone-300">
+                  {tr("Votre panier est vide.", "Your cart is empty.")}
+                </p>
+              )}
+
+              {cartItems.map((item) => {
+                const itemUnitPrice = Number(item.unitPrice ?? getCartItemProduct(item)?.basePrice ?? 0);
+                const itemTotal = itemUnitPrice * Number(item.quantity || 0);
+                return (
+                  <div key={item.id} className="rounded-xl border border-white/10 bg-black/20 p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-white">{getCartItemName(item)}</p>
+                        <p className="text-xs text-stone-300">{tr("Quantite", "Quantity")}: {item.quantity}</p>
+                        {item.addedIngredients?.length > 0 && (
+                          <p className="text-[11px] text-emerald-300">
+                            + {item.addedIngredients.map((entry) => getCartIngredientName(entry)).filter(Boolean).join(", ")}
+                          </p>
+                        )}
+                        {item.removedIngredients?.length > 0 && (
+                          <p className="text-[11px] text-red-300">
+                            - {item.removedIngredients.map((entry) => getCartIngredientName(entry)).filter(Boolean).join(", ")}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="shrink-0 text-right">
+                        <p className="text-xs font-bold text-saffron">{formatPrice(itemTotal)} EUR</p>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveCartItem(item.id)}
+                          className="mt-1 rounded-md border border-white/20 px-2 py-1 text-[11px] font-semibold text-stone-200 transition hover:bg-white/10"
+                        >
+                          {tr("Retirer", "Remove")}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="mt-4 border-t border-white/10 pt-4">
+              <p className="text-sm text-stone-200">
+                {tr("Total panier", "Cart total")}: <strong>{Number(cartTotal).toFixed(2)} EUR</strong>
+              </p>
+              <div className="mt-3 flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleValidateCart}
+                  disabled={cartItems.length === 0}
+                  className="flex-1 rounded-full bg-saffron px-4 py-2 text-xs font-bold uppercase tracking-wide text-charcoal transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {tr("Valider le panier", "Validate cart")}
                 </button>
-              </>
+                <button
+                  type="button"
+                  onClick={handleClearCart}
+                  disabled={cartItems.length === 0}
+                  className="rounded-full border border-white/25 px-4 py-2 text-xs font-semibold text-stone-100 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {tr("Vider", "Clear")}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+            <h2 className="mb-1 text-xl font-bold text-white">{tr("Retrait de la commande", "Order pickup")}</h2>
+            <p className="mb-4 text-sm text-stone-300">
+              {tr("Etape 2: une fois le panier valide, choisissez date, emplacement et creneau.", "Step 2: once the cart is validated, choose date, location and timeslot.")}
+            </p>
+
+            {!isCartValidated && (
+              <div className="mb-3 rounded-xl border border-amber-300/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+                {tr("Validez d'abord le panier pour debloquer la selection du retrait.", "Validate the cart first to unlock pickup selection.")}
+              </div>
             )}
-          </>
-        ) : (
-<div className="timeslot-section">
-  <h2>Choisissez une date</h2>
 
-  {/* NAVIGATION PAR FLÈCHES */}
-  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
-    <button onClick={() => {
-      const d = new Date(selectedDate);
-      d.setDate(d.getDate() - 1);
-      setSelectedDate(d.toISOString().split("T")[0]);
-    }}>
-      &lt;
-    </button>
+            <fieldset disabled={!isCartValidated || loading || cartItems.length === 0} className="space-y-3 disabled:opacity-60">
+              <label className="block text-sm text-stone-300">
+                {tr("Date", "Date")}
+                <input
+                  type="date"
+                  min={toLocalIsoDate(new Date())}
+                  value={selectedDate}
+                  onChange={(event) => setSelectedDate(event.target.value)}
+                  className="mt-1 w-full rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-white"
+                />
+              </label>
 
-    <input
-      type="date"
-      min={today}
-      value={selectedDate}
-      onChange={(e) => setSelectedDate(e.target.value)}
-      style={{ textAlign: "center" }}
-    />
+              <label className="block text-sm text-stone-300">
+                {tr("Emplacement", "Location")}
+                <select
+                  value={selectedLocationId}
+                  onChange={(event) => {
+                    setSelectedLocationId(event.target.value);
+                    setSelectedSlotId("");
+                  }}
+                  disabled={availableLocations.length === 0}
+                  className="mt-1 w-full rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-white"
+                >
+                  <option value="" disabled>
+                    {tr("Choisir un emplacement", "Choose a location")}
+                  </option>
+                  {availableLocations.map((location) => (
+                    <option key={location.id} value={location.id}>
+                      {location.name} - {location.city}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-    <button onClick={() => {
-      const d = new Date(selectedDate);
-      d.setDate(d.getDate() + 1);
-      setSelectedDate(d.toISOString().split("T")[0]);
-    }}>
-      &gt;
-    </button>
-  </div>
+              <label className="block text-sm text-stone-300">
+                {tr("Creneau", "Timeslot")}
+                <select
+                  value={selectedSlotId}
+                  onChange={(event) => setSelectedSlotId(event.target.value)}
+                  disabled={!selectedLocationId || availableLocations.length === 0}
+                  className="mt-1 w-full rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-white"
+                >
+                  <option value="">{tr("Choisir un creneau", "Choose a timeslot")}</option>
+                  {slots.map((slot) => (
+                    <option key={slot.id} value={slot.id}>
+                      {new Date(slot.startTime).toLocaleTimeString(locale, {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                      {" - "}
+                      {slot.location?.name || tr("Emplacement", "Location")}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-  <h3>Créneaux disponibles</h3>
-  {timeSlots.length === 0 ? (
-    <p>Aucun créneau disponible pour cette date</p>
-  ) : (
-    <select
-      value={selectedTimeSlot?.id || ""}
-      onChange={(e) => setSelectedTimeSlot(timeSlots.find(t => t.id === parseInt(e.target.value)))}
-    >
-      <option value="">-- Choisir un créneau --</option>
-      {timeSlots.map((t) => (
-        <option
-          key={t.id}
-          value={t.id}
-          disabled={t.maxPizzas - t.currentPizzas <= 0}
-        >
-          {new Date(t.startTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-        </option>
-      ))}
-    </select>
-  )}
+              {availableLocations.length === 0 && (
+                <div className="rounded-xl border border-red-400/40 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+                  {tr("Aucun emplacement disponible pour la date et la quantite choisies.", "No location available for selected date and quantity.")}
+                </div>
+              )}
 
-  <button
-    onClick={handleFinalizeOrder}
-    disabled={!selectedTimeSlot || loading || timeSlots.length === 0}
-    style={{ marginTop: "12px" }}
-  >
-    {loading ? "..." : "Finaliser la commande"}
-  </button>
-
-  <button
-    onClick={() => setFinalizing(false)}
-    style={{ marginTop: "10px" }}
-  >
-    Retour au panier
-  </button>
-</div>
-        )}
+              <button
+                type="button"
+                disabled={
+                  loading ||
+                  cartItems.length === 0 ||
+                  !isCartValidated ||
+                  !selectedLocationId ||
+                  !selectedSlot
+                }
+                onClick={handleFinalize}
+                className="mt-2 w-full rounded-full bg-saffron px-4 py-3 text-sm font-bold uppercase tracking-wide text-charcoal transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {loading ? tr("Traitement...", "Processing...") : tr("Finaliser la commande", "Finalize order")}
+              </button>
+            </fieldset>
+          </div>
+        </section>
       </div>
 
-      {/* ========================= MODAL ========================= */}
       {editingPizza && (
-        <PizzaModal
+        <PizzaCustomizerModal
           pizza={editingPizza}
-          ingredients={ingredients}
+          ingredients={extras}
           selectedExtras={selectedExtras}
           removedIngredients={removedIngredients}
+          quantity={quantity}
           onClose={() => setEditingPizza(null)}
-          onAdd={handleModalExtras}
-          quantities={quantities}
+          onExtrasChange={(ingredient, checked) => {
+            setSelectedExtras((prev) =>
+              checked ? [...prev, ingredient] : prev.filter((entry) => entry.id !== ingredient.id)
+            );
+          }}
+          onRemovedChange={(ingredient, checked) => {
+            setRemovedIngredients((prev) =>
+              checked ? [...prev, ingredient] : prev.filter((entry) => entry.id !== ingredient.id)
+            );
+          }}
+          onQuantityChange={setQuantity}
+          onConfirm={handleAddToCart}
+          tr={tr}
         />
       )}
     </div>

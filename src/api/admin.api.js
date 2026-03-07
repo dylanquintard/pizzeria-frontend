@@ -84,7 +84,7 @@ export const deleteIngredient = async (token, id) => {
 
 export const addIngredientToPizza = async (token, pizzaId, ingredientId) => {
   const response = await axios.post(
-    `${API_PIZZAS}/pizzas/ingredients`,
+    `${API_PIZZAS}/ingredients/link`,
     { pizzaId, ingredientId },
     withAuth(token)
   );
@@ -92,7 +92,7 @@ export const addIngredientToPizza = async (token, pizzaId, ingredientId) => {
 };
 
 export const removeIngredientFromPizza = async (token, pizzaId, ingredientId) => {
-  const response = await axios.delete(`${API_PIZZAS}/pizzas/ingredients`, {
+  const response = await axios.delete(`${API_PIZZAS}/ingredients/link`, {
     ...withAuth(token),
     data: { pizzaId, ingredientId },
   });
@@ -120,3 +120,4 @@ export const finalizeOrderAdmin = async (token, orderId) => {
   );
   return response.data;
 };
+

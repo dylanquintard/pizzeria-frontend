@@ -1,56 +1,89 @@
-import { useState, useContext, useEffect } from "react";
-import { AuthContext } from "../context/AuthContext";
+import { useContext, useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { loginUser } from "../api/user.api";
-import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState(null);
+  const [error, setError] = useState("");
   const { user, login } = useContext(AuthContext);
+  const { tr } = useLanguage();
   const navigate = useNavigate();
 
-  // Redirection si déjà connecté
   useEffect(() => {
-    if (user) {
-      navigate("/profile");
-    }
+    if (user) navigate("/profile");
   }, [user, navigate]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError(null);
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setError("");
 
     try {
       const { user: loggedUser, token } = await loginUser({ email, password });
       login(loggedUser, token);
-      navigate("/profile"); // redirection après login
+      navigate("/profile");
     } catch (err) {
-      setError(err.response?.data?.error || "Erreur connexion");
+      const apiError = err.response?.data;
+      if (apiError?.code === "ACCOUNT_NOT_VERIFIED" || apiError?.verificationRequired) {
+        navigate("/verify-account", {
+          state: {
+            email: apiError?.email || email.trim().toLowerCase(),
+            debugCodes: apiError?.debugCodes || null,
+          },
+        });
+        return;
+      }
+
+      setError(apiError?.error || tr("Erreur de connexion", "Login error"));
     }
   };
 
   return (
-    <div style={{ maxWidth: 400, margin: "0 auto" }}>
-      <h2>Connexion</h2>
-      <form onSubmit={handleSubmit}>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <input
-          type="password"
-          placeholder="Mot de passe"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-        <button type="submit">Se connecter</button>
-        {error && <p style={{ color: "red" }}>{error}</p>}
-      </form>
+    <div className="section-shell py-10">
+      <div className="mx-auto max-w-md rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-md">
+        <p className="text-sm uppercase tracking-[0.25em] text-saffron">{tr("Connexion", "Login")}</p>
+        <h1 className="mt-2 font-display text-4xl uppercase tracking-wide text-white">{tr("Espace client", "Client area")}</h1>
+
+        {error && (
+          <p className="mt-4 rounded-lg border border-red-400/50 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+            {error}
+          </p>
+        )}
+
+        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+          <input
+            type="email"
+            placeholder={tr("Email", "Email")}
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            className="w-full rounded-xl border border-white/20 bg-charcoal/70 px-4 py-3 text-white placeholder:text-stone-400"
+            required
+          />
+          <input
+            type="password"
+            placeholder={tr("Mot de passe", "Password")}
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            className="w-full rounded-xl border border-white/20 bg-charcoal/70 px-4 py-3 text-white placeholder:text-stone-400"
+            required
+          />
+          <button
+            type="submit"
+            className="w-full rounded-full bg-saffron px-5 py-3 text-sm font-bold uppercase tracking-wide text-charcoal hover:bg-yellow-300"
+          >
+            {tr("Se connecter", "Sign in")}
+          </button>
+        </form>
+
+        <p className="mt-5 text-sm text-stone-300">
+          {tr("Pas encore de compte?", "No account yet?")}{" "}
+          <Link to="/register" className="font-semibold text-saffron hover:underline">
+            {tr("Creer un compte", "Create an account")}
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }

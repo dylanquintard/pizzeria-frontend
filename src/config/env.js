@@ -21,3 +21,7 @@ const derivedSocketUrl = API_BASE_URL.endsWith("/api")
 
 export const SOCKET_URL =
   normalizeUrl(process.env.REACT_APP_SOCKET_URL) || derivedSocketUrl;
+
+export const INSTAGRAM_URL =
+  normalizeUrl(process.env.REACT_APP_INSTAGRAM_URL) || "https://instagram.com";
+

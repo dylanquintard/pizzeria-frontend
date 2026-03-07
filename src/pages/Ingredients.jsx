@@ -1,14 +1,16 @@
-import { useState, useEffect, useContext } from "react";
-import { AuthContext } from "../context/AuthContext";
+import { useContext, useEffect, useState } from "react";
 import {
-  getAllIngredients,
   createIngredient,
+  deleteIngredient,
+  getAllIngredients,
   updateIngredient,
-  deleteIngredient
 } from "../api/admin.api";
+import { AuthContext } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function Ingredients() {
   const { token, user, loading: authLoading } = useContext(AuthContext);
+  const { tr } = useLanguage();
   const [ingredients, setIngredients] = useState([]);
   const [message, setMessage] = useState("");
   const [newIngredient, setNewIngredient] = useState({ name: "", price: "" });
@@ -16,105 +18,135 @@ export default function Ingredients() {
   useEffect(() => {
     if (authLoading || !user || !token) return;
     if (user.role !== "ADMIN") {
-      setMessage("Accès refusé : administrateur uniquement");
+      setMessage(tr("Acces refuse : administrateur uniquement", "Access denied: admin only"));
       return;
     }
 
     async function fetchIngredients() {
       try {
         const data = await getAllIngredients(token);
-        setIngredients(data.map(i => ({ ...i, editPrice: false, tempPrice: i.price })));
+        const normalized = (Array.isArray(data) ? data : []).map((entry) => ({
+          ...entry,
+          editPrice: false,
+          tempPrice: entry.price,
+        }));
+        setIngredients(normalized);
       } catch (err) {
-        setMessage(err.response?.data?.error || "Erreur lors du chargement");
+        setMessage(err.response?.data?.error || tr("Erreur lors du chargement", "Error while loading"));
       }
     }
 
     fetchIngredients();
-  }, [authLoading, token, user]);
+  }, [authLoading, token, user, tr]);
 
   const handleCreate = async () => {
     try {
       const ingredient = await createIngredient(token, newIngredient);
-      setIngredients([...ingredients, { ...ingredient, editPrice: false, tempPrice: ingredient.price }]);
+      setIngredients((prev) => [
+        ...prev,
+        { ...ingredient, editPrice: false, tempPrice: ingredient.price },
+      ]);
       setNewIngredient({ name: "", price: "" });
+      setMessage("");
     } catch (err) {
-      setMessage(err.response?.data?.error || "Erreur lors de la création");
+      setMessage(err.response?.data?.error || tr("Erreur lors de la creation", "Error while creating"));
     }
   };
 
   const toggleEdit = (id) => {
-    setIngredients(ingredients.map(i => i.id === id ? { ...i, editPrice: !i.editPrice } : i));
+    setIngredients((prev) =>
+      prev.map((entry) => (entry.id === id ? { ...entry, editPrice: !entry.editPrice } : entry))
+    );
   };
 
   const handleSavePrice = async (id, tempPrice) => {
     try {
       const updated = await updateIngredient(token, id, { price: tempPrice });
-      setIngredients(ingredients.map(i => i.id === id ? { ...updated, editPrice: false, tempPrice: updated.price } : i));
+      setIngredients((prev) =>
+        prev.map((entry) =>
+          entry.id === id ? { ...updated, editPrice: false, tempPrice: updated.price } : entry
+        )
+      );
+      setMessage("");
     } catch (err) {
-      setMessage(err.response?.data?.error || "Erreur lors de la mise à jour du prix");
+      setMessage(err.response?.data?.error || tr("Erreur lors de la mise a jour du prix", "Error while updating price"));
     }
   };
 
   const handleDelete = async (id) => {
     try {
       await deleteIngredient(token, id);
-      setIngredients(ingredients.filter(i => i.id !== id));
+      setIngredients((prev) => prev.filter((entry) => entry.id !== id));
+      setMessage("");
     } catch (err) {
-      setMessage(err.response?.data?.error || "Erreur lors de la suppression");
+      setMessage(err.response?.data?.error || tr("Erreur lors de la suppression", "Error while deleting"));
     }
   };
 
-  if (authLoading) return <p>Chargement...</p>;
+  if (authLoading) return <p>{tr("Chargement...", "Loading...")}</p>;
 
   return (
     <div>
-      <h2>Ingrédients</h2>
+      <h2>{tr("Ingredients", "Ingredients")}</h2>
       {message && <p>{message}</p>}
 
-      <h3>Ajouter un ingrédient</h3>
+      <h3>{tr("Ajouter un ingredient", "Add ingredient")}</h3>
       <input
-        placeholder="Nom"
+        placeholder={tr("Nom", "Name")}
         value={newIngredient.name}
-        onChange={e => setNewIngredient({...newIngredient, name: e.target.value})}
+        onChange={(event) => setNewIngredient((prev) => ({ ...prev, name: event.target.value }))}
       />
       <input
         type="number"
-        placeholder="Prix"
+        placeholder={tr("Prix", "Price")}
         value={newIngredient.price}
-        onChange={e => setNewIngredient({...newIngredient, price: e.target.value})}
+        onChange={(event) => setNewIngredient((prev) => ({ ...prev, price: event.target.value }))}
       />
-      <button onClick={handleCreate}>Créer</button>
+      <button onClick={handleCreate}>{tr("Creer", "Create")}</button>
 
-      <h3>Liste des ingrédients</h3>
+      <h3>{tr("Liste des ingredients", "Ingredients list")}</h3>
       <table>
         <thead>
           <tr>
-            <th>ID</th><th>Nom</th><th>Prix</th><th>Actions</th>
+            <th>ID</th>
+            <th>{tr("Nom", "Name")}</th>
+            <th>{tr("Prix", "Price")}</th>
+            <th>{tr("Actions", "Actions")}</th>
           </tr>
         </thead>
         <tbody>
-          {ingredients.map(i => (
-            <tr key={i.id}>
-              <td>{i.id}</td>
-              <td>{i.name}</td>
+          {ingredients.map((entry) => (
+            <tr key={entry.id}>
+              <td>{entry.id}</td>
+              <td>{entry.name}</td>
               <td>
-                {i.editPrice ? (
+                {entry.editPrice ? (
                   <input
                     type="number"
-                    value={i.tempPrice}
-                    onChange={e => setIngredients(ingredients.map(ix => ix.id === i.id ? { ...ix, tempPrice: e.target.value } : ix))}
+                    value={entry.tempPrice}
+                    onChange={(event) =>
+                      setIngredients((prev) =>
+                        prev.map((item) =>
+                          item.id === entry.id ? { ...item, tempPrice: event.target.value } : item
+                        )
+                      )
+                    }
                   />
                 ) : (
-                  i.price
+                  entry.price
                 )}
               </td>
               <td>
-                {i.editPrice ? (
-                  <button onClick={() => handleSavePrice(i.id, i.tempPrice)}>Sauvegarder</button>
+                {entry.editPrice ? (
+                  <button onClick={() => handleSavePrice(entry.id, entry.tempPrice)}>
+                    {tr("Sauvegarder", "Save")}
+                  </button>
                 ) : (
-                  <button onClick={() => toggleEdit(i.id)}>Modifier le prix</button>
+                  <button onClick={() => toggleEdit(entry.id)}>
+                    {tr("Modifier le prix", "Edit price")}
+                  </button>
                 )}
-                <button onClick={() => handleDelete(i.id)}>Supprimer</button>
+                <button onClick={() => handleDelete(entry.id)}>{tr("Supprimer", "Delete")}</button>
               </td>
             </tr>
           ))}

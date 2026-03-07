@@ -7,8 +7,11 @@ const withAuth = (token) => ({
   headers: token ? { Authorization: `Bearer ${token}` } : {},
 });
 
-export const getActiveTimeSlots = async (token) => {
-  const response = await axios.get(`${API_TIMESLOTS}/active`, withAuth(token));
+export const getActiveTimeSlots = async (token, filters = {}) => {
+  const response = await axios.get(`${API_TIMESLOTS}/active`, {
+    ...withAuth(token),
+    params: filters,
+  });
   return response.data;
 };
 
@@ -45,3 +48,4 @@ export const deleteTimeSlot = async (token, id) => {
   const response = await axios.delete(`${API_TIMESLOTS}/${id}`, withAuth(token));
   return response.data;
 };
+

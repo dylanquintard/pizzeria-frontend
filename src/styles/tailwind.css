@@ -1,0 +1,72 @@
+@import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply min-h-screen bg-stonefire text-stone-100 font-body antialiased;
+    background-image:
+      radial-gradient(1100px 520px at -12% -20%, rgba(244, 183, 49, 0.22), transparent 62%),
+      radial-gradient(860px 420px at 112% -8%, rgba(217, 75, 31, 0.18), transparent 58%),
+      linear-gradient(180deg, #1f1712 0%, #12100d 38%, #0d0b09 100%);
+  }
+
+  section[id] {
+    scroll-margin-top: 6.5rem;
+  }
+
+  ::selection {
+    @apply bg-saffron text-charcoal;
+  }
+}
+
+@layer components {
+  .section-shell {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .glass-panel {
+    @apply rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md;
+  }
+
+  .admin-card {
+    @apply rounded-2xl border border-white/10 bg-white/5 p-5 text-stone-100 shadow-card backdrop-blur-sm;
+  }
+
+  .admin-card table {
+    @apply w-full text-sm;
+  }
+
+  .admin-card thead tr {
+    @apply border-b border-white/15 text-left text-stone-300;
+  }
+
+  .admin-card tbody tr {
+    @apply border-b border-white/10;
+  }
+
+  .admin-card th,
+  .admin-card td {
+    @apply px-3 py-3 align-top;
+  }
+
+  .admin-card input,
+  .admin-card select,
+  .admin-card textarea {
+    @apply w-full rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100 placeholder:text-stone-400 focus:border-saffron focus:outline-none focus:ring-2 focus:ring-saffron/20;
+  }
+
+  .admin-card button {
+    @apply rounded-lg bg-saffron px-3 py-2 text-xs font-semibold text-charcoal transition hover:bg-yellow-300;
+  }
+
+  .chip {
+    @apply inline-flex min-h-6 items-center rounded-full border border-saffron/55 bg-saffron/15 px-2.5 text-[11px] font-bold uppercase tracking-wide text-saffron;
+  }
+}

@@ -1,40 +1,72 @@
-// src/pages/Dashboard.jsx
 import { useContext } from "react";
-import { AuthContext } from "../context/AuthContext";
 import { NavLink } from "react-router-dom";
-import '../styles/Dashboard.css';
+import { AuthContext } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
+import { MessageNotificationsContext } from "../context/MessageNotificationsContext";
+
+const adminLinks = [
+  { to: "/admin/orders", labelFr: "Commandes", labelEn: "Orders" },
+  { to: "/admin/users", labelFr: "Clients", labelEn: "Users" },
+  { to: "/admin/pizzas", labelFr: "Pizzas", labelEn: "Pizzas" },
+  { to: "/admin/ingredients", labelFr: "Ingredients", labelEn: "Ingredients" },
+  { to: "/admin/categories", labelFr: "Categories", labelEn: "Categories" },
+  { to: "/admin/locations", labelFr: "Emplacements", labelEn: "Locations" },
+  { to: "/admin/timeslots", labelFr: "Creneaux", labelEn: "Timeslots" },
+  { to: "/admin/gallery", labelFr: "Galerie", labelEn: "Gallery" },
+  { to: "/admin/messages", labelFr: "Messagerie", labelEn: "Messages" },
+];
 
 export default function Dashboard({ children }) {
   const { user } = useContext(AuthContext);
+  const { totalUnread } = useContext(MessageNotificationsContext);
+  const { tr } = useLanguage();
 
   if (!user || user.role !== "ADMIN") {
-    return <p>Accès refusé : administrateur uniquement</p>;
+    return (
+      <div className="section-shell">
+        <p className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-red-200">
+          {tr("Acces refuse: administrateur uniquement.", "Access denied: admin only.")}
+        </p>
+      </div>
+    );
   }
 
   return (
-    <div className="admin-dashboard">
-      {/* Menu horizontal */}
-      <nav className="admin-menu">
-        <NavLink to="/admin/orders" className={({ isActive }) => isActive ? 'active' : ''}>
-          Gestion Commandes
-        </NavLink>
-        <NavLink to="/admin/users" className={({ isActive }) => isActive ? 'active' : ''}>
-          Gestion Clients
-        </NavLink>
-        <NavLink to="/admin/pizzas" className={({ isActive }) => isActive ? 'active' : ''}>
-          Gestion Pizzas
-        </NavLink>
-        <NavLink to="/admin/ingredients" className={({ isActive }) => isActive ? 'active' : ''}>
-          Gestion Ingrédients
-        </NavLink>
-        <NavLink to="/admin/timeslots" className={({ isActive }) => isActive ? 'active' : ''}>
-          Gestion Créneaux
-        </NavLink>
-      </nav>
+    <div className="section-shell pb-12">
+      <div className="mb-6">
+        <p className="text-sm uppercase tracking-[0.25em] text-saffron">{tr("Administration", "Administration")}</p>
+        <h1 className="font-display text-4xl uppercase tracking-wide text-white">{tr("Tableau de bord", "Dashboard")}</h1>
+      </div>
 
-      {/* Contenu dynamique */}
-      <div className="admin-content">
-        {children}
+      <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
+        <aside className="rounded-2xl border border-white/10 bg-white/5 p-4">
+          <nav className="space-y-2">
+            {adminLinks.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) =>
+                  `block rounded-lg px-3 py-2 text-sm font-medium transition ${
+                    isActive
+                      ? "bg-saffron text-charcoal"
+                      : "text-stone-200 hover:bg-white/10 hover:text-white"
+                  }`
+                }
+              >
+                <span className="flex items-center justify-between gap-2">
+                  <span>{tr(item.labelFr, item.labelEn)}</span>
+                  {item.to === "/admin/messages" && totalUnread > 0 && (
+                    <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-ember px-1.5 text-[10px] font-bold text-white">
+                      +{totalUnread}
+                    </span>
+                  )}
+                </span>
+              </NavLink>
+            ))}
+          </nav>
+        </aside>
+
+        <section className="admin-card">{children}</section>
       </div>
     </div>
   );

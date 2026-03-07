@@ -13,3 +13,5 @@ services:
         sync: false
       - key: REACT_APP_SOCKET_URL
         sync: false
+      - key: REACT_APP_INSTAGRAM_URL
+        sync: false

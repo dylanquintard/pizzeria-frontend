@@ -1,179 +1,328 @@
-import { useEffect, useState, useContext, useCallback } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { AuthContext } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
+import { getLocations } from "../api/location.api";
 import {
-  getAllTimeSlots,
-  createTimeSlotsBatch,
   activateTimeSlot,
-  deleteTimeSlot
+  createTimeSlotsBatch,
+  deleteTimeSlot,
+  getAllTimeSlots,
 } from "../api/timeslot.api";
+
+function toLocalIsoDate(dateValue) {
+  const date = new Date(dateValue);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getSlotServiceDate(slot) {
+  return slot.serviceDate ? toLocalIsoDate(slot.serviceDate) : toLocalIsoDate(slot.startTime);
+}
+
+function formatLocation(location, tr) {
+  if (!location) return tr("Sans emplacement", "No location");
+  const parts = [
+    location.name,
+    location.addressLine1,
+    `${location.postalCode || ""} ${location.city || ""}`.trim(),
+  ].filter(Boolean);
+  return parts.join(" - ");
+}
 
 export default function TimeslotsAdmin() {
   const { token } = useContext(AuthContext);
-
+  const { tr, locale } = useLanguage();
+  const initialDate = toLocalIsoDate(new Date());
   const [slots, setSlots] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [locations, setLocations] = useState([]);
+  const [selectedDate, setSelectedDate] = useState(initialDate);
+  const [selectedLocationFilter, setSelectedLocationFilter] = useState("");
   const [form, setForm] = useState({
-    serviceDate: new Date().toISOString().split("T")[0],
+    serviceDate: initialDate,
     startTime: "18:00",
     endTime: "22:00",
     duration: 15,
-    maxPizzas: 10
+    maxPizzas: 10,
+    locationId: "",
   });
   const [loading, setLoading] = useState(false);
 
-  // --- Récupère les créneaux pour la date sélectionnée ---
-  const fetchSlots = useCallback(async (date = selectedDate) => {
+  const fetchSlots = useCallback(
+    async (date = selectedDate, locationIdFilter = selectedLocationFilter) => {
+      try {
+        const allSlots = await getAllTimeSlots(token);
+        const filtered = allSlots.filter((slot) => {
+          const sameDate = getSlotServiceDate(slot) === date;
+          if (!sameDate) return false;
+          if (!locationIdFilter) return true;
+          return Number(slot.locationId) === Number(locationIdFilter);
+        });
+        setSlots(filtered);
+      } catch (err) {
+        console.error(err);
+        alert(tr("Impossible de recuperer les creneaux", "Unable to fetch timeslots"));
+      }
+    },
+    [token, selectedDate, selectedLocationFilter, tr]
+  );
+
+  const fetchLocations = useCallback(async () => {
     try {
-      const allSlots = await getAllTimeSlots(token);
-      const filtered = allSlots.filter(
-        (s) => new Date(s.serviceDate).toDateString() === new Date(date).toDateString()
-      );
-      setSlots(filtered);
+      const data = await getLocations();
+      setLocations(data);
     } catch (err) {
       console.error(err);
-      alert("Impossible de récupérer les créneaux");
+      alert(tr("Impossible de recuperer les emplacements", "Unable to fetch locations"));
     }
-  }, [token, selectedDate]);
+  }, [tr]);
+
+  useEffect(() => {
+    fetchLocations();
+  }, [fetchLocations]);
 
   useEffect(() => {
     fetchSlots();
   }, [fetchSlots]);
 
-  // --- Changer la date (flèches) ---
+  const sortedSlots = useMemo(
+    () => [...slots].sort((a, b) => new Date(a.startTime) - new Date(b.startTime)),
+    [slots]
+  );
+
   const changeDate = (delta) => {
-    const newDate = new Date(selectedDate);
-    newDate.setDate(newDate.getDate() + delta);
-    setSelectedDate(newDate);
-    setForm({ ...form, serviceDate: newDate.toISOString().split("T")[0] });
+    const next = new Date(`${selectedDate}T00:00:00`);
+    next.setDate(next.getDate() + delta);
+    const nextDate = toLocalIsoDate(next);
+
+    setSelectedDate(nextDate);
+    setForm((prev) => ({ ...prev, serviceDate: nextDate }));
   };
 
-  // --- Création de batch ---
-  const handleCreateBatch = async (e) => {
-    e.preventDefault();
+  const handleCreateBatch = async (event) => {
+    event.preventDefault();
+
+    if (!form.locationId) {
+      alert(tr("Selectionnez un emplacement avant de creer des creneaux", "Select a location before creating timeslots"));
+      return;
+    }
+
     setLoading(true);
+
     try {
-      await createTimeSlotsBatch(token, form);
-      alert("Créneaux créés !");
-      fetchSlots();
+      await createTimeSlotsBatch(token, {
+        ...form,
+        duration: Number(form.duration),
+        maxPizzas: Number(form.maxPizzas),
+        locationId: Number(form.locationId),
+      });
+      alert(tr("Creneaux crees", "Timeslots created"));
+      fetchSlots(form.serviceDate, selectedLocationFilter);
     } catch (err) {
       console.error(err);
       alert(err.response?.data?.error || err.message);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
-  // --- Activer / désactiver ---
   const handleToggleActive = async (slot) => {
     try {
       await activateTimeSlot(token, slot.id, !slot.active);
       fetchSlots();
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  // --- Supprimer un créneau ---
   const handleDelete = async (slot) => {
-    if (!window.confirm("Supprimer ce créneau ?")) return;
+    if (!window.confirm(tr("Supprimer ce creneau ?", "Delete this timeslot?"))) return;
+
     try {
       await deleteTimeSlot(token, slot.id);
       fetchSlots();
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  // --- Supprimer tous les créneaux de la date sélectionnée ---
   const handleDeleteAllOfDate = async () => {
-    if (!window.confirm(`Supprimer tous les créneaux du ${selectedDate.toLocaleDateString()} ?`)) return;
+    if (!window.confirm(`${tr("Supprimer tous les creneaux du", "Delete all timeslots of")} ${selectedDate} ?`)) return;
+
     try {
-      for (const slot of slots) {
+      for (const slot of sortedSlots) {
         await deleteTimeSlot(token, slot.id);
       }
       fetchSlots();
-      alert("Tous les créneaux de la date ont été supprimés !");
+      alert(tr("Tous les creneaux de la date ont ete supprimes", "All timeslots for this date were deleted"));
     } catch (err) {
       console.error(err);
-      alert("Erreur lors de la suppression des créneaux");
+      alert(tr("Erreur lors de la suppression des creneaux", "Error while deleting timeslots"));
     }
   };
 
   return (
     <div>
-      <h2>Gestion des créneaux</h2>
+      <h2>{tr("Gestion des creneaux", "Timeslot management")}</h2>
 
-      {/* Formulaire création batch */}
       <form onSubmit={handleCreateBatch} style={{ marginBottom: 20 }}>
-        <h3>Créer des créneaux automatiques</h3>
+        <h3>{tr("Creer des creneaux automatiques", "Create automatic timeslots")}</h3>
         <label>
-          Date du service:
+          {tr("Date du service", "Service date")}:
           <input
             type="date"
             value={form.serviceDate}
-            onChange={e => {
-              setForm({ ...form, serviceDate: e.target.value });
-              setSelectedDate(new Date(e.target.value));
+            onChange={(event) => {
+              const value = event.target.value;
+              setForm((prev) => ({ ...prev, serviceDate: value }));
+              setSelectedDate(value);
             }}
             required
           />
         </label>
         <label>
-          Heure ouverture:
-          <input type="time" value={form.startTime} onChange={e => setForm({ ...form, startTime: e.target.value })} required />
+          {tr("Heure ouverture", "Opening time")}:
+          <input
+            type="time"
+            value={form.startTime}
+            onChange={(event) =>
+              setForm((prev) => ({ ...prev, startTime: event.target.value }))
+            }
+            required
+          />
         </label>
         <label>
-          Heure fermeture:
-          <input type="time" value={form.endTime} onChange={e => setForm({ ...form, endTime: e.target.value })} required />
+          {tr("Heure fermeture", "Closing time")}:
+          <input
+            type="time"
+            value={form.endTime}
+            onChange={(event) =>
+              setForm((prev) => ({ ...prev, endTime: event.target.value }))
+            }
+            required
+          />
         </label>
         <label>
-          Durée créneau (min):
-          <input type="number" min="5" value={form.duration} onChange={e => setForm({ ...form, duration: parseInt(e.target.value) })} required />
+          {tr("Duree creneau (min)", "Timeslot duration (min)")}:
+          <input
+            type="number"
+            min="5"
+            value={form.duration}
+            onChange={(event) =>
+              setForm((prev) => ({ ...prev, duration: parseInt(event.target.value, 10) }))
+            }
+            required
+          />
         </label>
         <label>
-          Max pizzas par créneau:
-          <input type="number" min="1" value={form.maxPizzas} onChange={e => setForm({ ...form, maxPizzas: parseInt(e.target.value) })} required />
+          {tr("Max pizzas par creneau", "Max pizzas per timeslot")}:
+          <input
+            type="number"
+            min="1"
+            value={form.maxPizzas}
+            onChange={(event) =>
+              setForm((prev) => ({ ...prev, maxPizzas: parseInt(event.target.value, 10) }))
+            }
+            required
+          />
         </label>
-        <button type="submit" disabled={loading}>Créer les créneaux</button>
+        <label>
+          {tr("Emplacement", "Location")}:
+          <select
+            value={form.locationId}
+            onChange={(event) =>
+              setForm((prev) => ({ ...prev, locationId: event.target.value }))
+            }
+            required
+          >
+            <option value="" disabled>{tr("Choisir un emplacement", "Choose a location")}</option>
+            {locations.map((location) => (
+              <option key={location.id} value={location.id}>
+                {formatLocation(location, tr)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button type="submit" disabled={loading || !form.locationId}>
+          {tr("Creer les creneaux", "Create timeslots")}
+        </button>
       </form>
 
-      {/* Navigation de date */}
       <div style={{ display: "flex", alignItems: "center", marginBottom: 10 }}>
         <button onClick={() => changeDate(-1)}>&lt;</button>
-        <span style={{ margin: "0 10px", fontWeight: "bold" }}>
-          {selectedDate.toLocaleDateString()}
-        </span>
+        <span style={{ margin: "0 10px", fontWeight: "bold" }}>{selectedDate}</span>
         <button onClick={() => changeDate(1)}>&gt;</button>
       </div>
 
-      {/* Bouton supprimer tous les créneaux du jour */}
       <div style={{ marginBottom: 20 }}>
-        {slots.length > 0 && (
-          <button style={{ background: "red", color: "white", padding: "5px 10px" }} onClick={handleDeleteAllOfDate}>
-            Supprimer tous les créneaux de cette date
+        <label>
+          {tr("Filtrer par emplacement", "Filter by location")}:
+          <select
+            value={selectedLocationFilter}
+            onChange={(event) => {
+              const next = event.target.value;
+              setSelectedLocationFilter(next);
+              fetchSlots(selectedDate, next);
+            }}
+          >
+            <option value="">{tr("Tous les emplacements", "All locations")}</option>
+            {locations.map((location) => (
+              <option key={location.id} value={location.id}>
+                {formatLocation(location, tr)}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <div style={{ marginBottom: 20 }}>
+        {sortedSlots.length > 0 && (
+          <button
+            style={{ background: "red", color: "white", padding: "5px 10px" }}
+            onClick={handleDeleteAllOfDate}
+          >
+            {tr("Supprimer tous les creneaux de cette date", "Delete all timeslots for this date")}
           </button>
         )}
       </div>
 
-      {/* Tableau des créneaux */}
       <table border="1" cellPadding="5">
         <thead>
           <tr>
-            <th>Heure</th>
-            <th>Commandes</th>
-            <th>Actif</th>
-            <th>Actions</th>
+            <th>{tr("Heure", "Time")}</th>
+            <th>{tr("Emplacement", "Location")}</th>
+            <th>{tr("Commandes", "Orders")}</th>
+            <th>{tr("Actif", "Active")}</th>
+            <th>{tr("Actions", "Actions")}</th>
           </tr>
         </thead>
         <tbody>
-          {slots.length === 0 && (
+          {sortedSlots.length === 0 && (
             <tr>
-              <td colSpan="4" style={{ textAlign: "center" }}>Aucun créneau pour cette date</td>
+              <td colSpan="5" style={{ textAlign: "center" }}>
+                {tr("Aucun creneau pour cette date", "No timeslot for this date")}
+              </td>
             </tr>
           )}
-          {slots.map(slot => (
+          {sortedSlots.map((slot) => (
             <tr key={slot.id}>
-              <td>{new Date(slot.startTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</td>
-              <td>{slot.currentPizzas}/{slot.maxPizzas}</td>
-              <td>{slot.active ? "Oui" : "Non"}</td>
               <td>
-                <button onClick={() => handleToggleActive(slot)}>{slot.active ? "Désactiver" : "Activer"}</button>
-                <button onClick={() => handleDelete(slot)}>Supprimer</button>
+                {new Date(slot.startTime).toLocaleTimeString(locale, {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </td>
+              <td>{formatLocation(slot.location, tr)}</td>
+              <td>
+                {slot.currentPizzas}/{slot.maxPizzas}
+              </td>
+              <td>{slot.active ? tr("Oui", "Yes") : tr("Non", "No")}</td>
+              <td>
+                <button onClick={() => handleToggleActive(slot)}>
+                  {slot.active ? tr("Desactiver", "Disable") : tr("Activer", "Enable")}
+                </button>
+                <button onClick={() => handleDelete(slot)}>{tr("Supprimer", "Delete")}</button>
               </td>
             </tr>
           ))}

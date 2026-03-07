@@ -1,20 +1,23 @@
 import { useContext } from "react";
-import {
-  BrowserRouter,
-  Navigate,
-  Outlet,
-  Route,
-  Routes,
-} from "react-router-dom";
+import { BrowserRouter, Navigate, Outlet, Route, Routes } from "react-router-dom";
+import Header from "./components/layout/Header";
+import MainContent from "./components/layout/MainContent";
 import { AuthContext, AuthProvider } from "./context/AuthContext";
+import { CartProvider } from "./context/CartContext";
+import { LanguageProvider, useLanguage } from "./context/LanguageContext";
+import { MessageNotificationsProvider } from "./context/MessageNotificationsContext";
+import AdminMessages from "./pages/AdminMessages";
+import Categories from "./pages/Categories";
 import Dashboard from "./pages/Dashboard";
 import EditPizza from "./pages/EditPizza";
-import Header from "./pages/Header";
+import GalleryAdmin from "./pages/GalleryAdmin";
+import Home from "./pages/Home";
 import Ingredients from "./pages/Ingredients";
+import Locations from "./pages/Locations";
 import Login from "./pages/Login";
-import MainContent from "./pages/MainContent";
-import Menu from "./pages/Menu";
+import Messages from "./pages/Messages";
 import Order from "./pages/Order";
+import OrderConfirmation from "./pages/OrderConfirmation";
 import OrderList from "./pages/OrderList";
 import Pizzas from "./pages/Pizzas";
 import Profile from "./pages/Profile";
@@ -22,19 +25,22 @@ import Register from "./pages/Register";
 import TimeslotsAdmin from "./pages/Timeslots";
 import Users from "./pages/Users";
 import UserOrders from "./pages/UsersOrders";
+import VerifyAccount from "./pages/VerifyAccount";
 
 const PrivateRoute = ({ children }) => {
   const { token, loading } = useContext(AuthContext);
+  const { tr } = useLanguage();
 
-  if (loading) return <p>Loading...</p>;
+  if (loading) return <p>{tr("Chargement...", "Loading...")}</p>;
   if (!token) return <Navigate to="/login" replace />;
   return children;
 };
 
 const AdminRoute = ({ children }) => {
   const { token, user, loading } = useContext(AuthContext);
+  const { tr } = useLanguage();
 
-  if (loading) return <p>Loading...</p>;
+  if (loading) return <p>{tr("Chargement...", "Loading...")}</p>;
   if (!token || user?.role !== "ADMIN") return <Navigate to="/login" replace />;
   return children;
 };
@@ -49,16 +55,19 @@ const AppLayout = () => (
 );
 
 function AppRoutes() {
+  const { tr } = useLanguage();
+
   return (
     <Routes>
-
       <Route element={<AppLayout />}>
-        <Route path="login" element={<Login />} />
-        <Route path="register" element={<Register />} />
-        <Route path="menu" element={<Menu />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/menu" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/verify-account" element={<VerifyAccount />} />
 
         <Route
-          path="order"
+          path="/order"
           element={
             <PrivateRoute>
               <Order />
@@ -66,7 +75,15 @@ function AppRoutes() {
           }
         />
         <Route
-          path="profile"
+          path="/order/confirmation"
+          element={
+            <PrivateRoute>
+              <OrderConfirmation />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/profile"
           element={
             <PrivateRoute>
               <Profile />
@@ -74,44 +91,49 @@ function AppRoutes() {
           }
         />
         <Route
-          path="userorders"
+          path="/userorders"
           element={
             <PrivateRoute>
               <UserOrders />
             </PrivateRoute>
           }
         />
+        <Route
+          path="/messages"
+          element={
+            <PrivateRoute>
+              <Messages />
+            </PrivateRoute>
+          }
+        />
 
         <Route
-          path="admin"
-          element={
-            <AdminRoute>
-              <Dashboard />
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="admin/pizzas"
+          path="/admin"
           element={
             <AdminRoute>
               <Dashboard>
-                <Pizzas />
+                <p className="rounded-xl border border-stone-200 bg-white p-4 text-stone-700">
+                  {tr(
+                    "Selectionnez une section dans le menu administrateur.",
+                    "Select an admin section from the menu."
+                  )}
+                </p>
               </Dashboard>
             </AdminRoute>
           }
         />
         <Route
-          path="admin/ingredients"
+          path="/admin/orders"
           element={
             <AdminRoute>
               <Dashboard>
-                <Ingredients />
+                <OrderList />
               </Dashboard>
             </AdminRoute>
           }
         />
         <Route
-          path="admin/users"
+          path="/admin/users"
           element={
             <AdminRoute>
               <Dashboard>
@@ -121,17 +143,47 @@ function AppRoutes() {
           }
         />
         <Route
-          path="admin/editpizza/:id"
+          path="/admin/pizzas"
           element={
             <AdminRoute>
               <Dashboard>
-                <EditPizza />
+                <Pizzas />
               </Dashboard>
             </AdminRoute>
           }
         />
         <Route
-          path="admin/timeslots"
+          path="/admin/ingredients"
+          element={
+            <AdminRoute>
+              <Dashboard>
+                <Ingredients />
+              </Dashboard>
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/categories"
+          element={
+            <AdminRoute>
+              <Dashboard>
+                <Categories />
+              </Dashboard>
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/locations"
+          element={
+            <AdminRoute>
+              <Dashboard>
+                <Locations />
+              </Dashboard>
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/timeslots"
           element={
             <AdminRoute>
               <Dashboard>
@@ -141,11 +193,31 @@ function AppRoutes() {
           }
         />
         <Route
-          path="admin/orders"
+          path="/admin/gallery"
           element={
             <AdminRoute>
               <Dashboard>
-                <OrderList />
+                <GalleryAdmin />
+              </Dashboard>
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/messages"
+          element={
+            <AdminRoute>
+              <Dashboard>
+                <AdminMessages />
+              </Dashboard>
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/editpizza/:id"
+          element={
+            <AdminRoute>
+              <Dashboard>
+                <EditPizza />
               </Dashboard>
             </AdminRoute>
           }
@@ -160,9 +232,15 @@ function AppRoutes() {
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <AppRoutes />
-      </BrowserRouter>
+      <LanguageProvider>
+        <CartProvider>
+          <MessageNotificationsProvider>
+            <BrowserRouter>
+              <AppRoutes />
+            </BrowserRouter>
+          </MessageNotificationsProvider>
+        </CartProvider>
+      </LanguageProvider>
     </AuthProvider>
   );
 }
