@@ -3,7 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { getCategories } from "../api/category.api";
 import { getLocations } from "../api/location.api";
 import { getActiveTimeSlots } from "../api/timeslot.api";
-import { addToCart, finalizeOrder, getAllIngredients, getAllPizzasClient } from "../api/user.api";
+import {
+  addToCart,
+  finalizeOrder,
+  getAllIngredients,
+  getAllPizzasClient,
+  getCart,
+  getUserOrders,
+} from "../api/user.api";
 import { AuthContext } from "../context/AuthContext";
 import { CartContext } from "../context/CartContext";
 import { useLanguage } from "../context/LanguageContext";
@@ -405,20 +412,15 @@ export default function Order() {
       return;
     }
 
-    try {
-      setLoading(true);
-      const locationForSummary =
-        selectedSlot.location ||
-        availableLocations.find((location) => String(location.id) === String(selectedLocationId)) ||
-        locations.find((location) => String(location.id) === String(selectedLocationId)) ||
-        null;
-      const pickupLocationName = locationForSummary?.name || tr("Emplacement", "Location");
-      const pickupAddress = formatPickupAddress(locationForSummary, tr);
-      const pickupTime = selectedSlot.startTime;
-
-      const finalizedOrder = await finalizeOrder(token, selectedSlot.id);
-      const orderId = finalizedOrder?.id ?? finalizedOrder?.order?.id ?? finalizedOrder?.orderId ?? null;
-
+    const locationForSummary =
+      selectedSlot.location ||
+      availableLocations.find((location) => String(location.id) === String(selectedLocationId)) ||
+      locations.find((location) => String(location.id) === String(selectedLocationId)) ||
+      null;
+    const pickupLocationName = locationForSummary?.name || tr("Emplacement", "Location");
+    const pickupAddress = formatPickupAddress(locationForSummary, tr);
+    const pickupTime = selectedSlot.startTime;
+    const resetStateAndNavigate = async (resolvedOrderId = null) => {
       await refreshCart();
       setSlots([]);
       setSelectedLocationId("");
@@ -428,14 +430,49 @@ export default function Order() {
 
       navigate("/order/confirmation", {
         state: {
-          orderId,
+          orderId: resolvedOrderId,
           pickupTime,
           pickupLocationName,
           pickupAddress,
         },
       });
+    };
+
+    try {
+      setLoading(true);
+      const finalizedOrder = await finalizeOrder(token, selectedSlot.id);
+      const orderId = finalizedOrder?.id ?? finalizedOrder?.order?.id ?? finalizedOrder?.orderId ?? null;
+      await resetStateAndNavigate(orderId);
     } catch (err) {
-      setMessage(err.response?.data?.error || tr("Erreur lors de la finalisation", "Error while finalizing order"));
+      const backendError = String(err?.response?.data?.error || err?.message || "");
+      const isSocketEmissionFailure = /Cannot read properties of undefined \(reading 'to'\)/i.test(backendError);
+
+      // Backend may finalize the order and then fail when emitting Socket.IO events.
+      // If cart is now empty, treat it as finalized and continue to confirmation.
+      if (isSocketEmissionFailure) {
+        try {
+          const cartAfterFinalize = await getCart(token);
+          const remainingItems = Array.isArray(cartAfterFinalize?.items) ? cartAfterFinalize.items.length : 0;
+
+          if (remainingItems === 0) {
+            const orders = await getUserOrders(token);
+            const recentOrder = (Array.isArray(orders) ? orders : [])
+              .filter((order) => {
+                const orderSlotId = order?.timeSlot?.id ?? order?.timeSlotId;
+                return String(orderSlotId ?? "") === String(selectedSlot.id);
+              })
+              .sort((left, right) => new Date(right.createdAt) - new Date(left.createdAt))[0];
+
+            const fallbackOrderId = recentOrder?.id ?? null;
+            await resetStateAndNavigate(fallbackOrderId);
+            return;
+          }
+        } catch (_fallbackErr) {
+          // Keep the original error message if fallback checks fail.
+        }
+      }
+
+      setMessage(backendError || tr("Erreur lors de la finalisation", "Error while finalizing order"));
     } finally {
       setLoading(false);
     }
