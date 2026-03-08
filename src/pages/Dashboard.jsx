@@ -29,21 +29,21 @@ export default function Dashboard({ children }) {
   }
 
   return (
-    <div className="section-shell mx-auto max-w-6xl pb-10">
-      <div className="mb-5">
+    <div className="section-shell pb-12">
+      <div className="mb-6">
         <p className="text-sm uppercase tracking-[0.25em] text-saffron">{tr("Administration", "Administration")}</p>
-        <h1 className="font-display text-3xl uppercase tracking-wide text-white sm:text-4xl">{tr("Tableau de bord", "Dashboard")}</h1>
+        <h1 className="font-display text-4xl uppercase tracking-wide text-white">{tr("Tableau de bord", "Dashboard")}</h1>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[220px_minmax(0,1fr)] xl:items-start">
-        <aside className="rounded-2xl border border-white/10 bg-white/5 p-3 xl:sticky xl:top-24">
-          <nav className="flex gap-2 overflow-x-auto pb-1 xl:block xl:space-y-2 xl:overflow-visible xl:pb-0">
+      <div className="grid gap-6 lg:grid-cols-[220px_1fr]">
+        <aside className="hidden rounded-2xl border border-white/10 bg-white/5 p-4 lg:block">
+          <nav className="space-y-2">
             {adminLinks.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
                 className={({ isActive }) =>
-                  `shrink-0 rounded-lg px-3 py-2 text-sm font-medium transition xl:block ${
+                  `block rounded-lg px-3 py-2 text-sm font-medium transition ${
                     isActive
                       ? "bg-saffron text-charcoal"
                       : "text-stone-200 hover:bg-white/10 hover:text-white"
@@ -56,7 +56,7 @@ export default function Dashboard({ children }) {
           </nav>
         </aside>
 
-        <section className="admin-card min-w-0">{children}</section>
+        <section className="admin-card">{children}</section>
       </div>
     </div>
   );

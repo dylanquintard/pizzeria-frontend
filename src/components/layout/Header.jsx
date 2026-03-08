@@ -54,6 +54,18 @@ export default function Header() {
     { id: "services", label: tr("Nos services", "Our services") },
     { id: "contact", label: tr("Nous contacter", "Contact us") },
   ];
+  const adminMenuLinks = user?.role === "ADMIN"
+    ? [
+        { to: "/admin/orders", label: tr("Commandes", "Orders") },
+        { to: "/admin/users", label: tr("Clients", "Users") },
+        { to: "/admin/pizzas", label: tr("Pizzas", "Pizzas") },
+        { to: "/admin/ingredients", label: tr("Ingredients", "Ingredients") },
+        { to: "/admin/categories", label: tr("Categories", "Categories") },
+        { to: "/admin/locations", label: tr("Emplacements", "Locations") },
+        { to: "/admin/timeslots", label: tr("Creneaux", "Timeslots") },
+        { to: "/admin/gallery", label: tr("Galerie", "Gallery") },
+      ]
+    : [];
 
   const navHref = (id) => (location.pathname === "/" ? `#${id}` : `/#${id}`);
 
@@ -323,11 +335,17 @@ export default function Header() {
                   </button>
                 </div>
 
-                {onePageLinks.map((item) => (
+                {!isAdminRoute && onePageLinks.map((item) => (
                   <a key={item.id} href={navHref(item.id)} className="rounded-md px-3 py-2 transition hover:bg-white/10">
                     {item.label}
                   </a>
                 ))}
+
+                {isAdminRoute && (
+                  <Link to="/" className="rounded-md px-3 py-2 transition hover:bg-white/10">
+                    {tr("Accueil", "Home")}
+                  </Link>
+                )}
 
                 {token ? (
                   <Link
@@ -357,9 +375,22 @@ export default function Header() {
                 )}
 
                 {token && user?.role === "ADMIN" && (
-                  <Link to="/admin/orders" className="rounded-md border border-emerald-400/50 px-3 py-2 text-center text-sm text-emerald-300">
-                    Admin
-                  </Link>
+                  <div className="mt-2 rounded-lg border border-emerald-400/40 bg-emerald-500/10 p-2">
+                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-emerald-200">
+                      {tr("Administration", "Administration")}
+                    </p>
+                    <div className="grid gap-1">
+                      {adminMenuLinks.map((item) => (
+                        <Link
+                          key={item.to}
+                          to={item.to}
+                          className="rounded-md px-3 py-2 text-sm text-emerald-200 transition hover:bg-emerald-500/20"
+                        >
+                          {item.label}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
                 )}
 
                 {token && (
