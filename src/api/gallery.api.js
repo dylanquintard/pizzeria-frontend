@@ -18,6 +18,13 @@ export const createGalleryImage = async (token, data) => {
   return response.data;
 };
 
+export const uploadGalleryImage = async (token, file) => {
+  const formData = new FormData();
+  formData.append("image", file);
+  const response = await api.post("/gallery/upload", formData, authConfig(token));
+  return response.data;
+};
+
 export const updateGalleryImage = async (token, id, data) => {
   const response = await api.put(`/gallery/${id}`, data, authConfig(token));
   return response.data;

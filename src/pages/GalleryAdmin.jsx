@@ -6,6 +6,7 @@ import {
   createGalleryImage,
   deleteGalleryImage,
   getGalleryAdmin,
+  uploadGalleryImage,
   updateGalleryImage,
 } from "../api/gallery.api";
 
@@ -36,8 +37,10 @@ export default function GalleryAdmin() {
   const { tr } = useLanguage();
   const [images, setImages] = useState([]);
   const [newImage, setNewImage] = useState(emptyImageForm);
+  const [newImageFile, setNewImageFile] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [editImage, setEditImage] = useState(emptyImageForm);
+  const [editImageFile, setEditImageFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -58,15 +61,31 @@ export default function GalleryAdmin() {
 
   const handleCreate = async (event) => {
     event.preventDefault();
-    if (!newImage.imageUrl.trim()) {
-      setMessage(tr("L'URL de l'image est obligatoire", "Image URL is required"));
+    if (!newImage.imageUrl.trim() && !newImageFile) {
+      setMessage(
+        tr(
+          "Ajoutez une image par URL ou fichier",
+          "Provide an image using URL or file upload"
+        )
+      );
       return;
     }
 
     try {
       setLoading(true);
-      await createGalleryImage(token, normalizeImagePayload(newImage));
+      let payload = normalizeImagePayload(newImage);
+      if (newImageFile) {
+        const uploaded = await uploadGalleryImage(token, newImageFile);
+        payload = {
+          ...payload,
+          imageUrl: uploaded.imageUrl,
+          thumbnailUrl: payload.thumbnailUrl || uploaded.thumbnailUrl,
+        };
+      }
+
+      await createGalleryImage(token, payload);
       setNewImage(emptyImageForm);
+      setNewImageFile(null);
       setMessage("");
       fetchImages();
     } catch (err) {
@@ -78,6 +97,7 @@ export default function GalleryAdmin() {
 
   const startEditing = (image) => {
     setEditingId(image.id);
+    setEditImageFile(null);
     setEditImage({
       ...emptyImageForm,
       ...image,
@@ -90,13 +110,24 @@ export default function GalleryAdmin() {
 
   const cancelEditing = () => {
     setEditingId(null);
+    setEditImageFile(null);
     setEditImage(emptyImageForm);
   };
 
   const handleUpdate = async () => {
     try {
       setLoading(true);
-      await updateGalleryImage(token, editingId, normalizeImagePayload(editImage));
+      let payload = normalizeImagePayload(editImage);
+      if (editImageFile) {
+        const uploaded = await uploadGalleryImage(token, editImageFile);
+        payload = {
+          ...payload,
+          imageUrl: uploaded.imageUrl,
+          thumbnailUrl: payload.thumbnailUrl || uploaded.thumbnailUrl,
+        };
+      }
+
+      await updateGalleryImage(token, editingId, payload);
       cancelEditing();
       setMessage("");
       fetchImages();
@@ -144,6 +175,14 @@ export default function GalleryAdmin() {
             setNewImage((prev) => ({ ...prev, imageUrl: event.target.value }))
           }
         />
+        <input
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          onChange={(event) => setNewImageFile(event.target.files?.[0] || null)}
+        />
+        {newImageFile && (
+          <p>{tr("Fichier selectionne", "Selected file")}: {newImageFile.name}</p>
+        )}
         <input
           placeholder={tr("URL miniature (optionnel)", "Thumbnail URL (optional)")}
           value={newImage.thumbnailUrl}
@@ -252,6 +291,14 @@ export default function GalleryAdmin() {
                 setEditImage((prev) => ({ ...prev, imageUrl: event.target.value }))
               }
             />
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              onChange={(event) => setEditImageFile(event.target.files?.[0] || null)}
+            />
+            {editImageFile && (
+              <p>{tr("Fichier selectionne", "Selected file")}: {editImageFile.name}</p>
+            )}
             <input
               placeholder={tr("URL miniature", "Thumbnail URL")}
               value={editImage.thumbnailUrl}
