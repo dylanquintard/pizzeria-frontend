@@ -68,6 +68,9 @@ export default function Header() {
         { to: "/admin/gallery", label: tr("Galerie", "Gallery") },
       ]
     : [];
+  const safeAdminMenuLinks = adminMenuLinks.filter(
+    (item) => item && typeof item.to === "string" && item.to
+  );
 
   const navHref = (id) => (location.pathname === "/" ? `#${id}` : `/#${id}`);
 
@@ -175,6 +178,8 @@ export default function Header() {
                   onClick={() => {
                     setCartOpen((prev) => !prev);
                     setProfileOpen(false);
+                    setMobileOpen(false);
+                    setMobileAdminOpen(false);
                   }}
                   title={tr("Panier", "Cart")}
                   className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-saffron/35 bg-white/5 transition hover:bg-white/10"
@@ -247,6 +252,8 @@ export default function Header() {
                   onClick={() => {
                     setProfileOpen((prev) => !prev);
                     setCartOpen(false);
+                    setMobileOpen(false);
+                    setMobileAdminOpen(false);
                   }}
                   title={tr("Espace client", "Account")}
                   className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-saffron/35 bg-white/5 transition hover:bg-white/10"
@@ -288,7 +295,18 @@ export default function Header() {
 
             <button
               type="button"
-              onClick={() => setMobileOpen((prev) => !prev)}
+              onClick={() => {
+                setMobileOpen((prev) => {
+                  const next = !prev;
+                  if (next) {
+                    setCartOpen(false);
+                    setProfileOpen(false);
+                  } else {
+                    setMobileAdminOpen(false);
+                  }
+                  return next;
+                });
+              }}
               className="xl:hidden inline-flex h-9 w-9 items-center justify-center rounded-full border border-saffron/35 bg-white/5 text-white transition hover:bg-white/10"
               aria-expanded={mobileOpen}
               aria-label={tr("Ouvrir le menu", "Open menu")}
@@ -378,7 +396,7 @@ export default function Header() {
                   </Link>
                 )}
 
-                {token && user?.role === "ADMIN" && (
+                {token && isAdminUser && safeAdminMenuLinks.length > 0 && (
                   <div className="mt-2 rounded-lg border border-emerald-400/40 bg-emerald-500/10 p-2">
                     <button
                       type="button"
@@ -387,11 +405,11 @@ export default function Header() {
                       aria-expanded={mobileAdminOpen}
                     >
                       <span>{tr("Administration", "Administration")}</span>
-                      <span className="text-xs">{mobileAdminOpen ? "▲" : "▼"}</span>
+                      <span className="text-xs">{mobileAdminOpen ? "^" : "v"}</span>
                     </button>
                     {mobileAdminOpen && (
                       <div className="mt-1 grid gap-1">
-                        {adminMenuLinks.map((item) => (
+                        {safeAdminMenuLinks.map((item) => (
                           <Link
                             key={item.to}
                             to={item.to}
