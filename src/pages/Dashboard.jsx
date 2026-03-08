@@ -17,6 +17,9 @@ const adminLinks = [
 export default function Dashboard({ children }) {
   const { user } = useContext(AuthContext);
   const { tr } = useLanguage();
+  const safeAdminLinks = adminLinks.filter(
+    (item) => item && typeof item.to === "string" && item.to
+  );
 
   if (!user || user.role !== "ADMIN") {
     return (
@@ -38,7 +41,7 @@ export default function Dashboard({ children }) {
       <div className="grid gap-6 lg:grid-cols-[220px_1fr]">
         <aside className="hidden rounded-2xl border border-white/10 bg-white/5 p-4 lg:block">
           <nav className="space-y-2">
-            {adminLinks.map((item) => (
+            {safeAdminLinks.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
