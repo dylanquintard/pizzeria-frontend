@@ -245,7 +245,7 @@ export default function Header() {
               </div>
             )}
 
-            {token && !isAdminRoute && !isAdminUser && (
+            {token && !isAdminRoute && (
               <div ref={profileRef} className="relative">
                 <button
                   type="button"
@@ -273,12 +273,6 @@ export default function Header() {
                         className="rounded-md px-3 py-2 text-sm font-medium text-stone-800 transition hover:bg-stone-100"
                       >
                         {tr("Informations personnelles", "Personal information")}
-                      </Link>
-                      <Link
-                        to="/userorders"
-                        className="rounded-md px-3 py-2 text-sm font-medium text-stone-800 transition hover:bg-stone-100"
-                      >
-                        {tr("Mes commandes", "My orders")}
                       </Link>
                       <button
                         type="button"
