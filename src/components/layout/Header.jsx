@@ -40,12 +40,14 @@ export default function Header() {
   const { language, setLanguage, tr } = useLanguage();
 
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileAdminOpen, setMobileAdminOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const cartRef = useRef(null);
   const profileRef = useRef(null);
   const totalItems = Number(itemCount || 0);
   const isAdminRoute = location.pathname.startsWith("/admin");
+  const isAdminUser = user?.role === "ADMIN";
   const onePageLinks = [
     { id: "menu", label: tr("Le Menu", "Menu") },
     { id: "galerie", label: tr("Galerie", "Gallery") },
@@ -54,7 +56,7 @@ export default function Header() {
     { id: "services", label: tr("Nos services", "Our services") },
     { id: "contact", label: tr("Nous contacter", "Contact us") },
   ];
-  const adminMenuLinks = user?.role === "ADMIN"
+  const adminMenuLinks = isAdminUser
     ? [
         { to: "/admin/orders", label: tr("Commandes", "Orders") },
         { to: "/admin/users", label: tr("Clients", "Users") },
@@ -85,6 +87,7 @@ export default function Header() {
 
   useEffect(() => {
     setMobileOpen(false);
+    setMobileAdminOpen(false);
     setCartOpen(false);
     setProfileOpen(false);
   }, [location.pathname, location.hash]);
@@ -237,7 +240,7 @@ export default function Header() {
               </div>
             )}
 
-            {token && !isAdminRoute && (
+            {token && !isAdminRoute && !isAdminUser && (
               <div ref={profileRef} className="relative">
                 <button
                   type="button"
@@ -364,32 +367,41 @@ export default function Header() {
                 )}
 
                 {token && (
-                  <>
-                    <Link to="/profile" className="rounded-md px-3 py-2 text-sm transition hover:bg-white/10">
-                      {tr("Informations personnelles", "Personal information")}
-                    </Link>
-                    <Link to="/userorders" className="rounded-md px-3 py-2 text-sm transition hover:bg-white/10">
-                      {tr("Mes commandes", "My orders")}
-                    </Link>
-                  </>
+                  <Link to="/profile" className="rounded-md px-3 py-2 text-sm transition hover:bg-white/10">
+                    {tr("Informations personnelles", "Personal information")}
+                  </Link>
+                )}
+
+                {token && !isAdminUser && (
+                  <Link to="/userorders" className="rounded-md px-3 py-2 text-sm transition hover:bg-white/10">
+                    {tr("Mes commandes", "My orders")}
+                  </Link>
                 )}
 
                 {token && user?.role === "ADMIN" && (
                   <div className="mt-2 rounded-lg border border-emerald-400/40 bg-emerald-500/10 p-2">
-                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-emerald-200">
-                      {tr("Administration", "Administration")}
-                    </p>
-                    <div className="grid gap-1">
-                      {adminMenuLinks.map((item) => (
-                        <Link
-                          key={item.to}
-                          to={item.to}
-                          className="rounded-md px-3 py-2 text-sm text-emerald-200 transition hover:bg-emerald-500/20"
-                        >
-                          {item.label}
-                        </Link>
-                      ))}
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setMobileAdminOpen((prev) => !prev)}
+                      className="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm font-semibold text-emerald-200 transition hover:bg-emerald-500/20"
+                      aria-expanded={mobileAdminOpen}
+                    >
+                      <span>{tr("Administration", "Administration")}</span>
+                      <span className="text-xs">{mobileAdminOpen ? "▲" : "▼"}</span>
+                    </button>
+                    {mobileAdminOpen && (
+                      <div className="mt-1 grid gap-1">
+                        {adminMenuLinks.map((item) => (
+                          <Link
+                            key={item.to}
+                            to={item.to}
+                            className="rounded-md px-3 py-2 text-sm text-emerald-200 transition hover:bg-emerald-500/20"
+                          >
+                            {item.label}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
 

@@ -54,6 +54,13 @@ function formatPickupAddress(location, tr) {
   return [location.addressLine1, cityLine].filter(Boolean).join(", ");
 }
 
+function formatSlotTime(slot, locale) {
+  return new Date(slot.startTime).toLocaleTimeString(locale, {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 function PizzaCustomizerModal({
   pizza,
   ingredients,
@@ -283,6 +290,13 @@ export default function Order() {
   const selectedSlot = useMemo(
     () => slots.find((slot) => String(slot.id) === String(selectedSlotId)) || null,
     [slots, selectedSlotId]
+  );
+  const selectedLocation = useMemo(
+    () =>
+      availableLocations.find((location) => String(location.id) === String(selectedLocationId)) ||
+      locations.find((location) => String(location.id) === String(selectedLocationId)) ||
+      null,
+    [availableLocations, locations, selectedLocationId]
   );
 
   const menuByCategory = useMemo(() => {
@@ -648,53 +662,78 @@ export default function Order() {
                 />
               </label>
 
-              <label className="block text-sm text-stone-300">
-                {tr("Emplacement", "Location")}
-                <select
-                  value={selectedLocationId}
-                  onChange={(event) => {
-                    setSelectedLocationId(event.target.value);
-                    setSelectedSlotId("");
-                  }}
-                  disabled={availableLocations.length === 0}
-                  className="mt-1 w-full rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-white"
-                >
-                  <option value="" disabled>
-                    {tr("Choisir un emplacement", "Choose a location")}
-                  </option>
-                  {availableLocations.map((location) => (
-                    <option key={location.id} value={location.id}>
-                      {location.name} - {location.city}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <div className="space-y-2">
+                <p className="text-sm text-stone-300">{tr("Emplacement", "Location")}</p>
+                {availableLocations.length > 0 ? (
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {availableLocations.map((location) => {
+                      const isSelected = String(selectedLocationId) === String(location.id);
+                      return (
+                        <button
+                          key={location.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedLocationId(String(location.id));
+                            setSelectedSlotId("");
+                          }}
+                          className={`rounded-xl border px-3 py-2 text-left transition ${
+                            isSelected
+                              ? "border-saffron bg-saffron/15 text-saffron"
+                              : "border-white/20 bg-black/20 text-stone-100 hover:bg-white/10"
+                          }`}
+                        >
+                          <p className="text-sm font-semibold">{location.name}</p>
+                          <p className="text-xs text-stone-300">{location.city || "-"}</p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-red-400/40 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+                    {tr("Aucun emplacement disponible pour la date et la quantite choisies.", "No location available for selected date and quantity.")}
+                  </div>
+                )}
+              </div>
 
-              <label className="block text-sm text-stone-300">
-                {tr("Creneau", "Timeslot")}
-                <select
-                  value={selectedSlotId}
-                  onChange={(event) => setSelectedSlotId(event.target.value)}
-                  disabled={!selectedLocationId || availableLocations.length === 0}
-                  className="mt-1 w-full rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-white"
-                >
-                  <option value="">{tr("Choisir un creneau", "Choose a timeslot")}</option>
-                  {slots.map((slot) => (
-                    <option key={slot.id} value={slot.id}>
-                      {new Date(slot.startTime).toLocaleTimeString(locale, {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                      {" - "}
-                      {slot.location?.name || tr("Emplacement", "Location")}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <div className="space-y-2">
+                <p className="text-sm text-stone-300">{tr("Creneau", "Timeslot")}</p>
+                {!selectedLocationId ? (
+                  <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-xs text-stone-300">
+                    {tr("Selectionnez d'abord un emplacement", "Select a location first")}
+                  </div>
+                ) : slots.length === 0 ? (
+                  <div className="rounded-xl border border-red-400/40 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+                    {tr("Aucun creneau disponible pour cet emplacement a cette date.", "No timeslot available for this location on this date.")}
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {slots.map((slot) => {
+                      const isSelected = String(selectedSlotId) === String(slot.id);
+                      const remaining = Math.max(0, Number(slot.maxPizzas || 0) - Number(slot.currentPizzas || 0));
+                      return (
+                        <button
+                          key={slot.id}
+                          type="button"
+                          onClick={() => setSelectedSlotId(String(slot.id))}
+                          className={`rounded-full border px-3 py-2 text-xs font-semibold transition ${
+                            isSelected
+                              ? "border-saffron bg-saffron/20 text-saffron"
+                              : "border-white/20 bg-black/20 text-stone-100 hover:bg-white/10"
+                          }`}
+                        >
+                          {formatSlotTime(slot, locale)} · {remaining} {tr("places", "spots")}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
 
-              {availableLocations.length === 0 && (
-                <div className="rounded-xl border border-red-400/40 bg-red-500/10 px-3 py-2 text-xs text-red-200">
-                  {tr("Aucun emplacement disponible pour la date et la quantite choisies.", "No location available for selected date and quantity.")}
+              {selectedLocation && (
+                <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-xs text-stone-300">
+                  <strong className="text-stone-100">{selectedLocation.name}</strong>
+                  {" - "}
+                  {formatPickupAddress(selectedLocation, tr)}
                 </div>
               )}
 
