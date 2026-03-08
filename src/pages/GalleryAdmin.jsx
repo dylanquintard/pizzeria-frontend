@@ -38,9 +38,11 @@ export default function GalleryAdmin() {
   const [images, setImages] = useState([]);
   const [newImage, setNewImage] = useState(emptyImageForm);
   const [newImageFile, setNewImageFile] = useState(null);
+  const [newImagePreviewUrl, setNewImagePreviewUrl] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [editImage, setEditImage] = useState(emptyImageForm);
   const [editImageFile, setEditImageFile] = useState(null);
+  const [editImagePreviewUrl, setEditImagePreviewUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -59,13 +61,35 @@ export default function GalleryAdmin() {
     fetchImages();
   }, [authLoading, token, user, fetchImages]);
 
+  useEffect(() => {
+    if (!newImageFile) {
+      setNewImagePreviewUrl("");
+      return undefined;
+    }
+
+    const previewUrl = URL.createObjectURL(newImageFile);
+    setNewImagePreviewUrl(previewUrl);
+    return () => URL.revokeObjectURL(previewUrl);
+  }, [newImageFile]);
+
+  useEffect(() => {
+    if (!editImageFile) {
+      setEditImagePreviewUrl("");
+      return undefined;
+    }
+
+    const previewUrl = URL.createObjectURL(editImageFile);
+    setEditImagePreviewUrl(previewUrl);
+    return () => URL.revokeObjectURL(previewUrl);
+  }, [editImageFile]);
+
   const handleCreate = async (event) => {
     event.preventDefault();
-    if (!newImage.imageUrl.trim() && !newImageFile) {
+    if (!newImageFile) {
       setMessage(
         tr(
-          "Ajoutez une image par URL ou fichier",
-          "Provide an image using URL or file upload"
+          "Selectionnez un fichier image",
+          "Select an image file"
         )
       );
       return;
@@ -73,15 +97,12 @@ export default function GalleryAdmin() {
 
     try {
       setLoading(true);
-      let payload = normalizeImagePayload(newImage);
-      if (newImageFile) {
-        const uploaded = await uploadGalleryImage(token, newImageFile);
-        payload = {
-          ...payload,
-          imageUrl: uploaded.imageUrl,
-          thumbnailUrl: payload.thumbnailUrl || uploaded.thumbnailUrl,
-        };
-      }
+      const uploaded = await uploadGalleryImage(token, newImageFile);
+      const payload = {
+        ...normalizeImagePayload(newImage),
+        imageUrl: uploaded.imageUrl,
+        thumbnailUrl: uploaded.thumbnailUrl,
+      };
 
       await createGalleryImage(token, payload);
       setNewImage(emptyImageForm);
@@ -123,7 +144,7 @@ export default function GalleryAdmin() {
         payload = {
           ...payload,
           imageUrl: uploaded.imageUrl,
-          thumbnailUrl: payload.thumbnailUrl || uploaded.thumbnailUrl,
+          thumbnailUrl: uploaded.thumbnailUrl,
         };
       }
 
@@ -169,27 +190,37 @@ export default function GalleryAdmin() {
       <form onSubmit={handleCreate}>
         <h3>{tr("Ajouter une image", "Add image")}</h3>
         <input
-          placeholder={tr("URL image", "Image URL")}
-          value={newImage.imageUrl}
-          onChange={(event) =>
-            setNewImage((prev) => ({ ...prev, imageUrl: event.target.value }))
-          }
-        />
-        <input
           type="file"
           accept="image/png,image/jpeg,image/webp"
           onChange={(event) => setNewImageFile(event.target.files?.[0] || null)}
         />
-        {newImageFile && (
-          <p>{tr("Fichier selectionne", "Selected file")}: {newImageFile.name}</p>
+        {newImagePreviewUrl && (
+          <div style={{ position: "relative", width: "180px" }}>
+            <img
+              src={newImagePreviewUrl}
+              alt={tr("Apercu image selectionnee", "Selected image preview")}
+              style={{ width: "180px", height: "120px", objectFit: "cover", borderRadius: "8px" }}
+            />
+            <button
+              type="button"
+              onClick={() => setNewImageFile(null)}
+              aria-label={tr("Supprimer la selection", "Clear selection")}
+              style={{
+                position: "absolute",
+                top: "6px",
+                right: "6px",
+                width: "24px",
+                height: "24px",
+                borderRadius: "999px",
+                padding: 0,
+                lineHeight: "24px",
+                textAlign: "center",
+              }}
+            >
+              x
+            </button>
+          </div>
         )}
-        <input
-          placeholder={tr("URL miniature (optionnel)", "Thumbnail URL (optional)")}
-          value={newImage.thumbnailUrl}
-          onChange={(event) =>
-            setNewImage((prev) => ({ ...prev, thumbnailUrl: event.target.value }))
-          }
-        />
         <input
           placeholder={tr("Titre (optionnel)", "Title (optional)")}
           value={newImage.title}
@@ -285,27 +316,37 @@ export default function GalleryAdmin() {
           <h3>{tr("Modifier l'image", "Edit image")} #{editingId}</h3>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
             <input
-              placeholder={tr("URL image", "Image URL")}
-              value={editImage.imageUrl}
-              onChange={(event) =>
-                setEditImage((prev) => ({ ...prev, imageUrl: event.target.value }))
-              }
-            />
-            <input
               type="file"
               accept="image/png,image/jpeg,image/webp"
               onChange={(event) => setEditImageFile(event.target.files?.[0] || null)}
             />
-            {editImageFile && (
-              <p>{tr("Fichier selectionne", "Selected file")}: {editImageFile.name}</p>
+            {editImagePreviewUrl && (
+              <div style={{ position: "relative", width: "180px" }}>
+                <img
+                  src={editImagePreviewUrl}
+                  alt={tr("Apercu image selectionnee", "Selected image preview")}
+                  style={{ width: "180px", height: "120px", objectFit: "cover", borderRadius: "8px" }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setEditImageFile(null)}
+                  aria-label={tr("Supprimer la selection", "Clear selection")}
+                  style={{
+                    position: "absolute",
+                    top: "6px",
+                    right: "6px",
+                    width: "24px",
+                    height: "24px",
+                    borderRadius: "999px",
+                    padding: 0,
+                    lineHeight: "24px",
+                    textAlign: "center",
+                  }}
+                >
+                  x
+                </button>
+              </div>
             )}
-            <input
-              placeholder={tr("URL miniature", "Thumbnail URL")}
-              value={editImage.thumbnailUrl}
-              onChange={(event) =>
-                setEditImage((prev) => ({ ...prev, thumbnailUrl: event.target.value }))
-              }
-            />
             <input
               placeholder={tr("Titre", "Title")}
               value={editImage.title}
