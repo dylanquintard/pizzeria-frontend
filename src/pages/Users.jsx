@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { deleteUser, getAllUsers, updateUserRole } from "../api/admin.api";
 import { AuthContext } from "../context/AuthContext";
@@ -11,6 +11,19 @@ export default function Users() {
 
   const [users, setUsers] = useState([]);
   const [message, setMessage] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredUsers = useMemo(() => {
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+    if (!normalizedQuery) return users;
+
+    return users.filter((entry) => {
+      const fields = [entry.name, entry.email, entry.phone]
+        .map((value) => String(value || "").toLowerCase());
+
+      return fields.some((value) => value.includes(normalizedQuery));
+    });
+  }, [users, searchQuery]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -63,6 +76,17 @@ export default function Users() {
     <div>
       <h2>{tr("Liste des utilisateurs", "Users list")}</h2>
       {message && <p>{message}</p>}
+      <label htmlFor="users-search">{tr("Recherche client", "Customer search")}</label>
+      <input
+        id="users-search"
+        type="search"
+        value={searchQuery}
+        onChange={(event) => setSearchQuery(event.target.value)}
+        placeholder={tr(
+          "Rechercher par nom, email ou telephone",
+          "Search by name, email, or phone"
+        )}
+      />
 
       <table>
         <thead>
@@ -76,27 +100,57 @@ export default function Users() {
           </tr>
         </thead>
         <tbody>
-          {users.map((entry) => (
-            <tr key={entry.id}>
-              <td>{entry.id}</td>
-              <td>{entry.name}</td>
-              <td>{entry.email}</td>
-              <td>{entry.phone}</td>
-              <td>{entry.role}</td>
-              <td>
-                {entry.role === "CLIENT" ? (
-                  <button onClick={() => handleRoleChange(entry.id, "ADMIN")}>
-                    {tr("Promouvoir admin", "Promote to admin")}
-                  </button>
-                ) : (
-                  <button onClick={() => handleRoleChange(entry.id, "CLIENT")}>
-                    {tr("Retrograder client", "Demote to client")}
-                  </button>
-                )}
-                <button onClick={() => handleDelete(entry.id)}>{tr("Supprimer", "Delete")}</button>
-              </td>
+          {filteredUsers.length === 0 ? (
+            <tr>
+              <td colSpan={6}>{tr("Aucun utilisateur trouve.", "No users found.")}</td>
             </tr>
-          ))}
+          ) : (
+            filteredUsers.map((entry) => (
+              <tr key={entry.id}>
+                <td>{entry.id}</td>
+                <td>{entry.name}</td>
+                <td>{entry.email}</td>
+                <td>{entry.phone}</td>
+                <td>{entry.role}</td>
+                <td>
+                  {entry.role === "CLIENT" ? (
+                    <button onClick={() => handleRoleChange(entry.id, "ADMIN")}>
+                      {tr("Promouvoir admin", "Promote to admin")}
+                    </button>
+                  ) : (
+                    <button onClick={() => handleRoleChange(entry.id, "CLIENT")}>
+                      {tr("Retrograder client", "Demote to client")}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleDelete(entry.id)}
+                    aria-label={tr("Supprimer utilisateur", "Delete user")}
+                    style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <polyline points="3 6 5 6 21 6" />
+                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                      <path d="M10 11v6" />
+                      <path d="M14 11v6" />
+                      <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                    </svg>
+                    <span>{tr("Supprimer", "Delete")}</span>
+                  </button>
+                </td>
+              </tr>
+            ))
+          )}
         </tbody>
       </table>
     </div>
