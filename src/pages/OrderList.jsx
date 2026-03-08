@@ -25,11 +25,6 @@ function getOrderItemName(item, tr) {
   return product?.name || item?.name || `${tr("Produit", "Product")} #${item?.id ?? "?"}`;
 }
 
-function getOrderItemCategory(item) {
-  const product = getOrderItemProduct(item);
-  return product?.category?.name || item?.category?.name || product?.categoryName || item?.categoryName || null;
-}
-
 function getIngredientName(ingredient, tr) {
   return ingredient?.name || ingredient?.ingredient?.name || tr("Ingredient", "Ingredient");
 }
@@ -340,11 +335,11 @@ export default function OrderList() {
         </p>
       )}
 
-      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-white/10 bg-white/5 p-2">
+      <div className="flex flex-wrap items-center gap-1.5 rounded-2xl border border-white/10 bg-white/5 p-2 sm:gap-2">
         <button
           type="button"
           onClick={() => changeDate(-1)}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-white/20 text-stone-100 transition hover:bg-white/10"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/20 text-stone-100 transition hover:bg-white/10 sm:h-9 sm:w-9"
           aria-label={tr("Jour precedent", "Previous day")}
         >
           <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2">
@@ -356,13 +351,13 @@ export default function OrderList() {
           type="date"
           value={selectedDate}
           onChange={(event) => setSelectedDate(event.target.value)}
-          className="h-9 rounded-lg border border-white/20 bg-charcoal/70 px-3 text-sm text-stone-100 focus:border-saffron focus:outline-none"
+          className="h-8 w-[148px] rounded-lg border border-white/20 bg-charcoal/70 px-2 text-xs text-stone-100 focus:border-saffron focus:outline-none sm:h-9 sm:w-auto sm:px-3 sm:text-sm"
         />
 
         <button
           type="button"
           onClick={() => changeDate(1)}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-white/20 text-stone-100 transition hover:bg-white/10"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/20 text-stone-100 transition hover:bg-white/10 sm:h-9 sm:w-9"
           aria-label={tr("Jour suivant", "Next day")}
         >
           <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2">
@@ -370,14 +365,14 @@ export default function OrderList() {
           </svg>
         </button>
 
-        <label htmlFor="statusSelect" className="text-xs font-semibold uppercase tracking-wide text-stone-300 sm:ml-auto">
+        <label htmlFor="statusSelect" className="text-[11px] font-semibold uppercase tracking-wide text-stone-300 sm:ml-auto sm:text-xs">
           {tr("Statut", "Status")}
         </label>
         <select
           id="statusSelect"
           value={selectedStatus}
           onChange={(event) => setSelectedStatus(event.target.value)}
-          className="h-9 rounded-lg border border-white/20 bg-charcoal/70 px-3 text-sm text-stone-100 focus:border-saffron focus:outline-none"
+          className="h-8 rounded-lg border border-white/20 bg-charcoal/70 px-2 text-xs text-stone-100 focus:border-saffron focus:outline-none sm:h-9 sm:px-3 sm:text-sm"
         >
           <option value="COMPLETED">{tr("En cours", "In progress")}</option>
           <option value="FINALIZED">{tr("Termine", "Finished")}</option>
@@ -495,28 +490,24 @@ export default function OrderList() {
                           <div className="space-y-2">
                             {order.items?.length > 0 ? (
                               order.items.map((item, index) => {
-                                const category = getOrderItemCategory(item);
                                 const added = (item.addedIngredients || []).map((entry) => getIngredientName(entry, tr)).filter(Boolean);
                                 const removed = (item.removedIngredients || []).map((entry) => getIngredientName(entry, tr)).filter(Boolean);
 
                                 return (
-                                  <div key={item.id ?? `${order.id}-${index}`} className="text-xs text-stone-200">
+                                  <div key={item.id ?? `${order.id}-${index}`} className="text-sm text-stone-200">
                                     <div className="flex flex-wrap items-center gap-1.5">
-                                      <span className="inline-flex min-w-[34px] justify-center rounded-md bg-saffron/20 px-1.5 py-0.5 text-[11px] font-bold text-saffron">
+                                      <span className="inline-flex min-w-[34px] justify-center rounded-md bg-saffron/20 px-1.5 py-0.5 text-xs font-bold text-saffron">
                                         {item.quantity}x
                                       </span>
-                                      <span className="font-semibold text-white">{getOrderItemName(item, tr)}</span>
-                                      {category && (
-                                        <span className="rounded-md border border-white/20 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-stone-300">
-                                          {category}
-                                        </span>
-                                      )}
+                                      <span className="text-sm font-semibold text-white sm:text-[15px]">
+                                        {getOrderItemName(item, tr)}
+                                      </span>
                                     </div>
 
                                     {(added.length > 0 || removed.length > 0) && (
                                       <div className="ml-9 mt-1 space-y-0.5">
-                                        {added.length > 0 && <p className="text-[11px] text-emerald-300">+ {added.join(", ")}</p>}
-                                        {removed.length > 0 && <p className="text-[11px] text-red-300">- {removed.join(", ")}</p>}
+                                        {added.length > 0 && <p className="text-xs text-emerald-300 sm:text-sm">+ {added.join(", ")}</p>}
+                                        {removed.length > 0 && <p className="text-xs text-red-300 sm:text-sm">- {removed.join(", ")}</p>}
                                       </div>
                                     )}
                                   </div>

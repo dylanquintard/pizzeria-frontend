@@ -73,6 +73,10 @@ export default function Header() {
   );
 
   const navHref = (id) => (location.pathname === "/" ? `#${id}` : `/#${id}`);
+  const closeMobileMenus = () => {
+    setMobileOpen(false);
+    setMobileAdminOpen(false);
+  };
 
   useEffect(() => {
     const onClickOutside = (event) => {
@@ -351,13 +355,18 @@ export default function Header() {
                 </div>
 
                 {!isAdminRoute && onePageLinks.map((item) => (
-                  <a key={item.id} href={navHref(item.id)} className="rounded-md px-3 py-2 transition hover:bg-white/10">
+                  <a
+                    key={item.id}
+                    href={navHref(item.id)}
+                    onClick={closeMobileMenus}
+                    className="rounded-md px-3 py-2 transition hover:bg-white/10"
+                  >
                     {item.label}
                   </a>
                 ))}
 
                 {isAdminRoute && (
-                  <Link to="/" className="rounded-md px-3 py-2 transition hover:bg-white/10">
+                  <Link to="/" onClick={closeMobileMenus} className="rounded-md px-3 py-2 transition hover:bg-white/10">
                     {tr("Accueil", "Home")}
                   </Link>
                 )}
@@ -365,6 +374,7 @@ export default function Header() {
                 {token ? (
                   <Link
                     to="/order"
+                    onClick={closeMobileMenus}
                     className="mt-1 rounded-md bg-saffron px-3 py-2 text-center text-sm font-semibold text-charcoal"
                   >
                     {tr("Commander", "Order")}
@@ -372,6 +382,7 @@ export default function Header() {
                 ) : (
                   <Link
                     to="/login"
+                    onClick={closeMobileMenus}
                     className="mt-1 rounded-md border border-saffron/70 px-3 py-2 text-center text-sm font-semibold text-saffron"
                   >
                     {tr("Se connecter", "Sign in")}
@@ -379,13 +390,21 @@ export default function Header() {
                 )}
 
                 {token && (
-                  <Link to="/profile" className="rounded-md px-3 py-2 text-sm transition hover:bg-white/10">
+                  <Link
+                    to="/profile"
+                    onClick={closeMobileMenus}
+                    className="rounded-md px-3 py-2 text-sm transition hover:bg-white/10"
+                  >
                     {tr("Informations personnelles", "Personal information")}
                   </Link>
                 )}
 
                 {token && !isAdminUser && (
-                  <Link to="/userorders" className="rounded-md px-3 py-2 text-sm transition hover:bg-white/10">
+                  <Link
+                    to="/userorders"
+                    onClick={closeMobileMenus}
+                    className="rounded-md px-3 py-2 text-sm transition hover:bg-white/10"
+                  >
                     {tr("Mes commandes", "My orders")}
                   </Link>
                 )}
@@ -407,6 +426,7 @@ export default function Header() {
                           <Link
                             key={item.to}
                             to={item.to}
+                            onClick={closeMobileMenus}
                             className="rounded-md px-3 py-2 text-sm text-emerald-200 transition hover:bg-emerald-500/20"
                           >
                             {item.label}
@@ -420,7 +440,10 @@ export default function Header() {
                 {token && (
                   <button
                     type="button"
-                    onClick={logout}
+                    onClick={() => {
+                      closeMobileMenus();
+                      logout();
+                    }}
                     className="rounded-md border border-white/20 px-3 py-2 text-left text-sm"
                   >
                     {tr("Deconnexion", "Sign out")}
