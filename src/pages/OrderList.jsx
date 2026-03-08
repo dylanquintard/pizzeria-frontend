@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext, useCallback } from "react";
+import { useState, useEffect, useContext, useCallback, useRef } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import {
@@ -68,6 +68,10 @@ export default function OrderList() {
   const [usersByEmail, setUsersByEmail] = useState({});
   const [usersByName, setUsersByName] = useState({});
   const [usersLookupReady, setUsersLookupReady] = useState(false);
+  const [newOrdersCount, setNewOrdersCount] = useState(0);
+  const [notificationPermission, setNotificationPermission] = useState("default");
+  const seenOrderIdsRef = useRef(new Set());
+  const snapshotInitializedRef = useRef(false);
   const formatTime = (dateStr) => {
     const d = new Date(dateStr);
     return d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
@@ -88,7 +92,35 @@ export default function OrderList() {
         date: selectedDate,
         status: selectedStatus,
       });
-      setOrders(Array.isArray(data) ? data : []);
+      const nextOrders = Array.isArray(data) ? data : [];
+      setOrders(nextOrders);
+
+      const nextIds = new Set(nextOrders.map((entry) => String(entry.id)));
+      if (!snapshotInitializedRef.current) {
+        seenOrderIdsRef.current = nextIds;
+        snapshotInitializedRef.current = true;
+      } else {
+        const newOrders = nextOrders.filter((entry) => !seenOrderIdsRef.current.has(String(entry.id)));
+        if (newOrders.length > 0) {
+          setNewOrdersCount((prev) => prev + newOrders.length);
+
+          if (typeof window !== "undefined" && "Notification" in window && window.Notification.permission === "granted") {
+            const notificationText =
+              newOrders.length > 1
+                ? tr(`${newOrders.length} nouvelles commandes`, `${newOrders.length} new orders`)
+                : tr("Nouvelle commande recue", "New order received");
+
+            const browserNotification = new Notification(tr("Pizzeria - Admin", "Pizzeria - Admin"), {
+              body: notificationText,
+              tag: "new-order",
+            });
+            browserNotification.onclick = () => {
+              window.focus();
+            };
+          }
+        }
+        seenOrderIdsRef.current = nextIds;
+      }
       setMessage("");
     } catch (err) {
       console.error(err);
@@ -97,6 +129,20 @@ export default function OrderList() {
       setLoading(false);
     }
   }, [token, user, selectedDate, selectedStatus, tr]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !("Notification" in window)) {
+      setNotificationPermission("unsupported");
+      return;
+    }
+    setNotificationPermission(window.Notification.permission);
+  }, []);
+
+  useEffect(() => {
+    snapshotInitializedRef.current = false;
+    seenOrderIdsRef.current = new Set();
+    setNewOrdersCount(0);
+  }, [selectedDate, selectedStatus]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -224,6 +270,17 @@ export default function OrderList() {
   };
 
   const isErrorMessage = /erreur|impossible|acces refus|inconnu|error|unable|denied|unknown|failed/i.test(String(message).toLowerCase());
+  const isNotificationSupported = notificationPermission !== "unsupported";
+
+  const requestNotifications = async () => {
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+    try {
+      const permission = await window.Notification.requestPermission();
+      setNotificationPermission(permission);
+    } catch (_err) {
+      setNotificationPermission("denied");
+    }
+  };
 
   const groupedOrders = orders.reduce((acc, order) => {
     const slotKey = order.timeSlot ? formatTime(order.timeSlot.startTime) : "-";
@@ -234,11 +291,41 @@ export default function OrderList() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-2xl font-bold text-white">{tr("Gestion des commandes", "Order management")}</h2>
-        <p className="text-xs uppercase tracking-wider text-stone-400">
-          {orders.length} {tr("commande", "order")}{orders.length > 1 ? "s" : ""}
-        </p>
+        <div className="flex items-center gap-2">
+          {newOrdersCount > 0 && (
+            <span className="rounded-full border border-emerald-300/40 bg-emerald-500/10 px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-emerald-200">
+              +{newOrdersCount} {tr("nouvelle(s)", "new")}
+            </span>
+          )}
+          <p className="text-xs uppercase tracking-wider text-stone-400">
+            {orders.length} {tr("commande", "order")}{orders.length > 1 ? "s" : ""}
+          </p>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-stone-300">
+        {isNotificationSupported ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <span>
+              {tr("Notifications navigateur", "Browser notifications")}:{" "}
+              <strong className="text-stone-100">{notificationPermission}</strong>
+            </span>
+            {notificationPermission !== "granted" && (
+              <button type="button" onClick={requestNotifications}>
+                {tr("Activer", "Enable")}
+              </button>
+            )}
+          </div>
+        ) : (
+          <p>
+            {tr(
+              "Notifications non supportees ici. Sur iPhone: installez l'app web sur l'ecran d'accueil pour les notifications web.",
+              "Notifications not supported here. On iPhone, install the web app to Home Screen for web notifications."
+            )}
+          </p>
+        )}
       </div>
 
       {message && (
@@ -253,7 +340,7 @@ export default function OrderList() {
         </p>
       )}
 
-      <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 p-2">
+      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-white/10 bg-white/5 p-2">
         <button
           type="button"
           onClick={() => changeDate(-1)}
@@ -283,7 +370,7 @@ export default function OrderList() {
           </svg>
         </button>
 
-        <label htmlFor="statusSelect" className="ml-auto text-xs font-semibold uppercase tracking-wide text-stone-300">
+        <label htmlFor="statusSelect" className="text-xs font-semibold uppercase tracking-wide text-stone-300 sm:ml-auto">
           {tr("Statut", "Status")}
         </label>
         <select

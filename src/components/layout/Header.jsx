@@ -45,6 +45,7 @@ export default function Header() {
   const cartRef = useRef(null);
   const profileRef = useRef(null);
   const totalItems = Number(itemCount || 0);
+  const isAdminRoute = location.pathname.startsWith("/admin");
   const onePageLinks = [
     { id: "menu", label: tr("Le Menu", "Menu") },
     { id: "galerie", label: tr("Galerie", "Gallery") },
@@ -152,7 +153,7 @@ export default function Header() {
               </Link>
             )}
 
-            {token && (
+            {token && !isAdminRoute && (
               <div ref={cartRef} className="relative">
                 <button
                   type="button"
@@ -224,7 +225,7 @@ export default function Header() {
               </div>
             )}
 
-            {token && (
+            {token && !isAdminRoute && (
               <div ref={profileRef} className="relative">
                 <button
                   type="button"

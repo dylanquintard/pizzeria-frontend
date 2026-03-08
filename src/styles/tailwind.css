@@ -36,11 +36,11 @@
   }
 
   .admin-card {
-    @apply rounded-2xl border border-white/10 bg-white/5 p-5 text-stone-100 shadow-card backdrop-blur-sm;
+    @apply rounded-2xl border border-white/10 bg-white/5 p-3 text-stone-100 shadow-card backdrop-blur-sm sm:p-5;
   }
 
   .admin-card table {
-    @apply w-full text-sm;
+    @apply w-full min-w-[760px] text-sm;
   }
 
   .admin-card thead tr {
@@ -53,7 +53,7 @@
 
   .admin-card th,
   .admin-card td {
-    @apply px-3 py-3 align-top;
+    @apply px-2 py-2 align-top sm:px-3 sm:py-3;
   }
 
   .admin-card input,
