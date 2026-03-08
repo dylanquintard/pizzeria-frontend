@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { loginUser } from "../api/user.api";
 import { AuthContext } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
@@ -8,13 +8,20 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const { user, login } = useContext(AuthContext);
+  const { user, token, login } = useContext(AuthContext);
   const { tr } = useLanguage();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
-    if (user) navigate("/profile");
-  }, [user, navigate]);
+    if (location.state?.email && !email) {
+      setEmail(String(location.state.email));
+    }
+  }, [location.state, email]);
+
+  useEffect(() => {
+    if (user && token) navigate("/profile");
+  }, [user, token, navigate]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -26,6 +33,15 @@ export default function Login() {
       navigate("/profile");
     } catch (err) {
       const apiError = err.response?.data;
+      if (apiError?.code === "EMAIL_NOT_VERIFIED") {
+        navigate("/verify-email", {
+          state: {
+            email: email.trim().toLowerCase(),
+            verificationExpiresAt: apiError?.verificationExpiresAt || null,
+          },
+        });
+        return;
+      }
       setError(apiError?.error || tr("Erreur de connexion", "Login error"));
     }
   };

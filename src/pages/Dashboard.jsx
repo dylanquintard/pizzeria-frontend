@@ -2,7 +2,6 @@ import { useContext } from "react";
 import { NavLink } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
-import { MessageNotificationsContext } from "../context/MessageNotificationsContext";
 
 const adminLinks = [
   { to: "/admin/orders", labelFr: "Commandes", labelEn: "Orders" },
@@ -13,12 +12,10 @@ const adminLinks = [
   { to: "/admin/locations", labelFr: "Emplacements", labelEn: "Locations" },
   { to: "/admin/timeslots", labelFr: "Creneaux", labelEn: "Timeslots" },
   { to: "/admin/gallery", labelFr: "Galerie", labelEn: "Gallery" },
-  { to: "/admin/messages", labelFr: "Messagerie", labelEn: "Messages" },
 ];
 
 export default function Dashboard({ children }) {
   const { user } = useContext(AuthContext);
-  const { totalUnread } = useContext(MessageNotificationsContext);
   const { tr } = useLanguage();
 
   if (!user || user.role !== "ADMIN") {
@@ -53,14 +50,7 @@ export default function Dashboard({ children }) {
                   }`
                 }
               >
-                <span className="flex items-center justify-between gap-2">
-                  <span>{tr(item.labelFr, item.labelEn)}</span>
-                  {item.to === "/admin/messages" && totalUnread > 0 && (
-                    <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-ember px-1.5 text-[10px] font-bold text-white">
-                      +{totalUnread}
-                    </span>
-                  )}
-                </span>
+                <span>{tr(item.labelFr, item.labelEn)}</span>
               </NavLink>
             ))}
           </nav>

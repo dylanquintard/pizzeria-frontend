@@ -3,7 +3,6 @@ import { Link, useLocation } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import { CartContext } from "../../context/CartContext";
 import { useLanguage } from "../../context/LanguageContext";
-import { MessageNotificationsContext } from "../../context/MessageNotificationsContext";
 
 function CartItemRow({ item, onRemove, tr }) {
   const lineTotal = (Number(item.unitPrice || 0) * Number(item.quantity || 0)).toFixed(2);
@@ -38,7 +37,6 @@ export default function Header() {
   const location = useLocation();
   const { token, user, logout } = useContext(AuthContext);
   const { cartItems, cartTotal, itemCount, removeItem, clearCart, loading } = useContext(CartContext);
-  const { totalUnread: messagesUnread } = useContext(MessageNotificationsContext);
   const { language, setLanguage, tr } = useLanguage();
 
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -47,7 +45,6 @@ export default function Header() {
   const cartRef = useRef(null);
   const profileRef = useRef(null);
   const totalItems = Number(itemCount || 0);
-  const messagesRoute = user?.role === "ADMIN" ? "/admin/messages" : "/messages";
   const onePageLinks = [
     { id: "menu", label: tr("Le Menu", "Menu") },
     { id: "galerie", label: tr("Galerie", "Gallery") },
@@ -228,24 +225,6 @@ export default function Header() {
             )}
 
             {token && (
-              <Link
-                to={messagesRoute}
-                title={tr("Messagerie", "Messages")}
-                className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-saffron/35 bg-white/5 text-white transition hover:bg-white/10"
-              >
-                <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M4 6h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z" />
-                  <path d="m22 8-10 6L2 8" />
-                </svg>
-                {messagesUnread > 0 && (
-                  <span className="absolute -right-1.5 -top-2 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-ember px-1 text-[10px] font-bold text-white">
-                    +{messagesUnread}
-                  </span>
-                )}
-              </Link>
-            )}
-
-            {token && (
               <div ref={profileRef} className="relative">
                 <button
                   type="button"
@@ -277,17 +256,6 @@ export default function Header() {
                         className="rounded-md px-3 py-2 text-sm font-medium text-stone-800 transition hover:bg-stone-100"
                       >
                         {tr("Mes commandes", "My orders")}
-                      </Link>
-                      <Link
-                        to={messagesRoute}
-                        className="flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium text-stone-800 transition hover:bg-stone-100"
-                      >
-                        <span>{tr("Messagerie", "Messages")}</span>
-                        {messagesUnread > 0 && (
-                          <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-ember px-1.5 text-[10px] font-bold text-white">
-                            +{messagesUnread}
-                          </span>
-                        )}
                       </Link>
                       <button
                         type="button"
@@ -383,14 +351,6 @@ export default function Header() {
                     </Link>
                     <Link to="/userorders" className="rounded-md px-3 py-2 text-sm transition hover:bg-white/10">
                       {tr("Mes commandes", "My orders")}
-                    </Link>
-                    <Link to={messagesRoute} className="flex items-center justify-between rounded-md px-3 py-2 text-sm transition hover:bg-white/10">
-                      <span>{tr("Messagerie", "Messages")}</span>
-                      {messagesUnread > 0 && (
-                        <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-ember px-1.5 text-[10px] font-bold text-white">
-                          +{messagesUnread}
-                        </span>
-                      )}
                     </Link>
                   </>
                 )}

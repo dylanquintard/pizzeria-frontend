@@ -23,13 +23,13 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const { user, login } = useContext(AuthContext);
+  const { user, token, login } = useContext(AuthContext);
   const { tr } = useLanguage();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (user) navigate("/profile");
-  }, [user, navigate]);
+    if (user && token) navigate("/profile");
+  }, [user, token, navigate]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -57,14 +57,30 @@ export default function Register() {
     }
 
     try {
-      const { user: registeredUser, token } = await registerUser({
+      const registration = await registerUser({
         name: name.trim(),
         email: normalizedEmail,
         phone: normalizedPhone,
         password,
       });
-      login(registeredUser, token);
-      navigate("/profile");
+
+      if (registration?.requiresEmailVerification) {
+        navigate("/verify-email", {
+          state: {
+            email: normalizedEmail,
+            verificationExpiresAt: registration?.verificationExpiresAt || null,
+          },
+        });
+        return;
+      }
+
+      if (registration?.user && registration?.token) {
+        login(registration.user, registration.token);
+        navigate("/profile");
+        return;
+      }
+
+      navigate("/login", { state: { email: normalizedEmail } });
     } catch (err) {
       setError(err.response?.data?.error || tr("Erreur lors de l'inscription", "Registration error"));
     } finally {

@@ -11,16 +11,21 @@ const normalizeUrl = (value) => {
 };
 
 const localApiBaseUrl = "http://localhost:5000/api";
+const isProduction = process.env.NODE_ENV === "production";
+const configuredApiBaseUrl = normalizeUrl(process.env.REACT_APP_API_BASE_URL);
+
+if (isProduction) {
+  if (!configuredApiBaseUrl) {
+    throw new Error("REACT_APP_API_BASE_URL is required in production.");
+  }
+
+  if (!configuredApiBaseUrl.startsWith("https://")) {
+    throw new Error("REACT_APP_API_BASE_URL must use HTTPS in production.");
+  }
+}
 
 export const API_BASE_URL =
-  normalizeUrl(process.env.REACT_APP_API_BASE_URL) || localApiBaseUrl;
-
-const derivedSocketUrl = API_BASE_URL.endsWith("/api")
-  ? API_BASE_URL.slice(0, -4)
-  : API_BASE_URL;
-
-export const SOCKET_URL =
-  normalizeUrl(process.env.REACT_APP_SOCKET_URL) || derivedSocketUrl;
+  configuredApiBaseUrl || localApiBaseUrl;
 
 export const INSTAGRAM_URL =
   normalizeUrl(process.env.REACT_APP_INSTAGRAM_URL) || "https://instagram.com";

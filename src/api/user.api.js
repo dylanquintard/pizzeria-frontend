@@ -1,17 +1,7 @@
-import axios from "axios";
-import { API_BASE_URL } from "../config/env";
-
-const API_USERS = `${API_BASE_URL}/users`;
-const API_PIZZAS = `${API_BASE_URL}/pizzas`;
-const API_ORDERS = `${API_BASE_URL}/orders`;
-
-const authHeaders = (token) => {
-  if (!token) throw new Error("Missing token");
-  return { Authorization: `Bearer ${token}` };
-};
+import api, { authConfig } from "./http";
 
 export const registerUser = async ({ name, email, phone, password }) => {
-  const response = await axios.post(`${API_USERS}/register`, {
+  const response = await api.post("/users/register", {
     name,
     email,
     phone,
@@ -21,80 +11,71 @@ export const registerUser = async ({ name, email, phone, password }) => {
 };
 
 export const loginUser = async ({ email, password }) => {
-  const response = await axios.post(`${API_USERS}/login`, { email, password });
+  const response = await api.post("/users/login", { email, password });
+  return response.data;
+};
+
+export const verifyEmailCode = async ({ email, code }) => {
+  const response = await api.post("/users/verify-email", { email, code });
+  return response.data;
+};
+
+export const resendEmailVerificationCode = async ({ email }) => {
+  const response = await api.post("/users/resend-verification", { email });
+  return response.data;
+};
+
+export const logoutUser = async (token) => {
+  const response = await api.post("/users/logout", {}, authConfig(token));
   return response.data;
 };
 
 export const getMe = async (token) => {
-  const response = await axios.get(`${API_USERS}/me`, {
-    headers: authHeaders(token),
-  });
+  const response = await api.get("/users/me", authConfig(token));
   return response.data;
 };
 
 export const updateMe = async (token, data) => {
-  const response = await axios.put(`${API_USERS}/me`, data, {
-    headers: authHeaders(token),
-  });
+  const response = await api.put("/users/me", data, authConfig(token));
   return response.data;
 };
 
 export const getAllPizzasClient = async () => {
-  const response = await axios.get(API_PIZZAS);
+  const response = await api.get("/pizzas");
   return response.data;
 };
 
 export const getAllIngredients = async (token) => {
-  const response = await axios.get(`${API_PIZZAS}/ingredients`, {
-    headers: authHeaders(token),
-  });
+  const response = await api.get("/pizzas/ingredients", authConfig(token));
   return response.data;
 };
 
 export const getCart = async (token) => {
-  const response = await axios.get(`${API_ORDERS}/cart`, {
-    headers: authHeaders(token),
-  });
+  const response = await api.get("/orders/cart", authConfig(token));
   return response.data;
 };
 
 export const addToCart = async (token, pizzaId, quantity, customizations) => {
-  const response = await axios.post(
-    `${API_ORDERS}/cart`,
+  const response = await api.post(
+    "/orders/cart",
     { pizzaId, quantity, customizations },
-    { headers: authHeaders(token) }
+    authConfig(token)
   );
   return response.data;
 };
 
 export const removeFromCart = async (token, itemId) => {
-  const response = await axios.delete(`${API_ORDERS}/cart/${itemId}`, {
-    headers: authHeaders(token),
-  });
+  const response = await api.delete(`/orders/cart/${itemId}`, authConfig(token));
   return response.data;
 };
 
 export const finalizeOrder = async (token, timeSlotId) => {
-  const response = await fetch(`${API_ORDERS}/finalize`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...authHeaders(token),
-    },
-    body: JSON.stringify({ timeSlotId }),
-  });
-
-  if (!response.ok) {
-    throw await response.json();
-  }
-
-  return response.json();
+  const response = await api.post("/orders/finalize", { timeSlotId }, authConfig(token));
+  return response.data;
 };
 
 export const getUserOrders = async (token) => {
-  const response = await axios.get(`${API_USERS}/orders`, {
-    headers: authHeaders(token),
-  });
+  const response = await api.get("/users/orders", authConfig(token));
   return response.data;
 };
 

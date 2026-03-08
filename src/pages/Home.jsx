@@ -1,9 +1,9 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { getCategories } from "../api/category.api";
+import { sendContactEmail } from "../api/contact.api";
 import { INSTAGRAM_URL } from "../config/env";
 import { getPublicGallery } from "../api/gallery.api";
-import { createThread } from "../api/message.api";
 import { getAllPizzasClient } from "../api/user.api";
 import { AuthContext } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
@@ -48,14 +48,18 @@ function normalizeText(value) {
     .toLowerCase();
 }
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function Home() {
-  const { token } = useContext(AuthContext);
+  const { token, user } = useContext(AuthContext);
   const { tr } = useLanguage();
   const [pizzas, setPizzas] = useState([]);
   const [categories, setCategories] = useState([]);
   const [galleryImages, setGalleryImages] = useState([]);
   const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
   const [activeGalleryIndex, setActiveGalleryIndex] = useState(0);
+  const [contactName, setContactName] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
   const [contactSubject, setContactSubject] = useState("");
   const [contactMessage, setContactMessage] = useState("");
   const [contactFeedback, setContactFeedback] = useState("");
@@ -179,13 +183,30 @@ export default function Home() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [closeGallery, displayedGallery.length, isGalleryModalOpen, showNextInGallery, showPreviousInGallery]);
 
+  useEffect(() => {
+    if (!user) return;
+    setContactName((prev) => prev || user.name || "");
+    setContactEmail((prev) => prev || user.email || "");
+  }, [user]);
+
   const activeGalleryImage = displayedGallery[activeGalleryIndex] || null;
 
   const handleContactSubmit = async (event) => {
     event.preventDefault();
 
-    if (!token) {
-      setContactFeedback(tr("Connectez-vous pour envoyer un message.", "Sign in to send a message."));
+    if (!contactName.trim()) {
+      setContactFeedback(tr("Le nom est obligatoire.", "Name is required."));
+      return;
+    }
+
+    const normalizedEmail = contactEmail.trim().toLowerCase();
+    if (!normalizedEmail) {
+      setContactFeedback(tr("L'email est obligatoire.", "Email is required."));
+      return;
+    }
+
+    if (!EMAIL_REGEX.test(normalizedEmail)) {
+      setContactFeedback(tr("Format d'email invalide.", "Invalid email format."));
       return;
     }
 
@@ -196,15 +217,18 @@ export default function Home() {
 
     try {
       setSubmittingContact(true);
-      await createThread(token, {
-        subject: contactSubject.trim() || null,
-        content: contactMessage.trim(),
+      setContactFeedback("");
+      await sendContactEmail({
+        name: contactName.trim(),
+        email: normalizedEmail,
+        subject: contactSubject.trim(),
+        message: contactMessage.trim(),
       });
       setContactSubject("");
       setContactMessage("");
-      setContactFeedback(tr("Message envoye. Nous vous repondrons rapidement.", "Message sent. We will reply quickly."));
+      setContactFeedback(tr("Message envoye par email. Nous vous repondrons rapidement.", "Email sent. We will reply quickly."));
     } catch (err) {
-      setContactFeedback(err.response?.data?.error || tr("Impossible d'envoyer le message.", "Unable to send message."));
+      setContactFeedback(err.response?.data?.error || tr("Impossible d'envoyer l'email.", "Unable to send email."));
     } finally {
       setSubmittingContact(false);
     }
@@ -451,47 +475,47 @@ export default function Home() {
           </div>
 
           <div className="mt-6 rounded-2xl border border-white/15 bg-charcoal/70 p-5">
-            <p className="text-sm uppercase tracking-wider text-saffron">{tr("Messagerie", "Messages")}</p>
-            {!token && (
-              <div className="mt-3 space-y-3">
-                <p className="text-sm text-stone-200">{tr("Connectez-vous pour envoyer un message au camion.", "Sign in to send a message to the truck.")}</p>
-                <Link
-                  to="/login"
-                  className="inline-flex rounded-full border border-saffron/70 px-4 py-2 text-xs font-bold uppercase tracking-wide text-saffron transition hover:bg-saffron/10"
+            <p className="text-sm uppercase tracking-wider text-saffron">{tr("Formulaire de contact", "Contact form")}</p>
+            <form onSubmit={handleContactSubmit} className="mt-3 space-y-3">
+              <input
+                type="text"
+                value={contactName}
+                onChange={(event) => setContactName(event.target.value)}
+                placeholder={tr("Votre nom", "Your name")}
+                className="w-full rounded-xl border border-white/20 bg-black/20 px-3 py-2 text-sm text-white placeholder:text-stone-400 focus:border-saffron focus:outline-none"
+              />
+              <input
+                type="email"
+                value={contactEmail}
+                onChange={(event) => setContactEmail(event.target.value)}
+                placeholder={tr("Votre email", "Your email")}
+                className="w-full rounded-xl border border-white/20 bg-black/20 px-3 py-2 text-sm text-white placeholder:text-stone-400 focus:border-saffron focus:outline-none"
+              />
+              <input
+                type="text"
+                value={contactSubject}
+                onChange={(event) => setContactSubject(event.target.value)}
+                placeholder={tr("Sujet (optionnel)", "Subject (optional)")}
+                className="w-full rounded-xl border border-white/20 bg-black/20 px-3 py-2 text-sm text-white placeholder:text-stone-400 focus:border-saffron focus:outline-none"
+              />
+              <textarea
+                rows={4}
+                value={contactMessage}
+                onChange={(event) => setContactMessage(event.target.value)}
+                placeholder={tr("Votre message", "Your message")}
+                className="w-full rounded-xl border border-white/20 bg-black/20 px-3 py-2 text-sm text-white placeholder:text-stone-400 focus:border-saffron focus:outline-none"
+              />
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="submit"
+                  disabled={submittingContact}
+                  className="rounded-full bg-saffron px-5 py-2 text-xs font-bold uppercase tracking-wide text-charcoal transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {tr("Se connecter", "Sign in")}
-                </Link>
+                  {submittingContact ? tr("Envoi...", "Sending...") : tr("Envoyer", "Send")}
+                </button>
+                {contactFeedback && <p className="text-xs text-stone-200">{contactFeedback}</p>}
               </div>
-            )}
-
-            {token && (
-              <form onSubmit={handleContactSubmit} className="mt-3 space-y-3">
-                <input
-                  type="text"
-                  value={contactSubject}
-                  onChange={(event) => setContactSubject(event.target.value)}
-                  placeholder={tr("Sujet (optionnel)", "Subject (optional)")}
-                  className="w-full rounded-xl border border-white/20 bg-black/20 px-3 py-2 text-sm text-white placeholder:text-stone-400 focus:border-saffron focus:outline-none"
-                />
-                <textarea
-                  rows={4}
-                  value={contactMessage}
-                  onChange={(event) => setContactMessage(event.target.value)}
-                  placeholder={tr("Votre message", "Your message")}
-                  className="w-full rounded-xl border border-white/20 bg-black/20 px-3 py-2 text-sm text-white placeholder:text-stone-400 focus:border-saffron focus:outline-none"
-                />
-                <div className="flex flex-wrap items-center gap-3">
-                  <button
-                    type="submit"
-                    disabled={submittingContact}
-                    className="rounded-full bg-saffron px-5 py-2 text-xs font-bold uppercase tracking-wide text-charcoal transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {submittingContact ? tr("Envoi...", "Sending...") : tr("Envoyer", "Send")}
-                  </button>
-                  {contactFeedback && <p className="text-xs text-stone-200">{contactFeedback}</p>}
-                </div>
-              </form>
-            )}
+            </form>
           </div>
         </div>
       </section>

@@ -1,7 +1,5 @@
-import { useState, useEffect, useContext, useCallback, useRef } from "react";
-import { io } from "socket.io-client";
+import { useState, useEffect, useContext, useCallback } from "react";
 import { AuthContext } from "../context/AuthContext";
-import { SOCKET_URL } from "../config/env";
 import { useLanguage } from "../context/LanguageContext";
 import {
   getOrdersAdmin,
@@ -65,14 +63,11 @@ export default function OrderList() {
   const [selectedDate, setSelectedDate] = useState(toLocalIsoDate(new Date()));
   const [loading, setLoading] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState("COMPLETED");
-  const [showNotification, setShowNotification] = useState(false);
   const [expandedOrders, setExpandedOrders] = useState({});
   const [usersById, setUsersById] = useState({});
   const [usersByEmail, setUsersByEmail] = useState({});
   const [usersByName, setUsersByName] = useState({});
   const [usersLookupReady, setUsersLookupReady] = useState(false);
-  const socketRef = useRef(null);
-
   const formatTime = (dateStr) => {
     const d = new Date(dateStr);
     return d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
@@ -109,35 +104,12 @@ export default function OrderList() {
   }, [authLoading, fetchOrders]);
 
   useEffect(() => {
-    if (!token || !user || user.role !== "ADMIN") return;
-
-    socketRef.current = io(SOCKET_URL);
-    socketRef.current.emit("joinAdminRoom", { token }, (response) => {
-      if (!response?.ok) {
-        console.error("Unable to join admin room:", response?.error);
-      }
-    });
-
-    socketRef.current.on("orderCompleted", (order) => {
-      setOrders((prev) => {
-        if (prev.find((entry) => entry.id === order.id)) return prev;
-        setShowNotification(true);
-        const audio = new Audio(`${process.env.PUBLIC_URL}/ordernotification.mp3`);
-        audio.play().catch(() => {});
-        return [...prev, order];
-      });
-    });
-
-    return () => {
-      socketRef.current?.disconnect();
-    };
-  }, [token, user]);
-
-  useEffect(() => {
-    if (!showNotification) return;
-    const timeout = window.setTimeout(() => setShowNotification(false), 3500);
-    return () => window.clearTimeout(timeout);
-  }, [showNotification]);
+    if (!token || !user || user.role !== "ADMIN") return undefined;
+    const timer = window.setInterval(() => {
+      fetchOrders();
+    }, 10000);
+    return () => window.clearInterval(timer);
+  }, [token, user, fetchOrders]);
 
   useEffect(() => {
     if (!token || !user || user.role !== "ADMIN") return;
@@ -262,12 +234,6 @@ export default function OrderList() {
 
   return (
     <div className="space-y-4">
-      {showNotification && (
-        <div className="rounded-xl border border-emerald-400/40 bg-emerald-500/10 px-3 py-2 text-sm font-semibold text-emerald-200">
-          {tr("Nouvelle commande recue", "New order received")}
-        </div>
-      )}
-
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-2xl font-bold text-white">{tr("Gestion des commandes", "Order management")}</h2>
         <p className="text-xs uppercase tracking-wider text-stone-400">

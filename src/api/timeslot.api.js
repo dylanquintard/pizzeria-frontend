@@ -1,51 +1,44 @@
-import axios from "axios";
-import { API_BASE_URL } from "../config/env";
-
-const API_TIMESLOTS = `${API_BASE_URL}/timeslots`;
-
-const withAuth = (token) => ({
-  headers: token ? { Authorization: `Bearer ${token}` } : {},
-});
+import api, { authConfig } from "./http";
 
 export const getActiveTimeSlots = async (token, filters = {}) => {
-  const response = await axios.get(`${API_TIMESLOTS}/active`, {
-    ...withAuth(token),
+  const response = await api.get("/timeslots/active", {
+    ...authConfig(token),
     params: filters,
   });
   return response.data;
 };
 
 export const createTimeSlots = async (token, data) => {
-  const response = await axios.post(API_TIMESLOTS, data, withAuth(token));
+  const response = await api.post("/timeslots", data, authConfig(token));
   return response.data;
 };
 
 export const createTimeSlotsBatch = async (token, data) => {
-  const response = await axios.post(`${API_TIMESLOTS}/batch`, data, withAuth(token));
+  const response = await api.post("/timeslots/batch", data, authConfig(token));
   return response.data;
 };
 
 export const getAllTimeSlots = async (token) => {
-  const response = await axios.get(API_TIMESLOTS, withAuth(token));
+  const response = await api.get("/timeslots", authConfig(token));
   return response.data;
 };
 
 export const updateTimeSlot = async (token, id, data) => {
-  const response = await axios.put(`${API_TIMESLOTS}/${id}`, data, withAuth(token));
+  const response = await api.put(`/timeslots/${id}`, data, authConfig(token));
   return response.data;
 };
 
 export const activateTimeSlot = async (token, id, active) => {
-  const response = await axios.patch(
-    `${API_TIMESLOTS}/${id}/activate`,
+  const response = await api.patch(
+    `/timeslots/${id}/activate`,
     { active },
-    withAuth(token)
+    authConfig(token)
   );
   return response.data;
 };
 
 export const deleteTimeSlot = async (token, id) => {
-  const response = await axios.delete(`${API_TIMESLOTS}/${id}`, withAuth(token));
+  const response = await api.delete(`/timeslots/${id}`, authConfig(token));
   return response.data;
 };
 

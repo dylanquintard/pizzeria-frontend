@@ -5,8 +5,6 @@ import MainContent from "./components/layout/MainContent";
 import { AuthContext, AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
 import { LanguageProvider, useLanguage } from "./context/LanguageContext";
-import { MessageNotificationsProvider } from "./context/MessageNotificationsContext";
-import AdminMessages from "./pages/AdminMessages";
 import Categories from "./pages/Categories";
 import Dashboard from "./pages/Dashboard";
 import EditPizza from "./pages/EditPizza";
@@ -15,7 +13,6 @@ import Home from "./pages/Home";
 import Ingredients from "./pages/Ingredients";
 import Locations from "./pages/Locations";
 import Login from "./pages/Login";
-import Messages from "./pages/Messages";
 import Order from "./pages/Order";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import OrderList from "./pages/OrderList";
@@ -25,6 +22,7 @@ import Register from "./pages/Register";
 import TimeslotsAdmin from "./pages/Timeslots";
 import Users from "./pages/Users";
 import UserOrders from "./pages/UsersOrders";
+import VerifyEmail from "./pages/VerifyEmail";
 
 const PrivateRoute = ({ children }) => {
   const { token, loading } = useContext(AuthContext);
@@ -63,6 +61,7 @@ function AppRoutes() {
         <Route path="/menu" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
 
         <Route
           path="/order"
@@ -96,15 +95,6 @@ function AppRoutes() {
             </PrivateRoute>
           }
         />
-        <Route
-          path="/messages"
-          element={
-            <PrivateRoute>
-              <Messages />
-            </PrivateRoute>
-          }
-        />
-
         <Route
           path="/admin"
           element={
@@ -201,16 +191,6 @@ function AppRoutes() {
           }
         />
         <Route
-          path="/admin/messages"
-          element={
-            <AdminRoute>
-              <Dashboard>
-                <AdminMessages />
-              </Dashboard>
-            </AdminRoute>
-          }
-        />
-        <Route
           path="/admin/editpizza/:id"
           element={
             <AdminRoute>
@@ -232,11 +212,9 @@ export default function App() {
     <AuthProvider>
       <LanguageProvider>
         <CartProvider>
-          <MessageNotificationsProvider>
-            <BrowserRouter>
-              <AppRoutes />
-            </BrowserRouter>
-          </MessageNotificationsProvider>
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
         </CartProvider>
       </LanguageProvider>
     </AuthProvider>
