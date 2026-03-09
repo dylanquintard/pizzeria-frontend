@@ -44,11 +44,38 @@ function LanguageSelect({ language, setLanguage, tr, className = "" }) {
         className="h-9 rounded-full border border-white/20 bg-white/5 px-3 pr-8 text-[11px] font-semibold uppercase tracking-wide text-stone-100 transition focus:border-saffron focus:outline-none"
         aria-label={tr("Langue", "Language")}
       >
-        <option value="fr">Francais</option>
-        <option value="en">English</option>
+        <option value="fr">FR</option>
+        <option value="en">EN</option>
       </select>
       <span className="pointer-events-none absolute right-3 text-[10px] text-stone-300">v</span>
     </label>
+  );
+}
+
+function ThemeToggle({ isLight, onToggle, tr, className = "" }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className={`relative inline-flex h-9 w-[74px] items-center rounded-full border border-white/20 px-1 transition ${className} ${
+        isLight ? "bg-amber-100/80" : "bg-charcoal/70"
+      }`}
+      aria-label={tr("Changer le theme", "Toggle theme")}
+      title={isLight ? tr("Passer en mode sombre", "Switch to dark mode") : tr("Passer en mode clair", "Switch to light mode")}
+    >
+      <span
+        className={`absolute left-1 inline-flex h-7 w-7 items-center justify-center rounded-full text-xs transition-transform ${
+          isLight
+            ? "translate-x-9 bg-saffron text-charcoal shadow-fire"
+            : "translate-x-0 bg-stone-200 text-charcoal"
+        }`}
+      >
+        {isLight ? "S" : "L"}
+      </span>
+      <span className="sr-only">
+        {isLight ? tr("Mode sombre", "Dark mode") : tr("Mode clair", "Light mode")}
+      </span>
+    </button>
   );
 }
 
@@ -58,6 +85,8 @@ export default function Header() {
   const { cartItems, cartTotal, itemCount, removeItem, clearCart, loading } = useContext(CartContext);
   const { language, setLanguage, tr } = useLanguage();
   const { theme, toggleTheme } = useTheme();
+  const isLightTheme = theme === "light";
+  const iconColorClass = isLightTheme ? "text-stone-900" : "text-white";
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileAdminOpen, setMobileAdminOpen] = useState(false);
@@ -146,14 +175,7 @@ export default function Header() {
 
           <div className="flex items-center gap-2">
             <LanguageSelect language={language} setLanguage={setLanguage} tr={tr} className="hidden sm:inline-flex" />
-
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="hidden sm:inline-flex h-9 items-center rounded-full border border-white/20 bg-white/5 px-3 text-[11px] font-semibold uppercase tracking-wide text-stone-100 transition hover:bg-white/10"
-            >
-              {theme === "light" ? tr("Sombre", "Dark") : tr("Clair", "Light")}
-            </button>
+            <ThemeToggle isLight={isLightTheme} onToggle={toggleTheme} tr={tr} className="hidden sm:inline-flex" />
 
             {token && user?.role === "ADMIN" && (
               <Link
@@ -193,7 +215,7 @@ export default function Header() {
                   title={tr("Panier", "Cart")}
                   className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-saffron/35 bg-white/5 transition hover:bg-white/10"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" className="h-7 w-7">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={`h-7 w-7 ${iconColorClass}`}>
                     <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zm10 0c-1.1 0-1.99.9-1.99 2S15.9 22 17 22s2-.9 2-2-.9-2-2-2zM7.16 14h9.45c.75 0 1.41-.41 1.75-1.03L21 7H6.21l-.94-2H2v2h2l3.6 7.59-1.35 2.44C5.52 17.37 6.48 19 8 19h12v-2H8l1.16-2z" />
                   </svg>
                   <span className="absolute -right-1.5 -top-2 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-ember px-1 text-[10px] font-bold text-white">
@@ -202,7 +224,7 @@ export default function Header() {
                 </button>
 
                 {cartOpen && (
-                  <div className="absolute right-0 mt-3 w-[340px] max-w-[90vw] rounded-2xl border border-stone-200 bg-white p-3 text-stone-900 shadow-2xl">
+                  <div className="absolute right-0 mt-3 w-[340px] max-w-[90vw] rounded-2xl border border-stone-200 bg-white p-3 text-stone-900 shadow-2xl max-md:fixed max-md:left-2 max-md:right-2 max-md:top-[92px] max-md:mt-0 max-md:w-auto max-md:max-w-none">
                     <div className="mb-3 flex items-center justify-between">
                       <p className="text-xs font-bold uppercase tracking-wide">{tr("Panier", "Cart")}</p>
                       <span className="chip">{totalItems}</span>
@@ -268,7 +290,7 @@ export default function Header() {
                   className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-saffron/35 bg-white/5 transition hover:bg-white/10"
                   aria-expanded={profileOpen}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" className="h-7 w-7">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={`h-7 w-7 ${iconColorClass}`}>
                     <path d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5zm0 2c-3.3 0-10 1.7-10 5v3h20v-3c0-3.3-6.7-5-10-5z" />
                   </svg>
                 </button>
@@ -310,7 +332,7 @@ export default function Header() {
                   return next;
                 });
               }}
-              className="xl:hidden inline-flex h-9 w-9 items-center justify-center rounded-full border border-saffron/35 bg-white/5 text-white transition hover:bg-white/10"
+              className={`xl:hidden inline-flex h-9 w-9 items-center justify-center rounded-full border border-saffron/35 bg-white/5 transition hover:bg-white/10 ${iconColorClass}`}
               aria-expanded={mobileOpen}
               aria-label={tr("Ouvrir le menu", "Open menu")}
             >
@@ -331,18 +353,12 @@ export default function Header() {
         </div>
 
         {mobileOpen && (
-          <div className="pb-4 xl:hidden">
+          <div className="pb-4 xl:hidden max-h-[calc(100vh-96px)] overflow-y-auto overscroll-contain">
             <div className="glass-panel p-3">
               <div className="grid gap-1.5 text-sm text-stone-100">
                 <div className="mb-1 flex items-center gap-2">
                   <LanguageSelect language={language} setLanguage={setLanguage} tr={tr} />
-                  <button
-                    type="button"
-                    onClick={toggleTheme}
-                    className="inline-flex h-9 items-center rounded-full border border-white/20 bg-white/5 px-3 text-[11px] font-semibold uppercase tracking-wide text-stone-100 transition hover:bg-white/10"
-                  >
-                    {theme === "light" ? tr("Sombre", "Dark") : tr("Clair", "Light")}
-                  </button>
+                  <ThemeToggle isLight={isLightTheme} onToggle={toggleTheme} tr={tr} />
                 </div>
 
                 {!isAdminRoute && onePageLinks.map((item) => (

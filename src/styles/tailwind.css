@@ -107,6 +107,10 @@
     @apply inline-flex min-h-6 items-center rounded-full border border-saffron/55 bg-saffron/15 px-2.5 text-[11px] font-bold uppercase tracking-wide text-saffron;
   }
 
+  .avatar-badge {
+    @apply border border-white/20 bg-charcoal text-saffron;
+  }
+
   html[data-theme="light"] .glass-panel,
   html[data-theme="light"] .admin-card,
   html[data-theme="light"] .bg-white\/5,
@@ -139,6 +143,17 @@
   html[data-theme="light"] .text-stone-500,
   html[data-theme="light"] .text-stone-600 {
     color: #475569 !important;
+  }
+
+  html[data-theme="light"] .bg-oven-glow {
+    background-image: linear-gradient(145deg, rgba(255, 243, 222, 0.96) 0%, rgba(255, 255, 255, 0.92) 55%, rgba(246, 236, 220, 0.96) 100%);
+    background-color: rgba(255, 255, 255, 0.92);
+  }
+
+  html[data-theme="light"] .avatar-badge {
+    border-color: rgba(148, 163, 184, 0.5);
+    background-color: #111827;
+    color: #f4b731;
   }
 
   html[data-theme="light"] input,

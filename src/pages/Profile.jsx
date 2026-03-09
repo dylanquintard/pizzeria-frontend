@@ -117,7 +117,7 @@ export default function Profile() {
           <div className="bg-oven-glow p-6 sm:p-8">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="flex items-center gap-4">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/20 bg-charcoal/70 text-2xl font-bold text-saffron">
+                <div className="avatar-badge flex h-14 w-14 items-center justify-center rounded-2xl text-2xl font-bold">
                   {avatarLetter}
                 </div>
                 <div>
