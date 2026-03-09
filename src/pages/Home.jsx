@@ -247,8 +247,8 @@ export default function Home() {
         className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
       />
       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-charcoal/90 to-transparent p-3">
-        <p className="text-sm font-semibold text-white">{image.title || tr("Galerie", "Gallery")}</p>
-        <p className="text-xs text-stone-300">{image.description || tr("Qualite artisanale", "Craft quality")}</p>
+        <p className="theme-light-keep-white text-sm font-semibold text-white">{image.title || tr("Galerie", "Gallery")}</p>
+        <p className="theme-light-keep-white text-xs text-stone-300">{image.description || tr("Qualite artisanale", "Craft quality")}</p>
       </div>
     </button>
   );
@@ -266,13 +266,13 @@ export default function Home() {
         <div className="section-shell relative py-20 sm:py-28 lg:py-32">
           <div className="max-w-3xl">
             <p className="chip mb-6">{tr("Camion pizza napolitaine", "Neapolitan pizza truck")}</p>
-            <h1 className="font-display text-5xl uppercase leading-none tracking-wide text-white sm:text-6xl lg:text-7xl">
+            <h1 className="theme-light-keep-white font-display text-5xl uppercase leading-none tracking-wide text-white sm:text-6xl lg:text-7xl">
               {tr(
                 "Cuisson au four a bois, produits frais, pate a pizza maison.",
                 "Wood-fired baking, fresh products, homemade pizza dough."
               )}
             </h1>
-            <p className="mt-6 max-w-2xl text-base text-stone-200 sm:text-lg">
+            <p className="theme-light-keep-white mt-6 max-w-2xl text-base text-stone-200 sm:text-lg">
               {tr(
                 "Une carte lisible, des recettes courtes et de la qualite. Nos pizzas sont mises en avant avec une experience simple, rapide et moderne.",
                 "A clear menu, short recipes and quality. Our pizzas are highlighted with a simple, fast and modern experience."
@@ -288,14 +288,14 @@ export default function Home() {
               {token ? (
                 <Link
                   to="/order"
-                  className="rounded-full border border-white/30 px-6 py-3 text-sm font-semibold uppercase tracking-wide text-white hover:bg-white/10"
+                  className="theme-light-keep-white rounded-full border border-white/30 px-6 py-3 text-sm font-semibold uppercase tracking-wide text-white hover:bg-white/10"
                 >
                   {tr("Commander maintenant", "Order now")}
                 </Link>
               ) : (
                 <Link
                   to="/login"
-                  className="rounded-full border border-white/30 px-6 py-3 text-sm font-semibold uppercase tracking-wide text-white hover:bg-white/10"
+                  className="theme-light-keep-white rounded-full border border-white/30 px-6 py-3 text-sm font-semibold uppercase tracking-wide text-white hover:bg-white/10"
                 >
                   {tr("Se connecter", "Sign in")}
                 </Link>
@@ -355,7 +355,7 @@ export default function Home() {
 
       <section id="galerie" className="section-shell space-y-6">
         <div>
-          <p className="text-sm uppercase tracking-[0.25em] text-white">
+          <p className="theme-light-keep-white text-sm uppercase tracking-[0.25em] text-white">
             {tr("Le camion, le four dore, nos pizzas, etc...", "The truck, the golden oven, our pizzas, and more...")}
           </p>
         </div>
@@ -544,8 +544,8 @@ export default function Home() {
                   className="block max-h-[68vh] w-auto max-w-full object-contain"
                 />
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-charcoal/90 to-transparent p-3">
-                  <p className="text-sm font-semibold text-white">{activeGalleryImage.title || tr("Galerie", "Gallery")}</p>
-                  <p className="text-xs text-stone-300">
+                  <p className="theme-light-keep-white text-sm font-semibold text-white">{activeGalleryImage.title || tr("Galerie", "Gallery")}</p>
+                  <p className="theme-light-keep-white text-xs text-stone-300">
                     {activeGalleryImage.description || tr("Qualite artisanale", "Craft quality")}
                   </p>
                 </div>

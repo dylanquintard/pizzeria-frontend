@@ -8,6 +8,7 @@ import {
   getCategories,
   updateCategory,
 } from "../api/category.api";
+import { ActionIconButton, DeleteIcon, StatusToggle } from "../components/ui/AdminActions";
 
 const emptyCategoryForm = {
   name: "",
@@ -216,13 +217,20 @@ export default function Categories() {
               </td>
               <td>{category.active ? tr("Oui", "Yes") : tr("Non", "No")}</td>
               <td>
-                <button onClick={() => handleUpdate(category)} disabled={loading}>
-                  {tr("Sauvegarder", "Save")}
-                </button>
-                <button onClick={() => handleToggleActive(category)}>
-                  {category.active ? tr("Desactiver", "Disable") : tr("Activer", "Enable")}
-                </button>
-                <button onClick={() => handleDelete(category.id)}>{tr("Supprimer", "Delete")}</button>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => handleUpdate(category)} disabled={loading}>
+                    {tr("Sauvegarder", "Save")}
+                  </button>
+                  <StatusToggle
+                    checked={category.active}
+                    onChange={() => handleToggleActive(category)}
+                    labelOn={tr("Desactiver", "Disable")}
+                    labelOff={tr("Activer", "Enable")}
+                  />
+                  <ActionIconButton onClick={() => handleDelete(category.id)} label={tr("Supprimer", "Delete")} variant="danger">
+                    <DeleteIcon />
+                  </ActionIconButton>
+                </div>
               </td>
             </tr>
           ))}

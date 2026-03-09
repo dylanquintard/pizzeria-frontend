@@ -8,6 +8,7 @@ import {
   getLocations,
   updateLocation,
 } from "../api/location.api";
+import { ActionIconButton, DeleteIcon, EditIcon, StatusToggle } from "../components/ui/AdminActions";
 
 const emptyLocationForm = {
   name: "",
@@ -271,11 +272,20 @@ export default function Locations() {
               <td>{formatLocation(location)}</td>
               <td>{location.active ? tr("Oui", "Yes") : tr("Non", "No")}</td>
               <td>
-                <button onClick={() => startEditing(location)}>{tr("Modifier", "Edit")}</button>
-                <button onClick={() => handleToggleActive(location)}>
-                  {location.active ? tr("Desactiver", "Disable") : tr("Activer", "Enable")}
-                </button>
-                <button onClick={() => handleDelete(location.id)}>{tr("Supprimer", "Delete")}</button>
+                <div className="flex items-center gap-2">
+                  <ActionIconButton onClick={() => startEditing(location)} label={tr("Modifier", "Edit")}>
+                    <EditIcon />
+                  </ActionIconButton>
+                  <StatusToggle
+                    checked={location.active}
+                    onChange={() => handleToggleActive(location)}
+                    labelOn={tr("Desactiver", "Disable")}
+                    labelOff={tr("Activer", "Enable")}
+                  />
+                  <ActionIconButton onClick={() => handleDelete(location.id)} label={tr("Supprimer", "Delete")} variant="danger">
+                    <DeleteIcon />
+                  </ActionIconButton>
+                </div>
               </td>
             </tr>
           ))}

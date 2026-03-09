@@ -179,6 +179,7 @@ export default function Order() {
   const [message, setMessage] = useState("");
   const [validatedCartSignature, setValidatedCartSignature] = useState("");
   const [realtimeConnected, setRealtimeConnected] = useState(false);
+  const [activeCategoryKey, setActiveCategoryKey] = useState("");
 
   const cartSignature = useMemo(
     () =>
@@ -379,6 +380,23 @@ export default function Order() {
       }));
   }, [categories, pizzas, tr]);
 
+  useEffect(() => {
+    if (menuByCategory.length === 0) {
+      setActiveCategoryKey("");
+      return;
+    }
+
+    const stillExists = menuByCategory.some((entry) => entry.key === activeCategoryKey);
+    if (!stillExists) {
+      setActiveCategoryKey(menuByCategory[0].key);
+    }
+  }, [activeCategoryKey, menuByCategory]);
+
+  const visibleMenuGroup = useMemo(
+    () => menuByCategory.find((entry) => entry.key === activeCategoryKey) || menuByCategory[0] || null,
+    [activeCategoryKey, menuByCategory]
+  );
+
   const openPizzaModal = (pizza) => {
     setEditingPizza(pizza);
     setSelectedExtras([]);
@@ -527,7 +545,7 @@ export default function Order() {
       </div>
 
       {message && (
-        <div className="mb-6 rounded-xl border border-saffron/50 bg-saffron/10 px-4 py-3 text-sm text-saffron">
+        <div className="theme-light-keep-dark mb-6 rounded-xl border border-saffron/50 bg-saffron/10 px-4 py-3 text-sm text-saffron">
           {message}
         </div>
       )}
@@ -540,18 +558,38 @@ export default function Order() {
               {tr("Aucun produit disponible pour le moment.", "No products available right now.")}
             </div>
           ) : (
-            <div className="space-y-8">
-              {menuByCategory.map((group) => (
-                <article key={group.key} className="rounded-3xl border border-white/10 bg-charcoal/35 p-5 sm:p-7">
+            <div className="space-y-4">
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {menuByCategory.map((group) => {
+                  const isActive = group.key === visibleMenuGroup?.key;
+                  return (
+                    <button
+                      key={group.key}
+                      type="button"
+                      onClick={() => setActiveCategoryKey(group.key)}
+                      className={`shrink-0 rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-wide transition ${
+                        isActive
+                          ? "border-saffron bg-saffron text-charcoal"
+                          : "border-white/20 bg-black/20 text-stone-100 hover:bg-white/10"
+                      }`}
+                    >
+                      {group.title}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {visibleMenuGroup && (
+                <article className="rounded-3xl border border-white/10 bg-charcoal/35 p-5 sm:p-7">
                   <div className="mb-4 border-b border-white/10 pb-3">
                     <h3 className="font-display text-3xl uppercase tracking-[0.08em] text-crust sm:text-4xl">
-                      {group.title}
+                      {visibleMenuGroup.title}
                     </h3>
-                    {group.description && <p className="mt-1 text-sm text-stone-400">{group.description}</p>}
+                    {visibleMenuGroup.description && <p className="mt-1 text-sm text-stone-400">{visibleMenuGroup.description}</p>}
                   </div>
 
                   <div>
-                    {group.items.map((product) => (
+                    {visibleMenuGroup.items.map((product) => (
                       <div key={product.id} className="border-b border-white/10 py-4 last:border-b-0">
                         <div className="flex items-start gap-3">
                           <h4 className="text-base font-semibold uppercase tracking-wide text-white sm:text-lg">
@@ -564,16 +602,16 @@ export default function Order() {
                           <button
                             type="button"
                             onClick={() =>
-                              group.isPizzaCategory ? openPizzaModal(product) : handleQuickAdd(product)
+                              visibleMenuGroup.isPizzaCategory ? openPizzaModal(product) : handleQuickAdd(product)
                             }
                             disabled={loading}
                             title={
-                              group.isPizzaCategory
+                              visibleMenuGroup.isPizzaCategory
                                 ? tr("Configurer et ajouter", "Customize and add")
                                 : tr("Ajouter au panier", "Add to cart")
                             }
                             aria-label={
-                              group.isPizzaCategory
+                              visibleMenuGroup.isPizzaCategory
                                 ? `${tr("Configurer", "Customize")} ${product.name}`
                                 : `${tr("Ajouter", "Add")} ${product.name}`
                             }
@@ -594,13 +632,13 @@ export default function Order() {
                     ))}
                   </div>
                 </article>
-              ))}
+              )}
             </div>
           )}
         </section>
 
         <section className="space-y-4">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+          <div className="order-cart-shell rounded-2xl p-5">
             <div className="mb-4 flex items-center justify-between gap-3">
               <h2 className="text-xl font-bold text-white">{tr("Mon panier", "My cart")}</h2>
               {isCartValidated && (
@@ -613,7 +651,7 @@ export default function Order() {
             <div className="space-y-2">
               {cartLoading && <p className="text-sm text-stone-300">{tr("Chargement du panier...", "Loading cart...")}</p>}
               {!cartLoading && cartItems.length === 0 && (
-                <p className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-stone-300">
+                <p className="order-cart-item rounded-xl px-3 py-2 text-sm text-stone-300">
                   {tr("Votre panier est vide.", "Your cart is empty.")}
                 </p>
               )}
@@ -622,11 +660,11 @@ export default function Order() {
                 const itemUnitPrice = Number(item.unitPrice ?? getCartItemProduct(item)?.basePrice ?? 0);
                 const itemTotal = itemUnitPrice * Number(item.quantity || 0);
                 return (
-                  <div key={item.id} className="rounded-xl border border-white/10 bg-black/20 p-3">
+                  <div key={item.id} className="order-cart-item rounded-xl p-3">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-white">{getCartItemName(item)}</p>
-                        <p className="text-xs text-stone-300">{tr("Quantite", "Quantity")}: {item.quantity}</p>
+                          <p className="truncate text-sm font-semibold text-white">{getCartItemName(item)}</p>
+                          <p className="text-xs text-stone-300">{tr("Quantite", "Quantity")}: {item.quantity}</p>
                         {item.addedIngredients?.length > 0 && (
                           <p className="text-[11px] text-emerald-300">
                             + {item.addedIngredients.map((entry) => getCartIngredientName(entry)).filter(Boolean).join(", ")}
@@ -644,7 +682,7 @@ export default function Order() {
                         <button
                           type="button"
                           onClick={() => handleRemoveCartItem(item.id)}
-                          className="mt-1 rounded-md border border-white/20 px-2 py-1 text-[11px] font-semibold text-stone-200 transition hover:bg-white/10"
+                          className="mt-1 rounded-md border border-white/20 px-2 py-1 text-[11px] font-semibold text-stone-100 transition hover:bg-white/10"
                         >
                           {tr("Retirer", "Remove")}
                         </button>
@@ -693,7 +731,7 @@ export default function Order() {
             </p>
 
             {!isCartValidated && (
-              <div className="mb-3 rounded-xl border border-amber-300/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+              <div className="theme-light-keep-dark mb-3 rounded-xl border border-amber-300/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
                 {tr("Validez d'abord le panier pour debloquer la selection du retrait.", "Validate the cart first to unlock pickup selection.")}
               </div>
             )}
@@ -737,7 +775,7 @@ export default function Order() {
                     })}
                   </div>
                 ) : (
-                  <div className="rounded-xl border border-red-400/40 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+                  <div className="theme-light-keep-dark rounded-xl border border-red-400/40 bg-red-500/10 px-3 py-2 text-xs text-red-200">
                     {tr("Aucun emplacement disponible pour la date et la quantite choisies.", "No location available for selected date and quantity.")}
                   </div>
                 )}

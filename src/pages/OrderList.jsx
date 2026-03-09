@@ -366,7 +366,7 @@ export default function OrderList() {
           type="date"
           value={selectedDate}
           onChange={(event) => setSelectedDate(event.target.value)}
-          className="h-8 w-[148px] rounded-lg border border-white/20 bg-charcoal/70 px-2 text-xs text-stone-100 focus:border-saffron focus:outline-none sm:h-9 sm:w-auto sm:px-3 sm:text-sm"
+          className="h-8 w-[132px] rounded-lg border border-white/20 bg-charcoal/70 px-2 text-xs text-stone-100 focus:border-saffron focus:outline-none sm:h-9 sm:w-[152px] sm:px-3 sm:text-sm"
         />
 
         <button
@@ -466,7 +466,7 @@ export default function OrderList() {
                           <button
                             type="button"
                             onClick={() => handleDelete(order.id)}
-                            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-red-300/80 !bg-red-950/45 !p-0 !text-red-200 shadow-sm transition hover:!bg-red-900/55"
+                            className="inline-flex h-8 w-8 items-center justify-center border-none bg-transparent p-0 text-red-500 transition hover:text-red-400"
                             title={tr("Supprimer la commande", "Delete order")}
                             aria-label={tr("Supprimer la commande", "Delete order")}
                           >
@@ -481,7 +481,7 @@ export default function OrderList() {
                           <p className="truncate text-sm font-semibold uppercase tracking-wide text-white">
                             {order.user?.name || tr("Client inconnu", "Unknown client")}
                           </p>
-                          <p className={`mt-0.5 text-[11px] font-medium ${hasPhone ? "text-sky-200" : "text-stone-400"}`}>
+                          <p className={`theme-light-keep-dark mt-0.5 text-[11px] font-medium ${hasPhone ? "text-sky-200" : "text-stone-400"}`}>
                             {phoneDisplay}
                           </p>
                           <div className="mt-0.5 flex items-center justify-end gap-2 text-[11px] text-stone-300">
@@ -490,8 +490,8 @@ export default function OrderList() {
                             <span
                               className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
                                 order.status === "FINALIZED"
-                                  ? "bg-emerald-500/20 text-emerald-300"
-                                  : "bg-amber-500/20 text-amber-200"
+                                  ? "bg-emerald-500/20 text-black"
+                                  : "bg-amber-500/20 text-black"
                               }`}
                             >
                               {statusLabel}

@@ -7,6 +7,7 @@ import {
 } from "../api/admin.api";
 import { AuthContext } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
+import { ActionIconButton, DeleteIcon, EditIcon } from "../components/ui/AdminActions";
 
 export default function Ingredients() {
   const { token, user, loading: authLoading } = useContext(AuthContext);
@@ -137,16 +138,20 @@ export default function Ingredients() {
                 )}
               </td>
               <td>
-                {entry.editPrice ? (
-                  <button onClick={() => handleSavePrice(entry.id, entry.tempPrice)}>
-                    {tr("Sauvegarder", "Save")}
-                  </button>
-                ) : (
-                  <button onClick={() => toggleEdit(entry.id)}>
-                    {tr("Modifier le prix", "Edit price")}
-                  </button>
-                )}
-                <button onClick={() => handleDelete(entry.id)}>{tr("Supprimer", "Delete")}</button>
+                <div className="flex items-center gap-2">
+                  {entry.editPrice ? (
+                    <button onClick={() => handleSavePrice(entry.id, entry.tempPrice)}>
+                      {tr("Sauvegarder", "Save")}
+                    </button>
+                  ) : (
+                    <ActionIconButton onClick={() => toggleEdit(entry.id)} label={tr("Modifier le prix", "Edit price")}>
+                      <EditIcon />
+                    </ActionIconButton>
+                  )}
+                  <ActionIconButton onClick={() => handleDelete(entry.id)} label={tr("Supprimer", "Delete")} variant="danger">
+                    <DeleteIcon />
+                  </ActionIconButton>
+                </div>
               </td>
             </tr>
           ))}

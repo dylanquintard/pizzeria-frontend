@@ -9,6 +9,7 @@ import {
   uploadGalleryImage,
   updateGalleryImage,
 } from "../api/gallery.api";
+import { ActionIconButton, DeleteIcon, EditIcon, StatusToggle } from "../components/ui/AdminActions";
 
 const emptyImageForm = {
   imageUrl: "",
@@ -353,12 +354,19 @@ export default function GalleryAdmin() {
                   <td>{image.sortOrder}</td>
                   <td>{image.active ? tr("Oui", "Yes") : tr("Non", "No")}</td>
                   <td>
-                    <div className="flex min-w-[220px] flex-wrap gap-2">
-                      <button onClick={() => startEditing(image)}>{tr("Modifier", "Edit")}</button>
-                      <button onClick={() => handleToggleActive(image)}>
-                        {image.active ? tr("Desactiver", "Disable") : tr("Activer", "Enable")}
-                      </button>
-                      <button onClick={() => handleDelete(image.id)}>{tr("Supprimer", "Delete")}</button>
+                    <div className="flex min-w-[180px] items-center gap-2">
+                      <ActionIconButton onClick={() => startEditing(image)} label={tr("Modifier", "Edit")}>
+                        <EditIcon />
+                      </ActionIconButton>
+                      <StatusToggle
+                        checked={image.active}
+                        onChange={() => handleToggleActive(image)}
+                        labelOn={tr("Desactiver", "Disable")}
+                        labelOff={tr("Activer", "Enable")}
+                      />
+                      <ActionIconButton onClick={() => handleDelete(image.id)} label={tr("Supprimer", "Delete")} variant="danger">
+                        <DeleteIcon />
+                      </ActionIconButton>
                     </div>
                   </td>
                 </tr>

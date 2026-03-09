@@ -8,6 +8,7 @@ import {
   deleteTimeSlot,
   getAllTimeSlots,
 } from "../api/timeslot.api";
+import { ActionIconButton, DeleteIcon, StatusToggle } from "../components/ui/AdminActions";
 
 function toLocalIsoDate(dateValue) {
   const date = new Date(dateValue);
@@ -19,6 +20,12 @@ function toLocalIsoDate(dateValue) {
 
 function getSlotServiceDate(slot) {
   return slot.serviceDate ? toLocalIsoDate(slot.serviceDate) : toLocalIsoDate(slot.startTime);
+}
+
+function shiftIsoDate(isoDate, delta) {
+  const next = new Date(`${isoDate}T00:00:00`);
+  next.setDate(next.getDate() + delta);
+  return toLocalIsoDate(next);
 }
 
 function formatLocation(location, tr) {
@@ -92,12 +99,16 @@ export default function TimeslotsAdmin() {
   );
 
   const changeDate = (delta) => {
-    const next = new Date(`${selectedDate}T00:00:00`);
-    next.setDate(next.getDate() + delta);
-    const nextDate = toLocalIsoDate(next);
+    const nextDate = shiftIsoDate(selectedDate, delta);
 
     setSelectedDate(nextDate);
     setForm((prev) => ({ ...prev, serviceDate: nextDate }));
+  };
+
+  const changeServiceDate = (delta) => {
+    const nextDate = shiftIsoDate(form.serviceDate, delta);
+    setForm((prev) => ({ ...prev, serviceDate: nextDate }));
+    setSelectedDate(nextDate);
   };
 
   const handleCreateBatch = async (event) => {
@@ -170,16 +181,24 @@ export default function TimeslotsAdmin() {
         <h3>{tr("Creer des creneaux automatiques", "Create automatic timeslots")}</h3>
         <label>
           {tr("Date du service", "Service date")}:
-          <input
-            type="date"
-            value={form.serviceDate}
-            onChange={(event) => {
-              const value = event.target.value;
-              setForm((prev) => ({ ...prev, serviceDate: value }));
-              setSelectedDate(value);
-            }}
-            required
-          />
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
+            <button type="button" onClick={() => changeServiceDate(-1)} aria-label={tr("Jour precedent", "Previous day")}>
+              &lt;
+            </button>
+            <input
+              type="date"
+              value={form.serviceDate}
+              onChange={(event) => {
+                const value = event.target.value;
+                setForm((prev) => ({ ...prev, serviceDate: value }));
+                setSelectedDate(value);
+              }}
+              required
+            />
+            <button type="button" onClick={() => changeServiceDate(1)} aria-label={tr("Jour suivant", "Next day")}>
+              &gt;
+            </button>
+          </div>
         </label>
         <label>
           {tr("Heure ouverture", "Opening time")}:
@@ -319,10 +338,21 @@ export default function TimeslotsAdmin() {
               </td>
               <td>{slot.active ? tr("Oui", "Yes") : tr("Non", "No")}</td>
               <td>
-                <button onClick={() => handleToggleActive(slot)}>
-                  {slot.active ? tr("Desactiver", "Disable") : tr("Activer", "Enable")}
-                </button>
-                <button onClick={() => handleDelete(slot)}>{tr("Supprimer", "Delete")}</button>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <StatusToggle
+                    checked={slot.active}
+                    onChange={() => handleToggleActive(slot)}
+                    labelOn={tr("Desactiver", "Disable")}
+                    labelOff={tr("Activer", "Enable")}
+                  />
+                  <ActionIconButton
+                    onClick={() => handleDelete(slot)}
+                    label={tr("Supprimer", "Delete")}
+                    variant="danger"
+                  >
+                    <DeleteIcon />
+                  </ActionIconButton>
+                </div>
               </td>
             </tr>
           ))}

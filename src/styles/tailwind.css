@@ -111,6 +111,22 @@
     @apply border border-white/20 bg-charcoal text-saffron;
   }
 
+  .theme-light-keep-white {
+    color: inherit;
+  }
+
+  .theme-light-keep-dark {
+    color: inherit;
+  }
+
+  .order-cart-shell {
+    @apply border border-white/10 bg-charcoal/75 text-stone-100;
+  }
+
+  .order-cart-item {
+    @apply border border-white/15 bg-black/35 text-stone-100;
+  }
+
   html[data-theme="light"] .glass-panel,
   html[data-theme="light"] .admin-card,
   html[data-theme="light"] .bg-white\/5,
@@ -154,6 +170,35 @@
     border-color: rgba(148, 163, 184, 0.5);
     background-color: #111827;
     color: #f4b731;
+  }
+
+  html[data-theme="light"] .theme-light-keep-white {
+    color: #ffffff !important;
+  }
+
+  html[data-theme="light"] .theme-light-keep-dark {
+    color: #111827 !important;
+  }
+
+  html[data-theme="light"] .order-cart-shell {
+    background-color: rgba(17, 24, 39, 0.92) !important;
+    border-color: rgba(255, 255, 255, 0.14) !important;
+    color: #f3f4f6 !important;
+  }
+
+  html[data-theme="light"] .order-cart-item {
+    background-color: rgba(3, 7, 18, 0.72) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    color: #f3f4f6 !important;
+  }
+
+  html[data-theme="light"] .order-cart-shell p,
+  html[data-theme="light"] .order-cart-shell span,
+  html[data-theme="light"] .order-cart-shell h2,
+  html[data-theme="light"] .order-cart-shell h3,
+  html[data-theme="light"] .order-cart-shell strong,
+  html[data-theme="light"] .order-cart-shell button {
+    color: #f3f4f6 !important;
   }
 
   html[data-theme="light"] input,
