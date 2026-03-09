@@ -99,7 +99,7 @@
     @apply w-full rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100 placeholder:text-stone-400 focus:border-saffron focus:outline-none focus:ring-2 focus:ring-saffron/20;
   }
 
-  .admin-card button {
+  .admin-card :where(button) {
     @apply rounded-lg bg-saffron px-3 py-2 text-xs font-semibold text-charcoal transition hover:bg-yellow-300;
   }
 

@@ -14,9 +14,6 @@ export function ActionIconButton({
       : isDanger
         ? "text-red-500 hover:text-red-400"
         : "text-stone-100 hover:text-white";
-  const shellClass = isDanger
-    ? "h-8 w-8 border-none bg-transparent"
-    : "h-9 w-9 rounded-full border border-white/20 bg-black/25";
 
   return (
     <button
@@ -25,7 +22,7 @@ export function ActionIconButton({
       disabled={disabled}
       title={label}
       aria-label={label}
-      className={`inline-flex items-center justify-center transition ${shellClass} ${variantClass} disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+      className={`admin-icon-button inline-flex h-8 w-8 items-center justify-center rounded-none border-none bg-transparent p-0 transition hover:bg-transparent ${variantClass} disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
     >
       {children}
     </button>
@@ -66,15 +63,15 @@ export function StatusToggle({ checked, onChange, labelOn, labelOff, disabled = 
       disabled={disabled}
       title={checked ? labelOn : labelOff}
       aria-label={checked ? labelOn : labelOff}
-      className={`inline-flex h-7 w-12 items-center rounded-full border px-1 transition ${
+      className={`admin-toggle-button inline-flex h-6 w-11 items-center rounded-full border p-0 transition ${
         checked
-          ? "border-stone-300/70 bg-stone-900"
-          : "border-stone-400/60 bg-stone-500/40"
+          ? "border-stone-900 bg-stone-900 hover:bg-stone-900"
+          : "border-stone-500 bg-stone-400/70 hover:bg-stone-400/70"
       } ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
     >
       <span
-        className={`inline-block h-5 w-5 rounded-full bg-white transition-transform ${
-          checked ? "translate-x-5" : "translate-x-0"
+        className={`inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
+          checked ? "translate-x-6" : "translate-x-1"
         }`}
       />
     </button>

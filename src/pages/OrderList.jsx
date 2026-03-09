@@ -351,34 +351,33 @@ export default function OrderList() {
       )}
 
       <div className="flex flex-wrap items-center gap-1.5 rounded-2xl border border-white/10 bg-white/5 p-2 sm:gap-2">
-        <button
-          type="button"
-          onClick={() => changeDate(-1)}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/20 text-stone-100 transition hover:bg-white/10 sm:h-9 sm:w-9"
-          aria-label={tr("Jour precedent", "Previous day")}
-        >
-          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2">
-            <path d="m15 18-6-6 6-6" />
-          </svg>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => changeDate(-1)}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/20 text-stone-100 transition hover:bg-white/10 sm:h-9 sm:w-9"
+            aria-label={tr("Jour precedent", "Previous day")}
+          >
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2">
+              <path d="m15 18-6-6 6-6" />
+            </svg>
+          </button>
 
-        <input
-          type="date"
-          value={selectedDate}
-          onChange={(event) => setSelectedDate(event.target.value)}
-          className="h-8 w-[132px] rounded-lg border border-white/20 bg-charcoal/70 px-2 text-xs text-stone-100 focus:border-saffron focus:outline-none sm:h-9 sm:w-[152px] sm:px-3 sm:text-sm"
-        />
+          <span className="min-w-[118px] text-center text-xs font-semibold text-stone-100 sm:min-w-[138px] sm:text-sm">
+            {selectedDate}
+          </span>
 
-        <button
-          type="button"
-          onClick={() => changeDate(1)}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/20 text-stone-100 transition hover:bg-white/10 sm:h-9 sm:w-9"
-          aria-label={tr("Jour suivant", "Next day")}
-        >
-          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2">
-            <path d="m9 6 6 6-6 6" />
-          </svg>
-        </button>
+          <button
+            type="button"
+            onClick={() => changeDate(1)}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/20 text-stone-100 transition hover:bg-white/10 sm:h-9 sm:w-9"
+            aria-label={tr("Jour suivant", "Next day")}
+          >
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2">
+              <path d="m9 6 6 6-6 6" />
+            </svg>
+          </button>
+        </div>
 
         <label htmlFor="statusSelect" className="text-[11px] font-semibold uppercase tracking-wide text-stone-300 sm:ml-auto sm:text-xs">
           {tr("Statut", "Status")}
@@ -428,7 +427,7 @@ export default function OrderList() {
                           <button
                             type="button"
                             onClick={() => toggleDetails(order.id)}
-                            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300/60 !bg-slate-900/85 !p-0 !text-stone-100 shadow-sm transition hover:!bg-slate-800"
+                            className="inline-flex h-8 w-8 items-center justify-center border-none bg-transparent p-0 text-stone-100 transition hover:text-saffron"
                             title={isExpanded ? tr("Masquer details", "Hide details") : tr("Afficher details", "Show details")}
                             aria-label={isExpanded ? tr("Masquer details", "Hide details") : tr("Afficher details", "Show details")}
                           >
@@ -443,7 +442,7 @@ export default function OrderList() {
                             <button
                               type="button"
                               onClick={() => handleFinalize(order.id)}
-                              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-emerald-300/70 !bg-emerald-900/35 !p-0 !text-emerald-200 shadow-sm transition hover:!bg-emerald-800/45"
+                              className="inline-flex h-8 w-8 items-center justify-center border-none bg-transparent p-0 text-emerald-300 transition hover:text-emerald-200"
                               title={tr("Finaliser la commande", "Finalize order")}
                               aria-label={tr("Finaliser la commande", "Finalize order")}
                             >
@@ -453,7 +452,7 @@ export default function OrderList() {
                             </button>
                           ) : (
                             <span
-                              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-emerald-300/35 bg-emerald-900/20 text-emerald-200/70"
+                              className="inline-flex h-8 w-8 items-center justify-center text-emerald-200/55"
                               title={tr("Commande deja finalisee", "Order already finalized")}
                               aria-hidden="true"
                             >
@@ -466,14 +465,11 @@ export default function OrderList() {
                           <button
                             type="button"
                             onClick={() => handleDelete(order.id)}
-                            className="inline-flex h-8 w-8 items-center justify-center border-none bg-transparent p-0 text-red-500 transition hover:text-red-400"
+                            className="inline-flex h-8 items-center justify-center rounded-md bg-red-600 px-2.5 text-xs font-semibold text-white transition hover:bg-red-500"
                             title={tr("Supprimer la commande", "Delete order")}
                             aria-label={tr("Supprimer la commande", "Delete order")}
                           >
-                            <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="2.4">
-                              <path d="M18 6 6 18" />
-                              <path d="m6 6 12 12" />
-                            </svg>
+                            {tr("Supprimer", "Delete")}
                           </button>
                         </div>
 

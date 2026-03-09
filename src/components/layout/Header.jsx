@@ -34,20 +34,22 @@ function CartItemRow({ item, onRemove, tr }) {
   );
 }
 
-function LanguageSelect({ language, setLanguage, tr, className = "" }) {
+function LanguageSelect({ language, setLanguage, tr, className = "", isLight = false }) {
   return (
     <label className={`relative inline-flex items-center ${className}`}>
       <span className="sr-only">{tr("Langue", "Language")}</span>
       <select
         value={language}
         onChange={(event) => setLanguage(event.target.value)}
-        className="h-9 min-w-[68px] rounded-full border border-white/20 bg-white/5 pl-3 pr-7 text-[11px] font-semibold uppercase tracking-wide text-stone-100 transition focus:border-saffron focus:outline-none"
+        className={`h-7 min-w-[56px] appearance-none rounded-full border pl-2.5 pr-6 text-[10px] font-semibold uppercase leading-none tracking-[0.12em] transition focus:border-saffron focus:outline-none ${
+          isLight ? "border-stone-300 bg-white text-stone-800" : "border-white/20 bg-white/5 text-stone-100"
+        }`}
         aria-label={tr("Langue", "Language")}
       >
         <option value="fr">FR</option>
         <option value="en">EN</option>
       </select>
-      <span className="pointer-events-none absolute right-2.5 text-stone-300">
+      <span className={`pointer-events-none absolute right-2 ${isLight ? "text-stone-600" : "text-stone-300"}`}>
         <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.2">
           <path d="m6 9 6 6 6-6" />
         </svg>
@@ -61,16 +63,16 @@ function ThemeToggle({ isLight, onToggle, tr, className = "" }) {
     <button
       type="button"
       onClick={onToggle}
-      className={`relative inline-flex h-9 w-[74px] items-center rounded-full border border-white/20 px-1 transition ${className} ${
-        isLight ? "bg-amber-100/80" : "bg-charcoal/70"
+      className={`relative inline-flex h-7 w-[56px] items-center rounded-full border px-1 transition ${className} ${
+        isLight ? "border-stone-300 bg-stone-200/90" : "border-white/20 bg-charcoal/70"
       }`}
       aria-label={tr("Changer le theme", "Toggle theme")}
       title={isLight ? tr("Passer en mode sombre", "Switch to dark mode") : tr("Passer en mode clair", "Switch to light mode")}
     >
       <span
-        className={`absolute left-1 inline-flex h-7 w-7 items-center justify-center rounded-full text-xs transition-transform ${
+        className={`absolute left-1 inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold transition-transform ${
           isLight
-            ? "translate-x-9 bg-saffron text-charcoal shadow-fire"
+            ? "translate-x-7 bg-white text-stone-900 shadow"
             : "translate-x-0 bg-stone-200 text-charcoal"
         }`}
       >
@@ -178,7 +180,7 @@ export default function Header() {
           </nav>
 
           <div className="flex items-center gap-2">
-            <LanguageSelect language={language} setLanguage={setLanguage} tr={tr} className="hidden sm:inline-flex" />
+            <LanguageSelect language={language} setLanguage={setLanguage} tr={tr} isLight={isLightTheme} className="hidden sm:inline-flex" />
             <ThemeToggle isLight={isLightTheme} onToggle={toggleTheme} tr={tr} className="hidden sm:inline-flex" />
 
             {token && user?.role === "ADMIN" && (
@@ -361,7 +363,7 @@ export default function Header() {
             <div className="glass-panel p-3">
               <div className="grid gap-1.5 text-sm text-stone-100">
                 <div className="mb-1 flex items-center gap-2">
-                  <LanguageSelect language={language} setLanguage={setLanguage} tr={tr} />
+                  <LanguageSelect language={language} setLanguage={setLanguage} tr={tr} isLight={isLightTheme} />
                   <ThemeToggle isLight={isLightTheme} onToggle={toggleTheme} tr={tr} />
                 </div>
 

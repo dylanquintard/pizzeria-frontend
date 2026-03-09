@@ -308,7 +308,7 @@ export default function Home() {
       <section id="menu" className="section-shell space-y-8">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="text-4xl uppercase tracking-[0.25em] text-saffron">{tr("Le Menu", "Menu")}</p>
+            <p className="theme-light-keep-dark text-4xl uppercase tracking-[0.25em] text-saffron">{tr("Le Menu", "Menu")}</p>
           </div>
           <span className="rounded-full border border-saffron/50 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-saffron">
             {tr("Carte artisanale", "Craft menu")}
@@ -355,7 +355,7 @@ export default function Home() {
 
       <section id="galerie" className="section-shell space-y-6">
         <div>
-          <p className="theme-light-keep-white text-sm uppercase tracking-[0.25em] text-white">
+          <p className="theme-light-keep-dark text-sm uppercase tracking-[0.25em] text-white">
             {tr("Le camion, le four dore, nos pizzas, etc...", "The truck, the golden oven, our pizzas, and more...")}
           </p>
         </div>
@@ -373,7 +373,7 @@ export default function Home() {
 
       <section id="emplacements" className="section-shell space-y-6">
         <div>
-          <p className="text-sm uppercase tracking-[0.25em] text-saffron">{tr("Emplacements & horaires d'ouverture", "Locations & opening hours")}</p>
+          <p className="theme-light-keep-dark text-sm uppercase tracking-[0.25em] text-saffron">{tr("Emplacements & horaires d'ouverture", "Locations & opening hours")}</p>
           <h2 className="font-display text-4xl uppercase tracking-wide text-white">{tr("Tournee du camion", "Truck tour")}</h2>
           <p className="mt-2 text-sm text-stone-400">{tr("Adresses et horaires definitifs seront ajustes bientot.", "Final addresses and schedules will be adjusted soon.")}</p>
         </div>
@@ -407,7 +407,7 @@ export default function Home() {
 
       <section id="paiements" className="section-shell space-y-6">
         <div>
-          <p className="text-sm uppercase tracking-[0.25em] text-saffron">{tr("Moyens de paiement acceptes", "Accepted payment methods")}</p>
+          <p className="theme-light-keep-dark text-sm uppercase tracking-[0.25em] text-saffron">{tr("Moyens de paiement acceptes", "Accepted payment methods")}</p>
           <h2 className="font-display text-4xl uppercase tracking-wide text-white">{tr("Simple et rapide", "Simple and fast")}</h2>
         </div>
         <div className="flex flex-wrap items-center gap-6 sm:gap-8 lg:gap-10">
@@ -446,19 +446,19 @@ export default function Home() {
 
       <section id="contact" className="section-shell">
         <div className="rounded-3xl border border-white/10 bg-oven-glow p-8 sm:p-10">
-          <p className="text-sm uppercase tracking-[0.25em] text-saffron">{tr("Nous contacter", "Contact us")}</p>
+          <p className="theme-light-keep-dark text-sm uppercase tracking-[0.25em] text-saffron">{tr("Nous contacter", "Contact us")}</p>
           <h2 className="mt-2 font-display text-4xl uppercase tracking-wide text-white">{tr("On vous repond rapidement", "We reply quickly")}</h2>
           <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             <div className="rounded-2xl bg-charcoal/70 p-5">
-              <p className="text-sm uppercase tracking-wider text-saffron">{tr("Telephone", "Phone")}</p>
+              <p className="theme-light-keep-dark text-sm uppercase tracking-wider text-saffron">{tr("Telephone", "Phone")}</p>
               <p className="mt-2 text-lg font-semibold text-white">{tr("Numero a venir", "Number coming soon")}</p>
             </div>
             <div className="rounded-2xl bg-charcoal/70 p-5">
-              <p className="text-sm uppercase tracking-wider text-saffron">Email</p>
+              <p className="theme-light-keep-dark text-sm uppercase tracking-wider text-saffron">Email</p>
               <p className="mt-2 text-lg font-semibold text-white">adresse@email-a-venir.com</p>
             </div>
             <div className="rounded-2xl bg-charcoal/70 p-5">
-              <p className="text-sm uppercase tracking-wider text-saffron">{tr("RESEAU", "SOCIAL")}</p>
+              <p className="theme-light-keep-dark text-sm uppercase tracking-wider text-saffron">{tr("RESEAU", "SOCIAL")}</p>
               <a
                 href={INSTAGRAM_URL}
                 target="_blank"
@@ -475,7 +475,7 @@ export default function Home() {
           </div>
 
           <div className="mt-6 rounded-2xl border border-white/15 bg-charcoal/70 p-5">
-            <p className="text-sm uppercase tracking-wider text-saffron">{tr("Formulaire de contact", "Contact form")}</p>
+            <p className="theme-light-keep-dark text-sm uppercase tracking-wider text-saffron">{tr("Formulaire de contact", "Contact form")}</p>
             <form onSubmit={handleContactSubmit} className="mt-3 space-y-3">
               <input
                 type="text"
