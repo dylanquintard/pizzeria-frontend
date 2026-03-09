@@ -83,6 +83,12 @@ export default function Login() {
           </button>
         </form>
 
+        <p className="mt-3 text-right text-sm">
+          <Link to="/forgot-password" className="font-semibold text-saffron hover:underline">
+            {tr("Mot de passe oublie ?", "Forgot password?")}
+          </Link>
+        </p>
+
         <p className="mt-5 text-sm text-stone-300">
           {tr("Pas encore de compte?", "No account yet?")}{" "}
           <Link to="/register" className="font-semibold text-saffron hover:underline">

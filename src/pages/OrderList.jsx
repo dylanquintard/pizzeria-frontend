@@ -7,6 +7,7 @@ import {
   deleteOrderAdmin,
   finalizeOrderAdmin,
 } from "../api/admin.api";
+import { useRealtimeEvents } from "../hooks/useRealtimeEvents";
 
 function toLocalIsoDate(dateValue) {
   const date = new Date(dateValue);
@@ -65,6 +66,7 @@ export default function OrderList() {
   const [usersLookupReady, setUsersLookupReady] = useState(false);
   const [newOrdersCount, setNewOrdersCount] = useState(0);
   const [notificationPermission, setNotificationPermission] = useState("default");
+  const [realtimeConnected, setRealtimeConnected] = useState(false);
   const seenOrderIdsRef = useRef(new Set());
   const snapshotInitializedRef = useRef(false);
   const formatTime = (dateStr) => {
@@ -144,13 +146,20 @@ export default function OrderList() {
     fetchOrders();
   }, [authLoading, fetchOrders]);
 
-  useEffect(() => {
-    if (!token || !user || user.role !== "ADMIN") return undefined;
-    const timer = window.setInterval(() => {
-      fetchOrders();
-    }, 10000);
-    return () => window.clearInterval(timer);
-  }, [token, user, fetchOrders]);
+  const handleRealtimeEvent = useCallback(
+    (eventName) => {
+      if (eventName === "orders:admin-updated") {
+        fetchOrders();
+      }
+    },
+    [fetchOrders]
+  );
+
+  useRealtimeEvents({
+    enabled: Boolean(token && user?.role === "ADMIN"),
+    onEvent: handleRealtimeEvent,
+    onConnectionChange: setRealtimeConnected,
+  });
 
   useEffect(() => {
     if (!token || !user || user.role !== "ADMIN") return;
@@ -303,6 +312,12 @@ export default function OrderList() {
       <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-stone-300">
         {isNotificationSupported ? (
           <div className="flex flex-wrap items-center gap-2">
+            <span>
+              {tr("Flux temps reel", "Realtime stream")}:{" "}
+              <strong className={realtimeConnected ? "text-emerald-300" : "text-amber-300"}>
+                {realtimeConnected ? tr("connecte", "connected") : tr("reconnexion...", "reconnecting...")}
+              </strong>
+            </span>
             <span>
               {tr("Notifications navigateur", "Browser notifications")}:{" "}
               <strong className="text-stone-100">{notificationPermission}</strong>

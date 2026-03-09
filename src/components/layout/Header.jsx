@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import { CartContext } from "../../context/CartContext";
 import { useLanguage } from "../../context/LanguageContext";
+import { useTheme } from "../../context/ThemeContext";
 
 function CartItemRow({ item, onRemove, tr }) {
   const lineTotal = (Number(item.unitPrice || 0) * Number(item.quantity || 0)).toFixed(2);
@@ -33,11 +34,30 @@ function CartItemRow({ item, onRemove, tr }) {
   );
 }
 
+function LanguageSelect({ language, setLanguage, tr, className = "" }) {
+  return (
+    <label className={`relative inline-flex items-center ${className}`}>
+      <span className="sr-only">{tr("Langue", "Language")}</span>
+      <select
+        value={language}
+        onChange={(event) => setLanguage(event.target.value)}
+        className="h-9 rounded-full border border-white/20 bg-white/5 px-3 pr-8 text-[11px] font-semibold uppercase tracking-wide text-stone-100 transition focus:border-saffron focus:outline-none"
+        aria-label={tr("Langue", "Language")}
+      >
+        <option value="fr">Francais</option>
+        <option value="en">English</option>
+      </select>
+      <span className="pointer-events-none absolute right-3 text-[10px] text-stone-300">v</span>
+    </label>
+  );
+}
+
 export default function Header() {
   const location = useLocation();
   const { token, user, logout } = useContext(AuthContext);
   const { cartItems, cartTotal, itemCount, removeItem, clearCart, loading } = useContext(CartContext);
   const { language, setLanguage, tr } = useLanguage();
+  const { theme, toggleTheme } = useTheme();
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileAdminOpen, setMobileAdminOpen] = useState(false);
@@ -100,7 +120,7 @@ export default function Header() {
   }, [location.pathname, location.hash]);
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-saffron/20 bg-charcoal/90 backdrop-blur-xl">
+    <header className="app-header fixed inset-x-0 top-0 z-50 border-b border-saffron/20 bg-charcoal/90 backdrop-blur-xl">
       <div className="section-shell">
         <div className="flex min-h-[84px] items-center justify-between gap-3 py-2">
           <Link to="/" className="shrink-0">
@@ -125,30 +145,15 @@ export default function Header() {
           </nav>
 
           <div className="flex items-center gap-2">
-            <div className="hidden sm:inline-flex items-center rounded-full border border-white/20 bg-white/5 p-0.5">
-              <button
-                type="button"
-                onClick={() => setLanguage("fr")}
-                className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide transition ${
-                  language === "fr" ? "bg-saffron text-charcoal" : "text-stone-200 hover:bg-white/10"
-                }`}
-                aria-label={tr("Francais", "French")}
-                title={tr("Francais", "French")}
-              >
-                FR
-              </button>
-              <button
-                type="button"
-                onClick={() => setLanguage("en")}
-                className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide transition ${
-                  language === "en" ? "bg-saffron text-charcoal" : "text-stone-200 hover:bg-white/10"
-                }`}
-                aria-label="English"
-                title="English"
-              >
-                EN
-              </button>
-            </div>
+            <LanguageSelect language={language} setLanguage={setLanguage} tr={tr} className="hidden sm:inline-flex" />
+
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="hidden sm:inline-flex h-9 items-center rounded-full border border-white/20 bg-white/5 px-3 text-[11px] font-semibold uppercase tracking-wide text-stone-100 transition hover:bg-white/10"
+            >
+              {theme === "light" ? tr("Sombre", "Dark") : tr("Clair", "Light")}
+            </button>
 
             {token && user?.role === "ADMIN" && (
               <Link
@@ -329,28 +334,14 @@ export default function Header() {
           <div className="pb-4 xl:hidden">
             <div className="glass-panel p-3">
               <div className="grid gap-1.5 text-sm text-stone-100">
-                <div className="mb-1 inline-flex items-center justify-center rounded-full border border-white/20 bg-white/5 p-0.5">
+                <div className="mb-1 flex items-center gap-2">
+                  <LanguageSelect language={language} setLanguage={setLanguage} tr={tr} />
                   <button
                     type="button"
-                    onClick={() => setLanguage("fr")}
-                    className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wide transition ${
-                      language === "fr" ? "bg-saffron text-charcoal" : "text-stone-200 hover:bg-white/10"
-                    }`}
-                    aria-label={tr("Francais", "French")}
-                    title={tr("Francais", "French")}
+                    onClick={toggleTheme}
+                    className="inline-flex h-9 items-center rounded-full border border-white/20 bg-white/5 px-3 text-[11px] font-semibold uppercase tracking-wide text-stone-100 transition hover:bg-white/10"
                   >
-                    FR
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setLanguage("en")}
-                    className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wide transition ${
-                      language === "en" ? "bg-saffron text-charcoal" : "text-stone-200 hover:bg-white/10"
-                    }`}
-                    aria-label="English"
-                    title="English"
-                  >
-                    EN
+                    {theme === "light" ? tr("Sombre", "Dark") : tr("Clair", "Light")}
                   </button>
                 </div>
 

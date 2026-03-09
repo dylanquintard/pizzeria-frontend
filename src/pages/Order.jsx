@@ -8,12 +8,11 @@ import {
   finalizeOrder,
   getAllIngredients,
   getAllPizzasClient,
-  getCart,
-  getUserOrders,
 } from "../api/user.api";
 import { AuthContext } from "../context/AuthContext";
 import { CartContext } from "../context/CartContext";
 import { useLanguage } from "../context/LanguageContext";
+import { useRealtimeEvents } from "../hooks/useRealtimeEvents";
 
 function toLocalIsoDate(dateValue) {
   const date = new Date(dateValue);
@@ -179,6 +178,7 @@ export default function Order() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [validatedCartSignature, setValidatedCartSignature] = useState("");
+  const [realtimeConnected, setRealtimeConnected] = useState(false);
 
   const cartSignature = useMemo(
     () =>
@@ -286,6 +286,37 @@ export default function Order() {
   useEffect(() => {
     refreshSlots();
   }, [refreshSlots]);
+
+  const handleRealtimeEvent = useCallback(
+    (eventName) => {
+      if (eventName === "timeslots:updated") {
+        refreshSlots();
+        return;
+      }
+
+      if (eventName === "locations:updated") {
+        getLocations({ active: true })
+          .then((locationData) => {
+            setLocations(Array.isArray(locationData) ? locationData : []);
+            refreshSlots();
+          })
+          .catch(() => {});
+        return;
+      }
+
+      if (eventName === "cart:updated" || eventName === "orders:user-updated") {
+        refreshCart();
+        refreshSlots();
+      }
+    },
+    [refreshSlots, refreshCart]
+  );
+
+  useRealtimeEvents({
+    enabled: Boolean(token),
+    onEvent: handleRealtimeEvent,
+    onConnectionChange: setRealtimeConnected,
+  });
 
   useEffect(() => {
     if (cartItems.length === 0) {
@@ -444,35 +475,9 @@ export default function Order() {
       const orderId = finalizedOrder?.id ?? finalizedOrder?.order?.id ?? finalizedOrder?.orderId ?? null;
       await resetStateAndNavigate(orderId);
     } catch (err) {
-      const backendError = String(err?.response?.data?.error || err?.message || "");
-      const isSocketEmissionFailure = /Cannot read properties of undefined \(reading 'to'\)/i.test(backendError);
-
-      // Backend may finalize the order and then fail when emitting Socket.IO events.
-      // If cart is now empty, treat it as finalized and continue to confirmation.
-      if (isSocketEmissionFailure) {
-        try {
-          const cartAfterFinalize = await getCart(token);
-          const remainingItems = Array.isArray(cartAfterFinalize?.items) ? cartAfterFinalize.items.length : 0;
-
-          if (remainingItems === 0) {
-            const orders = await getUserOrders(token);
-            const recentOrder = (Array.isArray(orders) ? orders : [])
-              .filter((order) => {
-                const orderSlotId = order?.timeSlot?.id ?? order?.timeSlotId;
-                return String(orderSlotId ?? "") === String(selectedSlot.id);
-              })
-              .sort((left, right) => new Date(right.createdAt) - new Date(left.createdAt))[0];
-
-            const fallbackOrderId = recentOrder?.id ?? null;
-            await resetStateAndNavigate(fallbackOrderId);
-            return;
-          }
-        } catch (_fallbackErr) {
-          // Keep the original error message if fallback checks fail.
-        }
-      }
-
-      setMessage(backendError || tr("Erreur lors de la finalisation", "Error while finalizing order"));
+      setMessage(
+        err?.response?.data?.error || err?.message || tr("Erreur lors de la finalisation", "Error while finalizing order")
+      );
     } finally {
       setLoading(false);
     }
@@ -679,6 +684,12 @@ export default function Order() {
             <h2 className="mb-1 text-xl font-bold text-white">{tr("Retrait de la commande", "Order pickup")}</h2>
             <p className="mb-4 text-sm text-stone-300">
               {tr("Etape 2: une fois le panier valide, choisissez date, emplacement et creneau.", "Step 2: once the cart is validated, choose date, location and timeslot.")}
+            </p>
+            <p className="mb-3 text-xs text-stone-300">
+              {tr("Flux temps reel", "Realtime stream")}:{" "}
+              <strong className={realtimeConnected ? "text-emerald-300" : "text-amber-300"}>
+                {realtimeConnected ? tr("connecte", "connected") : tr("reconnexion...", "reconnecting...")}
+              </strong>
             </p>
 
             {!isCartValidated && (

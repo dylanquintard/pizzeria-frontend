@@ -9,6 +9,7 @@ import Categories from "./pages/Categories";
 import Dashboard from "./pages/Dashboard";
 import EditPizza from "./pages/EditPizza";
 import GalleryAdmin from "./pages/GalleryAdmin";
+import ForgotPassword from "./pages/ForgotPassword";
 import Home from "./pages/Home";
 import Ingredients from "./pages/Ingredients";
 import Locations from "./pages/Locations";
@@ -23,6 +24,7 @@ import TimeslotsAdmin from "./pages/Timeslots";
 import Users from "./pages/Users";
 import UserOrders from "./pages/UsersOrders";
 import VerifyEmail from "./pages/VerifyEmail";
+import { ThemeProvider } from "./context/ThemeContext";
 
 const PrivateRoute = ({ children }) => {
   const { token, loading } = useContext(AuthContext);
@@ -60,6 +62,7 @@ function AppRoutes() {
         <Route path="/" element={<Home />} />
         <Route path="/menu" element={<Home />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/register" element={<Register />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
 
@@ -210,13 +213,15 @@ function AppRoutes() {
 export default function App() {
   return (
     <AuthProvider>
-      <LanguageProvider>
-        <CartProvider>
-          <BrowserRouter>
-            <AppRoutes />
-          </BrowserRouter>
-        </CartProvider>
-      </LanguageProvider>
+      <ThemeProvider>
+        <LanguageProvider>
+          <CartProvider>
+            <BrowserRouter>
+              <AppRoutes />
+            </BrowserRouter>
+          </CartProvider>
+        </LanguageProvider>
+      </ThemeProvider>
     </AuthProvider>
   );
 }

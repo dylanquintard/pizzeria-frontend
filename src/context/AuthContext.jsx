@@ -1,40 +1,14 @@
 import { createContext, useEffect, useState } from "react";
-import { getMe, logoutUser } from "../api/user.api";
+import { getCsrfToken, getMe, logoutUser } from "../api/user.api";
+import { clearCsrfToken } from "../api/http";
 
 export const AuthContext = createContext();
 const INVALID_TOKEN_VALUES = new Set(["", "undefined", "null"]);
 const SESSION_COOKIE_TOKEN = "__cookie_session__";
-const AUTH_TOKEN_STORAGE_KEY = "pizzeria.auth.token";
 
 function hasValidToken(token) {
   if (typeof token !== "string") return false;
   return !INVALID_TOKEN_VALUES.has(token.trim());
-}
-
-function isJwtLike(value) {
-  if (typeof value !== "string") return false;
-  const token = value.trim();
-  if (!token) return false;
-  const parts = token.split(".");
-  return parts.length === 3 && parts.every((part) => part.length > 0);
-}
-
-function readStoredJwtToken() {
-  if (typeof window === "undefined") return null;
-  const raw = window.localStorage.getItem(AUTH_TOKEN_STORAGE_KEY);
-  if (!isJwtLike(raw)) return null;
-  return raw.trim();
-}
-
-function writeStoredJwtToken(jwtToken) {
-  if (typeof window === "undefined") return;
-
-  if (isJwtLike(jwtToken)) {
-    window.localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, jwtToken.trim());
-    return;
-  }
-
-  window.localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
 }
 
 export function AuthProvider({ children }) {
@@ -47,20 +21,6 @@ export function AuthProvider({ children }) {
 
     const hydrateSession = async () => {
       try {
-        const storedJwtToken = readStoredJwtToken();
-
-        if (storedJwtToken) {
-          try {
-            const profile = await getMe(storedJwtToken);
-            if (cancelled) return;
-            setUser(profile);
-            setToken(storedJwtToken);
-            return;
-          } catch (_jwtErr) {
-            writeStoredJwtToken(null);
-          }
-        }
-
         const profile = await getMe();
         if (cancelled) return;
         setUser(profile);
@@ -69,7 +29,7 @@ export function AuthProvider({ children }) {
         if (cancelled) return;
         setUser(null);
         setToken(null);
-        writeStoredJwtToken(null);
+        clearCsrfToken();
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -82,6 +42,26 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
+  useEffect(() => {
+    if (!token) return;
+
+    let cancelled = false;
+    const syncCsrfToken = async () => {
+      try {
+        await getCsrfToken(token);
+      } catch (_err) {
+        if (!cancelled) {
+          clearCsrfToken();
+        }
+      }
+    };
+
+    syncCsrfToken();
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
+
   const login = (userData, jwtToken) => {
     if (!userData) {
       return;
@@ -90,7 +70,6 @@ export function AuthProvider({ children }) {
     setUser(userData);
     const normalizedToken = hasValidToken(jwtToken) ? jwtToken.trim() : SESSION_COOKIE_TOKEN;
     setToken(normalizedToken);
-    writeStoredJwtToken(normalizedToken);
   };
 
   const logout = async () => {
@@ -102,7 +81,7 @@ export function AuthProvider({ children }) {
 
     setUser(null);
     setToken(null);
-    writeStoredJwtToken(null);
+    clearCsrfToken();
   };
 
   const updateUserContext = (updatedUser) => {

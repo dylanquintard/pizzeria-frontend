@@ -27,6 +27,8 @@ if (isProduction) {
 export const API_BASE_URL =
   configuredApiBaseUrl || localApiBaseUrl;
 
+export const REALTIME_STREAM_URL = `${API_BASE_URL}/realtime/stream`;
+
 export const INSTAGRAM_URL =
   normalizeUrl(process.env.REACT_APP_INSTAGRAM_URL) || "https://instagram.com";
 

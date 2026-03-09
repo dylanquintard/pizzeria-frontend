@@ -1,3 +1,3 @@
 export default function MainContent({ children }) {
-  return <main className="min-h-screen pt-20 md:pt-24">{children}</main>;
+  return <main className="min-h-screen pt-[106px] sm:pt-28 md:pt-32">{children}</main>;
 }

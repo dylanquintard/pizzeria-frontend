@@ -1,7 +1,8 @@
-import { useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { getUserOrders } from "../api/user.api";
 import { AuthContext } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
+import { useRealtimeEvents } from "../hooks/useRealtimeEvents";
 
 function formatDateTime(value, locale) {
   if (!value) return "-";
@@ -59,33 +60,48 @@ export default function UserOrders() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [expandedOrders, setExpandedOrders] = useState({});
+  const [realtimeConnected, setRealtimeConnected] = useState(false);
 
-  useEffect(() => {
+  const fetchOrders = useCallback(async () => {
     if (!token || !userId) return;
     setLoading(true);
+    try {
+      const data = await getUserOrders(token);
+      const normalized = Array.isArray(data) ? data : [];
+      setOrders(normalized);
 
-    const fetchOrders = async () => {
-      try {
-        const data = await getUserOrders(token);
-        const normalized = Array.isArray(data) ? data : [];
-        setOrders(normalized);
-
-        const initialExpandedState = normalized.reduce((acc, order) => {
-          acc[String(order.id)] = false;
-          return acc;
-        }, {});
-        setExpandedOrders(initialExpandedState);
-        setError("");
-      } catch (err) {
-        console.error(err);
-        setError(err.response?.data?.error || err.message || tr("Erreur lors du chargement des commandes", "Error loading orders"));
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchOrders();
+      const initialExpandedState = normalized.reduce((acc, order) => {
+        acc[String(order.id)] = false;
+        return acc;
+      }, {});
+      setExpandedOrders(initialExpandedState);
+      setError("");
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.error || err.message || tr("Erreur lors du chargement des commandes", "Error loading orders"));
+    } finally {
+      setLoading(false);
+    }
   }, [token, userId, tr]);
+
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
+
+  const handleRealtimeEvent = useCallback(
+    (eventName) => {
+      if (eventName === "orders:user-updated") {
+        fetchOrders();
+      }
+    },
+    [fetchOrders]
+  );
+
+  useRealtimeEvents({
+    enabled: Boolean(token && userId),
+    onEvent: handleRealtimeEvent,
+    onConnectionChange: setRealtimeConnected,
+  });
 
   const toggleOrderDetails = (orderId) => {
     const key = String(orderId);
@@ -106,6 +122,13 @@ export default function UserOrders() {
           {orders.length} {tr("commande", "order")}{orders.length > 1 ? "s" : ""}
         </p>
       </div>
+
+      <p className="text-xs text-stone-300">
+        {tr("Mises a jour temps reel", "Realtime updates")}:{" "}
+        <strong className={realtimeConnected ? "text-emerald-300" : "text-amber-300"}>
+          {realtimeConnected ? tr("connecte", "connected") : tr("reconnexion...", "reconnecting...")}
+        </strong>
+      </p>
 
       {loading && (
         <p className="rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm text-stone-300">

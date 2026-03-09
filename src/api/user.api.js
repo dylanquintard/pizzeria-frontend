@@ -25,6 +25,11 @@ export const resendEmailVerificationCode = async ({ email }) => {
   return response.data;
 };
 
+export const forgotPassword = async ({ email }) => {
+  const response = await api.post("/users/forgot-password", { email });
+  return response.data;
+};
+
 export const logoutUser = async (token) => {
   const response = await api.post("/users/logout", {}, authConfig(token));
   return response.data;
@@ -32,6 +37,11 @@ export const logoutUser = async (token) => {
 
 export const getMe = async (token) => {
   const response = await api.get("/users/me", authConfig(token));
+  return response.data;
+};
+
+export const getCsrfToken = async (token) => {
+  const response = await api.get("/users/csrf-token", authConfig(token));
   return response.data;
 };
 
