@@ -45,6 +45,18 @@ function formatLocationAddress(location, tr) {
   return [location.addressLine1, cityLine].filter(Boolean).join(", ");
 }
 
+function formatHourValue(timeValue) {
+  const match = /^([01]\d|2[0-3]):([0-5]\d)/.exec(String(timeValue || "").trim());
+  if (!match) return "--";
+  const hours = match[1];
+  const minutes = match[2];
+  return minutes === "00" ? `${hours}H` : `${hours}H${minutes}`;
+}
+
+function formatHourRange(startTime, endTime) {
+  return `${formatHourValue(startTime)}-${formatHourValue(endTime)}`;
+}
+
 export default function Home() {
   const { token, user } = useContext(AuthContext);
   const { tr } = useLanguage();
@@ -96,9 +108,9 @@ useEffect(() => {
 }, []);
 
 const truckTourSchedule = useMemo(
-  () =>
-    (Array.isArray(weeklySettings) ? weeklySettings : [])
-      .flatMap((entry, dayIndex) => {
+  () => {
+    const rows = (Array.isArray(weeklySettings) ? weeklySettings : []).flatMap(
+      (entry, dayIndex) => {
         const services =
           Array.isArray(entry?.services) && entry.services.length > 0
             ? entry.services
@@ -114,18 +126,58 @@ const truckTourSchedule = useMemo(
               : [];
 
         return services
-          .filter((service) => service?.location)
-          .map((service, serviceIndex) => ({
-            key: `${entry.dayOfWeek}-${service.locationId}-${dayIndex}-${serviceIndex}`,
-            locationName: service.location?.name || tr("Emplacement", "Location"),
-            address: formatLocationAddress(service.location, tr),
-            dayLabel: tr(
-              DAY_LABELS[entry.dayOfWeek]?.fr || entry.dayOfWeek,
-              DAY_LABELS[entry.dayOfWeek]?.en || entry.dayOfWeek
-            ),
-            hours: `${service.startTime || "--:--"} - ${service.endTime || "--:--"}`,
-          }));
-      }),
+          .filter((service) => service?.location && entry?.dayOfWeek)
+          .map((service, serviceIndex) => {
+            const locationName = service.location?.name || tr("Emplacement", "Location");
+            const address = formatLocationAddress(service.location, tr);
+            const locationKey =
+              service.locationId ||
+              `${locationName.toLowerCase()}-${address.toLowerCase()}`;
+
+            return {
+              groupKey: `${entry.dayOfWeek}-${locationKey}`,
+              sortKey: `${dayIndex}-${serviceIndex}`,
+              locationName,
+              address,
+              dayLabel: tr(
+                DAY_LABELS[entry.dayOfWeek]?.fr || entry.dayOfWeek,
+                DAY_LABELS[entry.dayOfWeek]?.en || entry.dayOfWeek
+              ),
+              hours: formatHourRange(service.startTime, service.endTime),
+            };
+          });
+      }
+    );
+
+    const grouped = new Map();
+    for (const row of rows) {
+      if (!grouped.has(row.groupKey)) {
+        grouped.set(row.groupKey, {
+          key: row.groupKey,
+          sortKey: row.sortKey,
+          locationName: row.locationName,
+          address: row.address,
+          dayLabel: row.dayLabel,
+          hours: [],
+        });
+      }
+
+      const current = grouped.get(row.groupKey);
+      if (!current.hours.includes(row.hours)) {
+        current.hours.push(row.hours);
+      }
+    }
+
+    return [...grouped.values()]
+      .sort((left, right) => String(left.sortKey).localeCompare(String(right.sortKey)))
+      .map((entry) => ({
+        key: entry.key,
+        locationName: entry.locationName,
+        address: entry.address,
+        dayLabel: entry.dayLabel,
+        hours: entry.hours,
+      }));
+  },
   [weeklySettings, tr]
 );
 
@@ -428,7 +480,11 @@ const truckTourSchedule = useMemo(
       <p className="mt-1 text-sm text-stone-200">{location.dayLabel}</p>
 
       <p className="mt-3 text-[11px] uppercase tracking-wider text-saffron">{tr("Horaires", "Hours")}</p>
-      <p className="mt-1 text-sm text-stone-200">{location.hours}</p>
+      <div className="mt-1 space-y-1 text-sm text-stone-200">
+        {(Array.isArray(location.hours) ? location.hours : []).map((hour) => (
+          <p key={hour}>{hour}</p>
+        ))}
+      </div>
     </div>
   ))
 )}
