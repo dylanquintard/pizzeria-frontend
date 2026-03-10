@@ -1,5 +1,10 @@
 import api, { authConfig } from "./http";
 
+export const getPublicWeeklySettings = async () => {
+  const response = await api.get("/timeslots/public-weekly-settings");
+  return response.data;
+};
+
 export const getWeeklySettings = async (token) => {
   const response = await api.get("/timeslots/weekly-settings", authConfig(token));
   return response.data;

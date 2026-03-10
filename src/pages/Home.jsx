@@ -4,30 +4,10 @@ import { getCategories } from "../api/category.api";
 import { sendContactEmail } from "../api/contact.api";
 import { INSTAGRAM_URL } from "../config/env";
 import { getPublicGallery } from "../api/gallery.api";
+import { getPublicWeeklySettings } from "../api/timeslot.api";
 import { getAllProductsClient } from "../api/user.api";
 import { AuthContext } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
-
-const upcomingLocations = [
-  {
-    spot: "Centre-ville",
-    address: "Adresse precise a venir",
-    days: "Lundi - Vendredi",
-    hours: "18:00 - 22:00",
-  },
-  {
-    spot: "Zone commerciale",
-    address: "Adresse precise a venir",
-    days: "Mardi - Samedi",
-    hours: "12:00 - 14:00 / 18:00 - 22:30",
-  },
-  {
-    spot: "Marche local",
-    address: "Adresse precise a venir",
-    days: "Dimanche",
-    hours: "11:30 - 15:00",
-  },
-];
 
 const paymentLogos = [
   { src: "/cb.png", alt: "CB", className: "h-9 w-auto object-contain" },
@@ -49,6 +29,21 @@ function normalizeText(value) {
 }
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const DAY_LABELS = {
+  MONDAY: { fr: "Lundi", en: "Monday" },
+  TUESDAY: { fr: "Mardi", en: "Tuesday" },
+  WEDNESDAY: { fr: "Mercredi", en: "Wednesday" },
+  THURSDAY: { fr: "Jeudi", en: "Thursday" },
+  FRIDAY: { fr: "Vendredi", en: "Friday" },
+  SATURDAY: { fr: "Samedi", en: "Saturday" },
+  SUNDAY: { fr: "Dimanche", en: "Sunday" },
+};
+
+function formatLocationAddress(location, tr) {
+  if (!location) return tr("Adresse non renseignee", "Address not available");
+  const cityLine = `${location.postalCode || ""} ${location.city || ""}`.trim();
+  return [location.addressLine1, cityLine].filter(Boolean).join(", ");
+}
 
 export default function Home() {
   const { token, user } = useContext(AuthContext);
@@ -56,6 +51,7 @@ export default function Home() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [galleryImages, setGalleryImages] = useState([]);
+  const [weeklySettings, setWeeklySettings] = useState([]);
   const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
   const [activeGalleryIndex, setActiveGalleryIndex] = useState(0);
   const [contactName, setContactName] = useState("");
@@ -74,18 +70,21 @@ export default function Home() {
           getAllProductsClient(),
           getCategories({ active: true, kind: "PRODUCT" }),
           getPublicGallery({ active: true }),
+          getPublicWeeklySettings(),
         ]);
 
         if (!cancelled) {
           setProducts(Array.isArray(productData) ? productData : []);
           setCategories(Array.isArray(categoryData) ? categoryData : []);
           setGalleryImages(Array.isArray(galleryData) ? galleryData : []);
+          setWeeklySettings(Array.isArray(galleryData?.slots) ? [] : []);
         }
       } catch (_err) {
         if (!cancelled) {
           setProducts([]);
           setCategories([]);
           setGalleryImages([]);
+          setWeeklySettings([]);
         }
       }
     }
@@ -95,6 +94,25 @@ export default function Home() {
       cancelled = true;
     };
   }, []);
+
+  const truckTourSchedule = useMemo(
+    () =>
+      (Array.isArray(weeklySettings) ? weeklySettings : [])
+        .filter((entry) => entry?.isOpen && entry?.location)
+        .map((entry, index) => ({
+          key: `${entry.dayOfWeek}-${entry.locationId}-${index}`,
+          locationName: entry.location?.name || tr("Emplacement", "Location"),
+          address: formatLocationAddress(entry.location, tr),
+          dayLabel:
+            DAY_LABELS[entry.dayOfWeek]?.[tr("fr", "en")] ||
+            tr(
+              DAY_LABELS[entry.dayOfWeek]?.fr || entry.dayOfWeek,
+              DAY_LABELS[entry.dayOfWeek]?.en || entry.dayOfWeek
+            ),
+          hours: `${entry.startTime || "--:--"} - ${entry.endTime || "--:--"}`,
+        })),
+    [weeklySettings, tr]
+  );
 
   const menuByCategory = useMemo(() => {
     const grouped = categories.map((category) => ({
