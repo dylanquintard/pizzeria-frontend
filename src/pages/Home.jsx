@@ -61,58 +61,54 @@ export default function Home() {
   const [contactFeedback, setContactFeedback] = useState("");
   const [submittingContact, setSubmittingContact] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
+useEffect(() => {
+  let cancelled = false;
 
-    async function fetchHomeData() {
-      try {
-        const [productData, categoryData, galleryData] = await Promise.all([
-          getAllProductsClient(),
-          getCategories({ active: true, kind: "PRODUCT" }),
-          getPublicGallery({ active: true }),
-          getPublicWeeklySettings(),
-        ]);
+  async function fetchHomeData() {
+    try {
+      const [productData, categoryData, galleryData, weeklySettingsData] = await Promise.all([
+        getAllProductsClient(),
+        getCategories({ active: true, kind: "PRODUCT" }),
+        getPublicGallery({ active: true }),
+        getPublicWeeklySettings(),
+      ]);
 
-        if (!cancelled) {
-          setProducts(Array.isArray(productData) ? productData : []);
-          setCategories(Array.isArray(categoryData) ? categoryData : []);
-          setGalleryImages(Array.isArray(galleryData) ? galleryData : []);
-          setWeeklySettings(Array.isArray(galleryData?.slots) ? [] : []);
-        }
-      } catch (_err) {
-        if (!cancelled) {
-          setProducts([]);
-          setCategories([]);
-          setGalleryImages([]);
-          setWeeklySettings([]);
-        }
+      if (!cancelled) {
+        setProducts(Array.isArray(productData) ? productData : []);
+        setCategories(Array.isArray(categoryData) ? categoryData : []);
+        setGalleryImages(Array.isArray(galleryData) ? galleryData : []);
+        setWeeklySettings(Array.isArray(weeklySettingsData) ? weeklySettingsData : []);
+      }
+    } catch (_err) {
+      if (!cancelled) {
+        setProducts([]);
+        setCategories([]);
+        setGalleryImages([]);
+        setWeeklySettings([]);
       }
     }
+  }
 
-    fetchHomeData();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  fetchHomeData();
+  return () => {
+    cancelled = true;
+  };
+}, []);
 
-  const truckTourSchedule = useMemo(
-    () =>
-      (Array.isArray(weeklySettings) ? weeklySettings : [])
-        .filter((entry) => entry?.isOpen && entry?.location)
-        .map((entry, index) => ({
-          key: `${entry.dayOfWeek}-${entry.locationId}-${index}`,
-          locationName: entry.location?.name || tr("Emplacement", "Location"),
-          address: formatLocationAddress(entry.location, tr),
-          dayLabel:
-            DAY_LABELS[entry.dayOfWeek]?.[tr("fr", "en")] ||
-            tr(
-              DAY_LABELS[entry.dayOfWeek]?.fr || entry.dayOfWeek,
-              DAY_LABELS[entry.dayOfWeek]?.en || entry.dayOfWeek
-            ),
-          hours: `${entry.startTime || "--:--"} - ${entry.endTime || "--:--"}`,
-        })),
-    [weeklySettings, tr]
-  );
+const truckTourSchedule = useMemo(
+  () =>
+    (Array.isArray(weeklySettings) ? weeklySettings : [])
+      .filter((entry) => entry?.isOpen && entry?.location)
+      .map((entry, index) => ({
+        key: `${entry.dayOfWeek}-${entry.locationId}-${index}`,
+        locationName: entry.location?.name || tr("Emplacement", "Location"),
+        address: formatLocationAddress(entry.location, tr),
+        dayLabel:
+          DAY_LABELS[entry.dayOfWeek]?.fr || entry.dayOfWeek,
+        hours: `${entry.startTime || "--:--"} - ${entry.endTime || "--:--"}`,
+      })),
+  [weeklySettings, tr]
+);
 
   const menuByCategory = useMemo(() => {
     const grouped = categories.map((category) => ({
@@ -396,30 +392,20 @@ export default function Home() {
           <p className="mt-2 text-sm text-stone-400">{tr("Adresses et horaires definitifs seront ajustes bientot.", "Final addresses and schedules will be adjusted soon.")}</p>
         </div>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {upcomingLocations.map((location) => (
-            <div key={location.spot} className="glass-panel p-5">
-              <p className="text-lg font-bold text-white">
-                {location.spot === "Centre-ville"
-                  ? tr("Centre-ville", "City center")
-                  : location.spot === "Zone commerciale"
-                    ? tr("Zone commerciale", "Shopping area")
-                    : location.spot === "Marche local"
-                      ? tr("Marche local", "Local market")
-                      : location.spot}
-              </p>
-              <p className="mt-2 text-sm text-stone-200">{tr("Adresse precise a venir", "Exact address coming soon")}</p>
-              <p className="mt-3 text-xs uppercase tracking-wider text-saffron">
-                {location.days === "Lundi - Vendredi"
-                  ? tr("Lundi - Vendredi", "Monday - Friday")
-                  : location.days === "Mardi - Samedi"
-                    ? tr("Mardi - Samedi", "Tuesday - Saturday")
-                    : location.days === "Dimanche"
-                      ? tr("Dimanche", "Sunday")
-                      : location.days}
-              </p>
-              <p className="text-sm text-stone-200">{location.hours}</p>
-            </div>
-          ))}
+{truckTourSchedule.length === 0 ? (
+  <div className="glass-panel p-5 text-sm text-stone-300">
+    {tr("Aucun horaire disponible pour le moment.", "No opening hours available for now.")}
+  </div>
+) : (
+  truckTourSchedule.map((location) => (
+    <div key={location.key} className="glass-panel p-5">
+      <p className="text-lg font-bold text-white">{location.locationName}</p>
+      <p className="mt-2 text-sm text-stone-200">{location.address}</p>
+      <p className="mt-3 text-xs uppercase tracking-wider text-saffron">{location.dayLabel}</p>
+      <p className="text-sm text-stone-200">{location.hours}</p>
+    </div>
+  ))
+)}
         </div>
       </section>
 
