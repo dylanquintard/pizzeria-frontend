@@ -111,7 +111,7 @@ export default function Header() {
     ? [
         { to: "/admin/orders", label: tr("Commandes", "Orders") },
         { to: "/admin/users", label: tr("Clients", "Users") },
-        { to: "/admin/products", label: tr("Menu", "Menu") },
+        { to: "/admin/menu", label: tr("Menu", "Menu") },
         { to: "/admin/ingredients", label: tr("Ingredients", "Ingredients") },
         { to: "/admin/categories", label: tr("Categories", "Categories") },
         { to: "/admin/locations", label: tr("Emplacements", "Locations") },

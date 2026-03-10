@@ -134,6 +134,16 @@ function AppRoutes() {
           }
         />
         <Route
+          path="/admin/menu"
+          element={
+            <AdminRoute>
+              <Dashboard>
+                <Products />
+              </Dashboard>
+            </AdminRoute>
+          }
+        />
+        <Route
           path="/admin/products"
           element={
             <AdminRoute>
