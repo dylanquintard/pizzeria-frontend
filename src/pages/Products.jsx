@@ -568,7 +568,7 @@ export default function Products() {
           </div>
         )}
 
-        {activePanel === KIND.MENU && (
+        {activePanel === KIND.MENU && !hasSelectedMenuCategory && (
           <>
             <div className="rounded-xl border border-white/10 bg-charcoal/40 p-3">
               <p className="mb-2 text-sm font-semibold text-white">
@@ -608,7 +608,7 @@ export default function Products() {
           </>
         )}
 
-        {activePanel === KIND.INGREDIENT && (
+        {activePanel === KIND.INGREDIENT && !hasSelectedIngredientCategory && (
           <>
             <div className="rounded-xl border border-white/10 bg-charcoal/40 p-3">
               <p className="mb-2 text-sm font-semibold text-white">
