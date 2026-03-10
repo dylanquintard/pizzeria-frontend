@@ -135,7 +135,7 @@ export default function Categories() {
             setNewCategory((prev) => ({ ...prev, sortOrder: event.target.value }))
           }
         />
-        <button type="submit" disabled={loading} className="w-full">
+        <button type="submit" disabled={loading} className="mt-2 w-full">
           {tr("Creer", "Create")}
         </button>
       </form>

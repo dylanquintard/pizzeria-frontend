@@ -13,8 +13,7 @@ function getInitialTheme() {
   const storedTheme = window.localStorage.getItem(STORAGE_KEY);
   if (storedTheme) return normalizeTheme(storedTheme);
 
-  const prefersLight = window.matchMedia?.("(prefers-color-scheme: light)")?.matches;
-  return prefersLight ? "light" : "dark";
+  return "dark";
 }
 
 export const ThemeContext = createContext({

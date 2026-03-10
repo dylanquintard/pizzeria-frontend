@@ -98,13 +98,6 @@ export default function TimeslotsAdmin() {
     [slots]
   );
 
-  const changeDate = (delta) => {
-    const nextDate = shiftIsoDate(selectedDate, delta);
-
-    setSelectedDate(nextDate);
-    setForm((prev) => ({ ...prev, serviceDate: nextDate }));
-  };
-
   const changeServiceDate = (delta) => {
     const nextDate = shiftIsoDate(form.serviceDate, delta);
     setForm((prev) => ({ ...prev, serviceDate: nextDate }));
@@ -181,22 +174,31 @@ export default function TimeslotsAdmin() {
         <h3>{tr("Creer des creneaux automatiques", "Create automatic timeslots")}</h3>
         <label>
           {tr("Date du service", "Service date")}:
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
-            <button type="button" onClick={() => changeServiceDate(-1)} aria-label={tr("Jour precedent", "Previous day")}>
-              &lt;
+          <div className="mt-1 flex w-full items-center gap-2">
+            <button
+              type="button"
+              onClick={() => changeServiceDate(-1)}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/25 bg-white/5 text-stone-100 transition hover:bg-white/15"
+              aria-label={tr("Jour precedent", "Previous day")}
+            >
+              <svg viewBox="0 0 24 24" className="h-[17px] w-[17px]" fill="none" stroke="currentColor" strokeWidth="2.4">
+                <path d="m14 6-6 6 6 6" />
+              </svg>
             </button>
-            <input
-              type="date"
-              value={form.serviceDate}
-              onChange={(event) => {
-                const value = event.target.value;
-                setForm((prev) => ({ ...prev, serviceDate: value }));
-                setSelectedDate(value);
-              }}
-              required
-            />
-            <button type="button" onClick={() => changeServiceDate(1)} aria-label={tr("Jour suivant", "Next day")}>
-              &gt;
+
+            <span className="min-w-0 flex-1 rounded-xl border border-white/20 bg-charcoal/50 px-3 py-2 text-center text-sm font-semibold text-stone-100">
+              {form.serviceDate}
+            </span>
+
+            <button
+              type="button"
+              onClick={() => changeServiceDate(1)}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/25 bg-white/5 text-stone-100 transition hover:bg-white/15"
+              aria-label={tr("Jour suivant", "Next day")}
+            >
+              <svg viewBox="0 0 24 24" className="h-[17px] w-[17px]" fill="none" stroke="currentColor" strokeWidth="2.4">
+                <path d="m10 6 6 6-6 6" />
+              </svg>
             </button>
           </div>
         </label>
@@ -263,16 +265,10 @@ export default function TimeslotsAdmin() {
             ))}
           </select>
         </label>
-        <button type="submit" disabled={loading || !form.locationId} className="w-full">
+        <button type="submit" disabled={loading || !form.locationId} className="mt-2 w-full">
           {tr("Creer les creneaux", "Create timeslots")}
         </button>
       </form>
-
-      <div style={{ display: "flex", alignItems: "center", marginBottom: 10 }}>
-        <button onClick={() => changeDate(-1)}>&lt;</button>
-        <span style={{ margin: "0 10px", fontWeight: "bold" }}>{selectedDate}</span>
-        <button onClick={() => changeDate(1)}>&gt;</button>
-      </div>
 
       <div style={{ marginBottom: 20 }}>
         <label>

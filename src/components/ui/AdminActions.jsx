@@ -65,13 +65,13 @@ export function StatusToggle({ checked, onChange, labelOn, labelOff, disabled = 
       aria-label={checked ? labelOn : labelOff}
       className={`admin-toggle-button inline-flex h-6 w-11 items-center rounded-full border p-0 transition ${
         checked
-          ? "border-stone-900 bg-stone-900 hover:bg-stone-900"
-          : "border-stone-500 bg-stone-400/70 hover:bg-stone-400/70"
+          ? "border-stone-200 bg-white hover:bg-stone-100"
+          : "border-stone-400 bg-stone-500 hover:bg-stone-400"
       } ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
     >
       <span
-        className={`inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
-          checked ? "translate-x-6" : "translate-x-1"
+        className={`inline-block h-4 w-4 rounded-full shadow-sm transition-transform ${
+          checked ? "translate-x-6 bg-stone-400" : "translate-x-1 bg-white"
         }`}
       />
     </button>
