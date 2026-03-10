@@ -63,21 +63,17 @@ function ThemeToggle({ isLight, onToggle, tr, className = "" }) {
     <button
       type="button"
       onClick={onToggle}
-      className={`relative inline-flex h-7 w-[56px] items-center rounded-full border px-1 transition ${className} ${
-        isLight ? "border-stone-300 bg-stone-200/90" : "border-white/20 bg-charcoal/70"
-      }`}
+      className={`relative inline-flex h-7 w-[56px] items-center rounded-full border border-stone-400 bg-stone-400/70 px-1 transition ${className}`}
       aria-label={tr("Changer le theme", "Toggle theme")}
       title={isLight ? tr("Passer en mode sombre", "Switch to dark mode") : tr("Passer en mode clair", "Switch to light mode")}
     >
       <span
-        className={`absolute left-1 inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold transition-transform ${
+        className={`absolute left-1 inline-flex h-5 w-5 items-center justify-center rounded-full shadow-sm transition-transform ${
           isLight
-            ? "translate-x-7 bg-white text-stone-900 shadow"
-            : "translate-x-0 bg-stone-200 text-charcoal"
+            ? "translate-x-7 bg-white"
+            : "translate-x-0 bg-charcoal"
         }`}
-      >
-        {isLight ? "S" : "L"}
-      </span>
+      />
       <span className="sr-only">
         {isLight ? tr("Mode sombre", "Dark mode") : tr("Mode clair", "Light mode")}
       </span>
