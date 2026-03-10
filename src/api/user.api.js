@@ -82,8 +82,8 @@ export const removeFromCart = async (token, itemId) => {
   return response.data;
 };
 
-export const finalizeOrder = async (token, timeSlotId) => {
-  const response = await api.post("/orders/finalize", { timeSlotId }, authConfig(token));
+export const finalizeOrder = async (token, pickupData) => {
+  const response = await api.post("/orders/finalize", pickupData, authConfig(token));
   return response.data;
 };
 

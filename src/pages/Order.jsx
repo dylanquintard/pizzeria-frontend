@@ -2,7 +2,7 @@ import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getCategories } from "../api/category.api";
 import { getLocations } from "../api/location.api";
-import { getActiveTimeSlots } from "../api/timeslot.api";
+import { getPickupAvailability } from "../api/timeslot.api";
 import {
   addToCart,
   finalizeOrder,
@@ -22,8 +22,21 @@ function toLocalIsoDate(dateValue) {
   return `${year}-${month}-${day}`;
 }
 
-function getSlotServiceDate(slot) {
-  return slot.serviceDate ? toLocalIsoDate(slot.serviceDate) : toLocalIsoDate(slot.startTime);
+function shiftIsoDate(isoDate, delta) {
+  const next = new Date(`${isoDate}T00:00:00`);
+  next.setDate(next.getDate() + delta);
+  return toLocalIsoDate(next);
+}
+
+function formatNavigatorDate(isoDate, locale) {
+  const parsed = new Date(`${isoDate}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) return isoDate;
+  return parsed.toLocaleDateString(locale, {
+    weekday: "long",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
 }
 
 function formatPrice(value) {
@@ -58,13 +71,6 @@ function formatPickupAddress(location, tr) {
   if (!location) return tr("Adresse de retrait non disponible", "Pickup address unavailable");
   const cityLine = `${location.postalCode || ""} ${location.city || ""}`.trim();
   return [location.addressLine1, cityLine].filter(Boolean).join(", ");
-}
-
-function formatSlotTime(slot, locale) {
-  return new Date(slot.startTime).toLocaleTimeString(locale, {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 }
 
 function ProductCustomizerModal({
@@ -207,34 +213,22 @@ export default function Order() {
   const [categories, setCategories] = useState([]);
   const [extras, setExtras] = useState([]);
   const [locations, setLocations] = useState([]);
-  const [availableLocations, setAvailableLocations] = useState([]);
-  const [slots, setSlots] = useState([]);
+  const [availabilitySlots, setAvailabilitySlots] = useState([]);
   const [selectedDate, setSelectedDate] = useState(toLocalIsoDate(new Date()));
+  const [selectedPickupTime, setSelectedPickupTime] = useState("");
   const [selectedLocationId, setSelectedLocationId] = useState("");
-  const [selectedSlotId, setSelectedSlotId] = useState("");
   const [editingProduct, setEditingProduct] = useState(null);
   const [selectedExtras, setSelectedExtras] = useState([]);
   const [removedIngredients, setRemovedIngredients] = useState([]);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [validatedCartSignature, setValidatedCartSignature] = useState("");
   const [realtimeConnected, setRealtimeConnected] = useState(false);
   const [activeCategoryKey, setActiveCategoryKey] = useState("");
 
-  const cartSignature = useMemo(
-    () =>
-      cartItems
-        .map((item) => {
-          const added = (item.addedIngredients || []).map((entry) => getCartIngredientName(entry)).join(",");
-          const removed = (item.removedIngredients || []).map((entry) => getCartIngredientName(entry)).join(",");
-          return `${item.id}:${item.quantity}:${item.unitPrice}:${added}:${removed}`;
-        })
-        .join("|"),
-    [cartItems]
-  );
-
-  const isCartValidated = cartItems.length > 0 && validatedCartSignature !== "" && validatedCartSignature === cartSignature;
+  const todayIso = toLocalIsoDate(new Date());
+  const canGoPreviousDate = selectedDate > todayIso;
+  const quantityForAvailability = Math.max(1, Number(itemCount || 0));
 
   useEffect(() => {
     let cancelled = false;
@@ -267,72 +261,53 @@ export default function Order() {
     };
   }, [token, tr]);
 
-  const refreshSlots = useCallback(async () => {
-    if (!isCartValidated || itemCount <= 0) {
-      setSlots([]);
-      setAvailableLocations([]);
+  const refreshAvailability = useCallback(async () => {
+    try {
+      const response = await getPickupAvailability(token, {
+        date: selectedDate,
+        quantity: quantityForAvailability,
+      });
+
+      const slots = Array.isArray(response?.slots) ? response.slots : [];
+      const availableSlots = slots.filter((slot) => slot.availableForQuantity);
+      setAvailabilitySlots(availableSlots);
+    } catch (err) {
+      setAvailabilitySlots([]);
+      setMessage(
+        err.response?.data?.error ||
+          tr("Impossible de recuperer les disponibilites", "Unable to fetch pickup availability")
+      );
+    }
+  }, [selectedDate, quantityForAvailability, token, tr]);
+
+  useEffect(() => {
+    refreshAvailability();
+  }, [refreshAvailability]);
+
+  useEffect(() => {
+    const hasSelectedTime = availabilitySlots.some(
+      (slot) => slot.pickupTime === selectedPickupTime
+    );
+    if (!hasSelectedTime) {
+      setSelectedPickupTime("");
       setSelectedLocationId("");
-      setSelectedSlotId("");
       return;
     }
 
-    try {
-      const allSlots = await getActiveTimeSlots(token, {});
-      const now = new Date();
-      const eligibleSlots = allSlots.filter((slot) => {
-        const locationId = slot.location?.id ?? slot.locationId;
-        if (!locationId) return false;
-
-        const slotStart = new Date(slot.startTime);
-        return (
-          getSlotServiceDate(slot) === selectedDate &&
-          slot.maxPizzas - slot.currentPizzas >= itemCount &&
-          slotStart - now >= 15 * 60_000
-        );
-      });
-
-      const availableLocationIds = new Set(
-        eligibleSlots
-          .map((slot) => slot.location?.id ?? slot.locationId)
-          .filter((entry) => entry !== null && entry !== undefined)
-          .map((entry) => String(entry))
-      );
-
-      const nextAvailableLocations = locations.filter((location) =>
-        availableLocationIds.has(String(location.id))
-      );
-      setAvailableLocations(nextAvailableLocations);
-
-      const selectedIsAvailable = availableLocationIds.has(String(selectedLocationId));
-      const nextLocationId = selectedIsAvailable ? String(selectedLocationId) : "";
-
-      if (String(selectedLocationId || "") !== String(nextLocationId || "")) {
-        setSelectedLocationId(nextLocationId);
-      }
-
-      const slotsForSelectedLocation = nextLocationId
-        ? eligibleSlots.filter(
-            (slot) => String(slot.location?.id ?? slot.locationId) === String(nextLocationId)
-          )
-        : [];
-
-      setSlots(slotsForSelectedLocation);
-      if (!slotsForSelectedLocation.find((slot) => String(slot.id) === String(selectedSlotId))) {
-        setSelectedSlotId("");
-      }
-    } catch (err) {
-      setMessage(err.response?.data?.error || tr("Impossible de recuperer les creneaux", "Unable to fetch timeslots"));
+    const hasSelectedLocation = availabilitySlots.some(
+      (slot) =>
+        slot.pickupTime === selectedPickupTime &&
+        String(slot.locationId) === String(selectedLocationId)
+    );
+    if (!hasSelectedLocation) {
+      setSelectedLocationId("");
     }
-  }, [isCartValidated, itemCount, locations, selectedDate, selectedLocationId, selectedSlotId, token, tr]);
-
-  useEffect(() => {
-    refreshSlots();
-  }, [refreshSlots]);
+  }, [availabilitySlots, selectedPickupTime, selectedLocationId]);
 
   const handleRealtimeEvent = useCallback(
     (eventName) => {
       if (eventName === "timeslots:updated") {
-        refreshSlots();
+        refreshAvailability();
         return;
       }
 
@@ -340,7 +315,7 @@ export default function Order() {
         getLocations({ active: true })
           .then((locationData) => {
             setLocations(Array.isArray(locationData) ? locationData : []);
-            refreshSlots();
+            refreshAvailability();
           })
           .catch(() => {});
         return;
@@ -348,10 +323,10 @@ export default function Order() {
 
       if (eventName === "cart:updated" || eventName === "orders:user-updated") {
         refreshCart();
-        refreshSlots();
+        refreshAvailability();
       }
     },
-    [refreshSlots, refreshCart]
+    [refreshAvailability, refreshCart]
   );
 
   useRealtimeEvents({
@@ -360,23 +335,51 @@ export default function Order() {
     onConnectionChange: setRealtimeConnected,
   });
 
-  useEffect(() => {
-    if (cartItems.length === 0) {
-      setValidatedCartSignature("");
-      setSelectedSlotId("");
+  const timeOptions = useMemo(() => {
+    const grouped = new Map();
+    for (const slot of availabilitySlots) {
+      const key = slot.pickupTime;
+      if (!grouped.has(key)) {
+        grouped.set(key, {
+          pickupTime: key,
+          remainingCapacity: 0,
+          locationCount: 0,
+        });
+      }
+
+      const current = grouped.get(key);
+      current.remainingCapacity += Number(slot.remainingCapacity || 0);
+      current.locationCount += 1;
     }
-  }, [cartItems.length]);
+
+    return [...grouped.values()].sort((left, right) =>
+      String(left.pickupTime).localeCompare(String(right.pickupTime))
+    );
+  }, [availabilitySlots]);
+
+  const locationsForSelectedTime = useMemo(
+    () =>
+      availabilitySlots
+        .filter((slot) => slot.pickupTime === selectedPickupTime)
+        .sort((left, right) =>
+          String(left.location?.name || "").localeCompare(String(right.location?.name || ""))
+        ),
+    [availabilitySlots, selectedPickupTime]
+  );
 
   const selectedSlot = useMemo(
-    () => slots.find((slot) => String(slot.id) === String(selectedSlotId)) || null,
-    [slots, selectedSlotId]
+    () =>
+      locationsForSelectedTime.find(
+        (slot) => String(slot.locationId) === String(selectedLocationId)
+      ) || null,
+    [locationsForSelectedTime, selectedLocationId]
   );
   const selectedLocation = useMemo(
     () =>
-      availableLocations.find((location) => String(location.id) === String(selectedLocationId)) ||
+      selectedSlot?.location ||
       locations.find((location) => String(location.id) === String(selectedLocationId)) ||
       null,
-    [availableLocations, locations, selectedLocationId]
+    [selectedSlot, locations, selectedLocationId]
   );
 
   const menuByCategory = useMemo(() => {
@@ -487,52 +490,53 @@ export default function Order() {
   };
 
   const handleFinalize = async () => {
-    if (!isCartValidated) {
-      setMessage(tr("Validez d'abord le panier avant de choisir le retrait.", "Validate the cart before selecting pickup."));
+    if (cartItems.length === 0) {
+      setMessage(tr("Votre panier est vide", "Your cart is empty"));
+      return;
+    }
+
+    if (!selectedPickupTime) {
+      setMessage(tr("Selectionnez un horaire", "Select a pickup time"));
       return;
     }
 
     if (!selectedLocationId) {
-      setMessage(tr("Selectionnez un emplacement disponible", "Select an available location"));
+      setMessage(tr("Selectionnez une adresse de retrait", "Select a pickup address"));
       return;
     }
 
     if (!selectedSlot) {
-      setMessage(tr("Selectionnez un creneau", "Select a timeslot"));
+      setMessage(tr("Selection invalide", "Invalid pickup selection"));
       return;
     }
 
-    const locationForSummary =
-      selectedSlot.location ||
-      availableLocations.find((location) => String(location.id) === String(selectedLocationId)) ||
-      locations.find((location) => String(location.id) === String(selectedLocationId)) ||
-      null;
+    const locationForSummary = selectedLocation;
     const pickupLocationName = locationForSummary?.name || tr("Emplacement", "Location");
     const pickupAddress = formatPickupAddress(locationForSummary, tr);
-    const pickupTime = selectedSlot.startTime;
-    const resetStateAndNavigate = async (resolvedOrderId = null) => {
+    const pickupTime = `${selectedDate}T${selectedPickupTime}:00`;
+
+    try {
+      setLoading(true);
+      const finalizedOrder = await finalizeOrder(token, {
+        pickupDate: selectedDate,
+        pickupTime: selectedPickupTime,
+        locationId: Number(selectedLocationId),
+      });
+      const orderId = finalizedOrder?.id ?? finalizedOrder?.order?.id ?? finalizedOrder?.orderId ?? null;
       await refreshCart();
-      setSlots([]);
+      setAvailabilitySlots([]);
+      setSelectedPickupTime("");
       setSelectedLocationId("");
-      setSelectedSlotId("");
-      setValidatedCartSignature("");
       setMessage("");
 
       navigate("/order/confirmation", {
         state: {
-          orderId: resolvedOrderId,
+          orderId,
           pickupTime,
           pickupLocationName,
           pickupAddress,
         },
       });
-    };
-
-    try {
-      setLoading(true);
-      const finalizedOrder = await finalizeOrder(token, selectedSlot.id);
-      const orderId = finalizedOrder?.id ?? finalizedOrder?.order?.id ?? finalizedOrder?.orderId ?? null;
-      await resetStateAndNavigate(orderId);
     } catch (err) {
       setMessage(
         err?.response?.data?.error || err?.message || tr("Erreur lors de la finalisation", "Error while finalizing order")
@@ -540,16 +544,6 @@ export default function Order() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleValidateCart = () => {
-    if (cartItems.length === 0) {
-      setMessage(tr("Votre panier est vide", "Your cart is empty"));
-      return;
-    }
-
-    setValidatedCartSignature(cartSignature);
-    setMessage(tr("Panier valide. Choisissez la date, l'emplacement et l'heure de retrait.", "Cart validated. Choose date, location and pickup time."));
   };
 
   const handleRemoveCartItem = async (itemId) => {
@@ -564,8 +558,6 @@ export default function Order() {
   const handleClearCart = async () => {
     try {
       await clearCart();
-      setValidatedCartSignature("");
-      setSelectedSlotId("");
       setMessage(tr("Panier vide", "Cart cleared"));
     } catch (err) {
       setMessage(err.response?.data?.error || tr("Impossible de vider le panier", "Unable to clear cart"));
@@ -682,11 +674,6 @@ export default function Order() {
           <div className="order-cart-shell rounded-2xl p-5">
             <div className="mb-4 flex items-center justify-between gap-3">
               <h2 className="text-xl font-bold text-white">{tr("Mon panier", "My cart")}</h2>
-              {isCartValidated && (
-                <span className="rounded-full bg-emerald-500/20 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-emerald-300">
-                  {tr("Panier valide", "Cart validated")}
-                </span>
-              )}
             </div>
 
             <div className="space-y-2">
@@ -741,14 +728,6 @@ export default function Order() {
               <div className="mt-3 flex gap-2">
                 <button
                   type="button"
-                  onClick={handleValidateCart}
-                  disabled={cartItems.length === 0}
-                  className="flex-1 rounded-full bg-saffron px-4 py-2 text-xs font-bold uppercase tracking-wide text-charcoal transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {tr("Valider le panier", "Validate cart")}
-                </button>
-                <button
-                  type="button"
                   onClick={handleClearCart}
                   disabled={cartItems.length === 0}
                   className="rounded-full border border-white/25 px-4 py-2 text-xs font-semibold text-stone-100 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
@@ -762,7 +741,7 @@ export default function Order() {
           <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
             <h2 className="mb-1 text-xl font-bold text-white">{tr("Retrait de la commande", "Order pickup")}</h2>
             <p className="mb-4 text-sm text-stone-300">
-              {tr("Etape 2: une fois le panier valide, choisissez date, emplacement et creneau.", "Step 2: once the cart is validated, choose date, location and timeslot.")}
+              {tr("Choisissez d'abord la date, l'horaire, puis l'adresse de retrait.", "Choose date first, then pickup time and location.")}
             </p>
             <p className="mb-3 text-xs text-stone-300">
               {tr("Flux temps reel", "Realtime stream")}:{" "}
@@ -771,84 +750,105 @@ export default function Order() {
               </strong>
             </p>
 
-            {!isCartValidated && (
-              <div className="theme-light-keep-dark mb-3 rounded-xl border border-amber-300/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
-                {tr("Validez d'abord le panier pour debloquer la selection du retrait.", "Validate the cart first to unlock pickup selection.")}
-              </div>
-            )}
+            <fieldset disabled={loading} className="space-y-3 disabled:opacity-60">
+              <div className="space-y-2">
+                <p className="text-sm text-stone-300">{tr("Date de retrait", "Pickup date")}</p>
+                <div className="mt-1 flex w-full items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!canGoPreviousDate) return;
+                      setSelectedDate((prev) => shiftIsoDate(prev, -1));
+                    }}
+                    disabled={!canGoPreviousDate}
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/25 bg-white/5 text-stone-100 transition hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-40"
+                    aria-label={tr("Jour precedent", "Previous day")}
+                  >
+                    <svg viewBox="0 0 24 24" className="h-[17px] w-[17px]" fill="none" stroke="currentColor" strokeWidth="2.4">
+                      <path d="m14 6-6 6 6 6" />
+                    </svg>
+                  </button>
 
-            <fieldset disabled={!isCartValidated || loading || cartItems.length === 0} className="space-y-3 disabled:opacity-60">
-              <label className="block text-sm text-stone-300">
-                {tr("Date", "Date")}
-                <input
-                  type="date"
-                  min={toLocalIsoDate(new Date())}
-                  value={selectedDate}
-                  onChange={(event) => setSelectedDate(event.target.value)}
-                  className="mt-1 w-full rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-white"
-                />
-              </label>
+                  <span className="min-w-0 flex-1 rounded-xl border border-white/20 bg-charcoal/50 px-3 py-2 text-center text-sm font-semibold text-stone-100">
+                    {formatNavigatorDate(selectedDate, locale)}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() => setSelectedDate((prev) => shiftIsoDate(prev, 1))}
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/25 bg-white/5 text-stone-100 transition hover:bg-white/15"
+                    aria-label={tr("Jour suivant", "Next day")}
+                  >
+                    <svg viewBox="0 0 24 24" className="h-[17px] w-[17px]" fill="none" stroke="currentColor" strokeWidth="2.4">
+                      <path d="m10 6 6 6-6 6" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
 
               <div className="space-y-2">
-                <p className="text-sm text-stone-300">{tr("Emplacement", "Location")}</p>
-                {availableLocations.length > 0 ? (
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {availableLocations.map((location) => {
-                      const isSelected = String(selectedLocationId) === String(location.id);
+                <p className="text-sm text-stone-300">{tr("Horaire de retrait", "Pickup time")}</p>
+                {timeOptions.length === 0 ? (
+                  <div className="rounded-xl border border-red-400/40 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+                    {tr("Aucun horaire disponible pour cette date et cette quantite.", "No pickup time available for this date and quantity.")}
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {timeOptions.map((option) => {
+                      const isSelected = selectedPickupTime === option.pickupTime;
                       return (
                         <button
-                          key={location.id}
+                          key={option.pickupTime}
                           type="button"
                           onClick={() => {
-                            setSelectedLocationId(String(location.id));
-                            setSelectedSlotId("");
+                            setSelectedPickupTime(option.pickupTime);
+                            setSelectedLocationId("");
                           }}
+                          className={`rounded-full border px-3 py-2 text-xs font-semibold transition ${
+                            isSelected
+                              ? "border-saffron bg-saffron/15 text-saffron"
+                              : "border-white/20 bg-black/20 text-stone-100 hover:bg-white/10"
+                          }`}
+                        >
+                          {option.pickupTime} - {option.remainingCapacity} {tr("places", "spots")}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-sm text-stone-300">{tr("Adresse de retrait", "Pickup location")}</p>
+                {!selectedPickupTime ? (
+                  <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-xs text-stone-300">
+                    {tr("Selectionnez d'abord un horaire", "Select a pickup time first")}
+                  </div>
+                ) : locationsForSelectedTime.length === 0 ? (
+                  <div className="rounded-xl border border-red-400/40 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+                    {tr("Aucune adresse disponible pour cet horaire.", "No location available for this pickup time.")}
+                  </div>
+                ) : (
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {locationsForSelectedTime.map((slot) => {
+                      const location = slot.location;
+                      const isSelected = String(selectedLocationId) === String(slot.locationId);
+                      return (
+                        <button
+                          key={`${slot.locationId}-${slot.pickupTime}`}
+                          type="button"
+                          onClick={() => setSelectedLocationId(String(slot.locationId))}
                           className={`rounded-xl border px-3 py-2 text-left transition ${
                             isSelected
                               ? "border-saffron bg-saffron/15 text-saffron"
                               : "border-white/20 bg-black/20 text-stone-100 hover:bg-white/10"
                           }`}
                         >
-                          <p className="text-sm font-semibold">{location.name}</p>
-                          <p className="text-xs text-stone-300">{location.city || "-"}</p>
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="theme-light-keep-dark rounded-xl border border-red-400/40 bg-red-500/10 px-3 py-2 text-xs text-red-200">
-                    {tr("Aucun emplacement disponible pour la date et la quantite choisies.", "No location available for selected date and quantity.")}
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <p className="text-sm text-stone-300">{tr("Creneau", "Timeslot")}</p>
-                {!selectedLocationId ? (
-                  <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-xs text-stone-300">
-                    {tr("Selectionnez d'abord un emplacement", "Select a location first")}
-                  </div>
-                ) : slots.length === 0 ? (
-                  <div className="rounded-xl border border-red-400/40 bg-red-500/10 px-3 py-2 text-xs text-red-200">
-                    {tr("Aucun creneau disponible pour cet emplacement a cette date.", "No timeslot available for this location on this date.")}
-                  </div>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {slots.map((slot) => {
-                      const isSelected = String(selectedSlotId) === String(slot.id);
-                      const remaining = Math.max(0, Number(slot.maxPizzas || 0) - Number(slot.currentPizzas || 0));
-                      return (
-                        <button
-                          key={slot.id}
-                          type="button"
-                          onClick={() => setSelectedSlotId(String(slot.id))}
-                          className={`rounded-full border px-3 py-2 text-xs font-semibold transition ${
-                            isSelected
-                              ? "border-saffron bg-saffron/20 text-saffron"
-                              : "border-white/20 bg-black/20 text-stone-100 hover:bg-white/10"
-                          }`}
-                        >
-                          {formatSlotTime(slot, locale)} · {remaining} {tr("places", "spots")}
+                          <p className="text-sm font-semibold">{location?.name || "-"}</p>
+                          <p className="text-xs text-stone-300">{formatPickupAddress(location, tr)}</p>
+                          <p className="mt-1 text-[11px] text-emerald-300">
+                            {slot.remainingCapacity} {tr("places restantes", "spots left")}
+                          </p>
                         </button>
                       );
                     })}
@@ -869,7 +869,7 @@ export default function Order() {
                 disabled={
                   loading ||
                   cartItems.length === 0 ||
-                  !isCartValidated ||
+                  !selectedPickupTime ||
                   !selectedLocationId ||
                   !selectedSlot
                 }
