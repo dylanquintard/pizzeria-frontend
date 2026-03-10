@@ -523,7 +523,11 @@ export default function Products() {
                   <button
                     key={category.id}
                     type="button"
-                    onClick={() => setSelectedMenuCategoryId(String(category.id))}
+                    onClick={() =>
+                      setSelectedMenuCategoryId((prev) =>
+                        String(prev) === String(category.id) ? "" : String(category.id)
+                      )
+                    }
                     className={`shrink-0 rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-wide transition ${
                       isSelected
                         ? "border-saffron bg-saffron text-charcoal"
