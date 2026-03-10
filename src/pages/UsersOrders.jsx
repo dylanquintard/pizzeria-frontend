@@ -152,13 +152,14 @@ export default function UserOrders() {
           const isExpanded = Boolean(expandedOrders[String(order.id)]);
           const slotLabel = formatSlotLabel(order.timeSlot, locale, tr);
           const locationName = order.timeSlot?.location?.name || null;
+          const pickupDateTime = order.timeSlot?.startTime || order.createdAt;
 
           return (
             <article key={order.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-[11px] uppercase tracking-[0.2em] text-stone-400">{tr("Commande du", "Order date")}</p>
-                  <p className="truncate text-sm font-semibold text-white">{formatDateTime(order.createdAt, locale)}</p>
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-stone-400">{tr("Retrait prevu", "Scheduled pickup")}</p>
+                  <p className="truncate text-sm font-semibold text-white">{formatDateTime(pickupDateTime, locale)}</p>
                 </div>
 
                 <span
