@@ -305,15 +305,7 @@ export default function GalleryAdmin() {
           />
         </div>
 
-        <label className="inline-flex items-center gap-2 text-sm text-stone-200">
-          <input
-            type="checkbox"
-            checked={newImage.active}
-            onChange={(event) => setNewImage((prev) => ({ ...prev, active: event.target.checked }))}
-          />
-          {tr("Active", "Active")}
-        </label>
-        <button type="submit" disabled={loading}>
+        <button type="submit" disabled={loading} className="w-full">
           {tr("Ajouter", "Add")}
         </button>
       </form>

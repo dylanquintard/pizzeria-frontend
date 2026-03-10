@@ -263,7 +263,7 @@ export default function TimeslotsAdmin() {
             ))}
           </select>
         </label>
-        <button type="submit" disabled={loading || !form.locationId}>
+        <button type="submit" disabled={loading || !form.locationId} className="w-full">
           {tr("Creer les creneaux", "Create timeslots")}
         </button>
       </form>

@@ -135,17 +135,7 @@ export default function Categories() {
             setNewCategory((prev) => ({ ...prev, sortOrder: event.target.value }))
           }
         />
-        <label style={{ marginLeft: "8px" }}>
-          <input
-            type="checkbox"
-            checked={newCategory.active}
-            onChange={(event) =>
-            setNewCategory((prev) => ({ ...prev, active: event.target.checked }))
-          }
-          />
-          {tr("Active", "Active")}
-        </label>
-        <button type="submit" disabled={loading}>
+        <button type="submit" disabled={loading} className="w-full">
           {tr("Creer", "Create")}
         </button>
       </form>

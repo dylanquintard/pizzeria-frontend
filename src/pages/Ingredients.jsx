@@ -103,7 +103,7 @@ export default function Ingredients() {
         value={newIngredient.price}
         onChange={(event) => setNewIngredient((prev) => ({ ...prev, price: event.target.value }))}
       />
-      <button onClick={handleCreate}>{tr("Creer", "Create")}</button>
+      <button onClick={handleCreate} className="w-full">{tr("Creer", "Create")}</button>
 
       <h3>{tr("Liste des ingredients", "Ingredients list")}</h3>
       <table>

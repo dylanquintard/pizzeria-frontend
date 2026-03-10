@@ -233,17 +233,7 @@ export default function Locations() {
             setNewLocation((prev) => ({ ...prev, notes: event.target.value }))
           }
         />
-        <label style={{ marginLeft: "8px" }}>
-          <input
-            type="checkbox"
-            checked={newLocation.active}
-            onChange={(event) =>
-            setNewLocation((prev) => ({ ...prev, active: event.target.checked }))
-          }
-          />
-          {tr("Actif", "Active")}
-        </label>
-        <button type="submit" disabled={loading}>
+        <button type="submit" disabled={loading} className="w-full">
           {tr("Creer", "Create")}
         </button>
       </form>

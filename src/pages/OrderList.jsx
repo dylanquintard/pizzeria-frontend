@@ -8,6 +8,7 @@ import {
   finalizeOrderAdmin,
 } from "../api/admin.api";
 import { useRealtimeEvents } from "../hooks/useRealtimeEvents";
+import { ActionIconButton, DeleteIcon } from "../components/ui/AdminActions";
 
 function toLocalIsoDate(dateValue) {
   const date = new Date(dateValue);
@@ -350,8 +351,8 @@ export default function OrderList() {
         </p>
       )}
 
-      <div className="flex flex-wrap items-center gap-1.5 rounded-2xl border border-white/10 bg-white/5 p-2 sm:gap-2">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-white/10 bg-white/5 p-2">
+        <div className="flex w-full items-center gap-2 sm:flex-1">
           <button
             type="button"
             onClick={() => changeDate(-1)}
@@ -363,7 +364,7 @@ export default function OrderList() {
             </svg>
           </button>
 
-          <span className="min-w-[118px] text-center text-xs font-semibold text-stone-100 sm:min-w-[138px] sm:text-sm">
+          <span className="min-w-0 flex-1 text-center text-xs font-semibold text-stone-100 sm:text-sm">
             {selectedDate}
           </span>
 
@@ -379,18 +380,20 @@ export default function OrderList() {
           </button>
         </div>
 
-        <label htmlFor="statusSelect" className="text-[11px] font-semibold uppercase tracking-wide text-stone-300 sm:ml-auto sm:text-xs">
-          {tr("Statut", "Status")}
-        </label>
-        <select
-          id="statusSelect"
-          value={selectedStatus}
-          onChange={(event) => setSelectedStatus(event.target.value)}
-          className="h-8 rounded-lg border border-white/20 bg-charcoal/70 px-2 text-xs text-stone-100 focus:border-saffron focus:outline-none sm:h-9 sm:px-3 sm:text-sm"
-        >
-          <option value="COMPLETED">{tr("En cours", "In progress")}</option>
-          <option value="FINALIZED">{tr("Termine", "Finished")}</option>
-        </select>
+        <div className="ml-auto flex items-center gap-2">
+          <label htmlFor="statusSelect" className="text-[11px] font-semibold uppercase tracking-wide text-stone-300 sm:text-xs">
+            {tr("Statut", "Status")}
+          </label>
+          <select
+            id="statusSelect"
+            value={selectedStatus}
+            onChange={(event) => setSelectedStatus(event.target.value)}
+            className="h-8 rounded-lg border border-white/20 bg-charcoal/70 px-2 text-xs text-stone-100 focus:border-saffron focus:outline-none sm:h-9 sm:px-3 sm:text-sm"
+          >
+            <option value="COMPLETED">{tr("En cours", "In progress")}</option>
+            <option value="FINALIZED">{tr("Termine", "Finished")}</option>
+          </select>
+        </div>
       </div>
 
       {loading ? (
@@ -462,15 +465,13 @@ export default function OrderList() {
                             </span>
                           )}
 
-                          <button
-                            type="button"
+                          <ActionIconButton
                             onClick={() => handleDelete(order.id)}
-                            className="inline-flex h-8 items-center justify-center rounded-md bg-red-600 px-2.5 text-xs font-semibold text-white transition hover:bg-red-500"
-                            title={tr("Supprimer la commande", "Delete order")}
-                            aria-label={tr("Supprimer la commande", "Delete order")}
+                            label={tr("Supprimer la commande", "Delete order")}
+                            variant="danger"
                           >
-                            {tr("Supprimer", "Delete")}
-                          </button>
+                            <DeleteIcon />
+                          </ActionIconButton>
                         </div>
 
                         <div className="min-w-0 text-right">

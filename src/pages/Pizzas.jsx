@@ -193,7 +193,7 @@ export default function Pizzas() {
             onChange={(event) => setNewMenuItem((prev) => ({ ...prev, basePrice: event.target.value }))}
           />
         </div>
-        <button type="button" onClick={handleCreate}>
+        <button type="button" onClick={handleCreate} className="w-full">
           {tr("Ajouter au menu", "Add to menu")}
         </button>
       </div>
