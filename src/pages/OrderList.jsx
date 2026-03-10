@@ -19,7 +19,7 @@ function toLocalIsoDate(dateValue) {
 }
 
 function getOrderItemProduct(item) {
-  return item?.pizza || item?.product || item?.menuItem || null;
+  return item?.product || item?.menuItem || null;
 }
 
 function getOrderItemName(item, tr) {

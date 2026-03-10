@@ -143,7 +143,6 @@ function AppRoutes() {
             </AdminRoute>
           }
         />
-        <Route path="/admin/pizzas" element={<Navigate to="/admin/products" replace />} />
         <Route
           path="/admin/ingredients"
           element={
@@ -196,16 +195,6 @@ function AppRoutes() {
         />
         <Route
           path="/admin/editproduct/:id"
-          element={
-            <AdminRoute>
-              <Dashboard>
-                <EditProduct />
-              </Dashboard>
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/admin/editpizza/:id"
           element={
             <AdminRoute>
               <Dashboard>

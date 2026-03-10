@@ -32,7 +32,7 @@ function formatPrice(value) {
 }
 
 function getCartItemProduct(item) {
-  return item?.pizza || item?.product || item?.menuItem || null;
+  return item?.product || item?.menuItem || null;
 }
 
 function getCartItemName(item) {

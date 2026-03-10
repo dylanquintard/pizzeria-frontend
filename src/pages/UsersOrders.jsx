@@ -212,14 +212,14 @@ export default function UserOrders() {
                       <div key={item.id} className="rounded-lg border border-white/10 bg-charcoal/60 p-2.5">
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <p className="text-sm font-semibold text-white">
-                            {item.quantity}x {item.product?.name || item.pizza?.name || tr("Produit", "Product")}
+                            {item.quantity}x {item.product?.name || tr("Produit", "Product")}
                           </p>
                           <p className="text-xs font-semibold text-saffron">{formatPrice(item.unitPrice)} EUR / {tr("unite", "unit")}</p>
                         </div>
 
-                        {(item.product?.category?.name || item.pizza?.category?.name) && (
+                        {item.product?.category?.name && (
                           <p className="mt-1 text-[11px] text-stone-300">
-                            {tr("Categorie", "Category")}: {item.product?.category?.name || item.pizza?.category?.name}
+                            {tr("Categorie", "Category")}: {item.product.category.name}
                           </p>
                         )}
 

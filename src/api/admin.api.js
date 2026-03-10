@@ -113,11 +113,3 @@ export const finalizeOrderAdmin = async (token, orderId) => {
   );
   return response.data;
 };
-
-export const getAllPizzas = getAllProducts;
-export const getPizzaById = getProductById;
-export const createPizza = createProduct;
-export const updatePizza = updateProduct;
-export const deletePizza = deleteProduct;
-export const addIngredientToPizza = addIngredientToProduct;
-export const removeIngredientFromPizza = removeIngredientFromProduct;

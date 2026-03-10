@@ -91,5 +91,3 @@ export const getUserOrders = async (token) => {
   const response = await api.get("/users/orders", authConfig(token));
   return response.data;
 };
-
-export const getAllPizzasClient = getAllProductsClient;
