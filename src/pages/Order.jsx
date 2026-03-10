@@ -232,6 +232,7 @@ export default function Order() {
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [isFinalizeConfirmOpen, setIsFinalizeConfirmOpen] = useState(false);
   const [validatedCartSignature, setValidatedCartSignature] = useState("");
   const [realtimeConnected, setRealtimeConnected] = useState(false);
   const [activeCategoryKey, setActiveCategoryKey] = useState("");
@@ -564,20 +565,23 @@ export default function Order() {
       return;
     }
 
+    setIsFinalizeConfirmOpen(true);
+  };
+
+  const handleConfirmFinalize = async () => {
+    if (!selectedPickupTime || !selectedLocationId || !selectedSlot) {
+      setIsFinalizeConfirmOpen(false);
+      setMessage(tr("Selection invalide", "Invalid pickup selection"));
+      return;
+    }
+
     const locationForSummary = selectedLocation;
     const pickupLocationName = locationForSummary?.name || tr("Emplacement", "Location");
     const pickupAddress = formatPickupAddress(locationForSummary, tr);
     const pickupTime = `${selectedDate}T${selectedPickupTime}:00`;
-    const confirmationMessage = tr(
-      `Confirmez votre retrait :\n${pickupLocationName}\n${pickupAddress}\nHoraire: ${selectedPickupTime}\n\nVerifiez bien l'adresse avant de finaliser.`,
-      `Confirm your pickup:\n${pickupLocationName}\n${pickupAddress}\nTime: ${selectedPickupTime}\n\nPlease verify the address before finalizing.`
-    );
-
-    if (!window.confirm(confirmationMessage)) {
-      return;
-    }
 
     try {
+      setIsFinalizeConfirmOpen(false);
       setLoading(true);
       const finalizedOrder = await finalizeOrder(token, {
         pickupDate: selectedDate,
@@ -984,6 +988,68 @@ export default function Order() {
           </div>
         </section>
       </div>
+
+      {isFinalizeConfirmOpen && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/75 p-4">
+          <div className="w-full max-w-lg rounded-2xl border border-saffron/45 bg-charcoal/95 p-5 shadow-2xl">
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-saffron">
+              {tr("Verification retrait", "Pickup check")}
+            </p>
+            <h3 className="mt-2 text-xl font-bold text-white">
+              {tr("Confirmez votre adresse de retrait", "Confirm your pickup address")}
+            </h3>
+
+            <div className="mt-4 space-y-3 rounded-xl border border-white/10 bg-black/20 p-4 text-sm">
+              <div>
+                <p className="text-[11px] uppercase tracking-wide text-stone-400">{tr("Emplacement", "Location")}</p>
+                <p className="font-semibold text-white">
+                  {selectedLocation?.name || tr("Emplacement", "Location")}
+                </p>
+              </div>
+              <div>
+                <p className="text-[11px] uppercase tracking-wide text-stone-400">{tr("Adresse", "Address")}</p>
+                <p className="text-stone-200">{formatPickupAddress(selectedLocation, tr)}</p>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div>
+                  <p className="text-[11px] uppercase tracking-wide text-stone-400">{tr("Date", "Date")}</p>
+                  <p className="text-stone-200">{formatNavigatorDate(selectedDate, locale)}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] uppercase tracking-wide text-stone-400">{tr("Horaire", "Time")}</p>
+                  <p className="text-stone-200">{selectedPickupTime || "--:--"}</p>
+                </div>
+              </div>
+            </div>
+
+            <p className="mt-3 text-xs text-amber-200">
+              {tr(
+                "Verifiez bien cette adresse avant de finaliser la commande.",
+                "Please verify this address before finalizing your order."
+              )}
+            </p>
+
+            <div className="mt-5 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setIsFinalizeConfirmOpen(false)}
+                disabled={loading}
+                className="flex-1 rounded-full border border-white/25 px-4 py-2 text-xs font-semibold text-stone-100 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {tr("Annuler", "Cancel")}
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmFinalize}
+                disabled={loading}
+                className="flex-1 rounded-full bg-saffron px-4 py-2 text-xs font-bold uppercase tracking-wide text-charcoal transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {loading ? tr("Traitement...", "Processing...") : tr("Confirmer", "Confirm")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {editingProduct && (
         <ProductCustomizerModal
