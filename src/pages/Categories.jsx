@@ -23,12 +23,15 @@ const emptyCategoryForm = {
 };
 
 function normalizeCategoryPayload(form, kind) {
+  const name = String(form?.name ?? "").trim();
+  const description = typeof form?.description === "string" ? form.description.trim() : "";
+
   return {
-    name: form.name.trim(),
-    description: form.description.trim() || null,
-    sortOrder: Number(form.sortOrder || 0),
-    active: Boolean(form.active),
-    kind,
+    name,
+    description: description || null,
+    sortOrder: Number(form?.sortOrder || 0),
+    active: Boolean(form?.active),
+    kind: form?.kind || kind,
   };
 }
 
@@ -251,7 +254,7 @@ export default function Categories() {
                   <td>{category.active ? tr("Oui", "Yes") : tr("Non", "No")}</td>
                   <td>
                     <div className="flex items-center gap-2">
-                      <button onClick={() => handleUpdate(category)} disabled={loading}>
+                      <button type="button" onClick={() => handleUpdate(category)} disabled={loading}>
                         {tr("Sauvegarder", "Save")}
                       </button>
                       <StatusToggle
