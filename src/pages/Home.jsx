@@ -103,8 +103,10 @@ const truckTourSchedule = useMemo(
         key: `${entry.dayOfWeek}-${entry.locationId}-${index}`,
         locationName: entry.location?.name || tr("Emplacement", "Location"),
         address: formatLocationAddress(entry.location, tr),
-        dayLabel:
+        dayLabel: tr(
           DAY_LABELS[entry.dayOfWeek]?.fr || entry.dayOfWeek,
+          DAY_LABELS[entry.dayOfWeek]?.en || entry.dayOfWeek
+        ),
         hours: `${entry.startTime || "--:--"} - ${entry.endTime || "--:--"}`,
       })),
   [weeklySettings, tr]
@@ -389,7 +391,7 @@ const truckTourSchedule = useMemo(
         <div>
           <p className="theme-light-keep-dark text-sm uppercase tracking-[0.25em] text-saffron">{tr("Emplacements & horaires d'ouverture", "Locations & opening hours")}</p>
           <h2 className="font-display text-4xl uppercase tracking-wide text-white">{tr("Tournee du camion", "Truck tour")}</h2>
-          <p className="mt-2 text-sm text-stone-400">{tr("Adresses et horaires definitifs seront ajustes bientot.", "Final addresses and schedules will be adjusted soon.")}</p>
+          <p className="mt-2 text-sm text-stone-400">{tr("Planning hebdomadaire en direct.", "Live weekly schedule.")}</p>
         </div>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
 {truckTourSchedule.length === 0 ? (
@@ -399,10 +401,17 @@ const truckTourSchedule = useMemo(
 ) : (
   truckTourSchedule.map((location) => (
     <div key={location.key} className="glass-panel p-5">
-      <p className="text-lg font-bold text-white">{location.locationName}</p>
-      <p className="mt-2 text-sm text-stone-200">{location.address}</p>
-      <p className="mt-3 text-xs uppercase tracking-wider text-saffron">{location.dayLabel}</p>
-      <p className="text-sm text-stone-200">{location.hours}</p>
+      <p className="text-[11px] uppercase tracking-wider text-saffron">{tr("Nom adresse", "Location name")}</p>
+      <p className="mt-1 text-lg font-bold text-white">{location.locationName}</p>
+
+      <p className="mt-3 text-[11px] uppercase tracking-wider text-saffron">{tr("Adresse", "Address")}</p>
+      <p className="mt-1 text-sm text-stone-200">{location.address}</p>
+
+      <p className="mt-3 text-[11px] uppercase tracking-wider text-saffron">{tr("Jour d'ouverture", "Opening day")}</p>
+      <p className="mt-1 text-sm text-stone-200">{location.dayLabel}</p>
+
+      <p className="mt-3 text-[11px] uppercase tracking-wider text-saffron">{tr("Horaires", "Hours")}</p>
+      <p className="mt-1 text-sm text-stone-200">{location.hours}</p>
     </div>
   ))
 )}
