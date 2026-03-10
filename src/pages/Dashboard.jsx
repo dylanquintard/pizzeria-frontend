@@ -7,8 +7,6 @@ const adminLinks = [
   { to: "/admin/orders", labelFr: "Commandes", labelEn: "Orders" },
   { to: "/admin/users", labelFr: "Clients", labelEn: "Users" },
   { to: "/admin/menu", labelFr: "Menu", labelEn: "Menu" },
-  { to: "/admin/ingredients", labelFr: "Ingredients", labelEn: "Ingredients" },
-  { to: "/admin/categories", labelFr: "Categories", labelEn: "Categories" },
   { to: "/admin/locations", labelFr: "Emplacements", labelEn: "Locations" },
   { to: "/admin/timeslots", labelFr: "Creneaux", labelEn: "Timeslots" },
   { to: "/admin/gallery", labelFr: "Galerie", labelEn: "Gallery" },

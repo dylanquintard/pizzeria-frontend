@@ -490,7 +490,10 @@ export default function Products() {
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
-            onClick={() => setActivePanel((prev) => (prev === KIND.MENU ? "" : KIND.MENU))}
+            onClick={() => {
+              setCategoryListPanel("");
+              setActivePanel((prev) => (prev === KIND.MENU ? "" : KIND.MENU));
+            }}
             className={`rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-wide transition ${
               activePanel === KIND.MENU
                 ? "border-saffron bg-saffron text-charcoal"
@@ -501,9 +504,10 @@ export default function Products() {
           </button>
           <button
             type="button"
-            onClick={() =>
-              setActivePanel((prev) => (prev === KIND.INGREDIENT ? "" : KIND.INGREDIENT))
-            }
+            onClick={() => {
+              setCategoryListPanel("");
+              setActivePanel((prev) => (prev === KIND.INGREDIENT ? "" : KIND.INGREDIENT));
+            }}
             className={`rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-wide transition ${
               activePanel === KIND.INGREDIENT
                 ? "border-saffron bg-saffron text-charcoal"
@@ -526,7 +530,10 @@ export default function Products() {
                   <button
                     key={category.id}
                     type="button"
-                    onClick={() => setSelectedMenuCategoryId(String(category.id))}
+                    onClick={() => {
+                      setCategoryListPanel("");
+                      setSelectedMenuCategoryId(String(category.id));
+                    }}
                     className={`shrink-0 rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-wide transition ${
                       isSelected
                         ? "border-saffron bg-saffron text-charcoal"
@@ -556,7 +563,10 @@ export default function Products() {
                   <button
                     key={category.id}
                     type="button"
-                    onClick={() => setSelectedIngredientCategoryId(String(category.id))}
+                    onClick={() => {
+                      setCategoryListPanel("");
+                      setSelectedIngredientCategoryId(String(category.id));
+                    }}
                     className={`shrink-0 rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-wide transition ${
                       isSelected
                         ? "border-saffron bg-saffron text-charcoal"
@@ -610,71 +620,6 @@ export default function Products() {
           </div>
         )}
 
-        <div className="space-y-3 rounded-xl border border-white/10 bg-charcoal/30 p-3">
-          <p className="text-sm font-semibold text-white">
-            {tr("Listes categories (cachees par defaut)", "Category lists (hidden by default)")}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => setCategoryListPanel((prev) => (prev === KIND.MENU ? "" : KIND.MENU))}
-              className={`rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-wide transition ${
-                categoryListPanel === KIND.MENU
-                  ? "border-saffron bg-saffron text-charcoal"
-                  : "border-white/20 bg-black/20 text-stone-100 hover:bg-white/10"
-              }`}
-            >
-              {tr("Liste categories plats", "Dish category list")}
-            </button>
-            <button
-              type="button"
-              onClick={() =>
-                setCategoryListPanel((prev) => (prev === KIND.INGREDIENT ? "" : KIND.INGREDIENT))
-              }
-              className={`rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-wide transition ${
-                categoryListPanel === KIND.INGREDIENT
-                  ? "border-saffron bg-saffron text-charcoal"
-                  : "border-white/20 bg-black/20 text-stone-100 hover:bg-white/10"
-              }`}
-            >
-              {tr("Liste categories ingredients", "Ingredient category list")}
-            </button>
-          </div>
-
-          {categoryListPanel === KIND.MENU && (
-            <CategoryTable
-              title={tr("Liste categorie menu", "Menu category list")}
-              categories={menuCategories}
-              token={token}
-              tr={tr}
-              onRefresh={async (updater) => {
-                if (typeof updater === "function") {
-                  setMenuCategories((prev) => updater(prev));
-                  return;
-                }
-                await refreshAfterAction();
-              }}
-              onError={setMessage}
-            />
-          )}
-
-          {categoryListPanel === KIND.INGREDIENT && (
-            <CategoryTable
-              title={tr("Liste categorie ingredients", "Ingredients category list")}
-              categories={ingredientCategories}
-              token={token}
-              tr={tr}
-              onRefresh={async (updater) => {
-                if (typeof updater === "function") {
-                  setIngredientCategories((prev) => updater(prev));
-                  return;
-                }
-                await refreshAfterAction();
-              }}
-              onError={setMessage}
-            />
-          )}
-        </div>
       </section>
 
       {hasSelectedCategory && (
@@ -850,6 +795,74 @@ export default function Products() {
           )}
         </section>
       )}
+
+      <section className="space-y-3 rounded-2xl border border-white/10 bg-charcoal/30 p-4">
+        <p className="text-sm font-semibold text-white">{tr("Listes categories", "Category lists")}</p>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setActivePanel("");
+              setCategoryListPanel((prev) => (prev === KIND.MENU ? "" : KIND.MENU));
+            }}
+            className={`rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-wide transition ${
+              categoryListPanel === KIND.MENU
+                ? "border-saffron bg-saffron text-charcoal"
+                : "border-white/20 bg-black/20 text-stone-100 hover:bg-white/10"
+            }`}
+          >
+            {tr("Liste categories plats", "Dish category list")}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setActivePanel("");
+              setCategoryListPanel((prev) => (prev === KIND.INGREDIENT ? "" : KIND.INGREDIENT));
+            }}
+            className={`rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-wide transition ${
+              categoryListPanel === KIND.INGREDIENT
+                ? "border-saffron bg-saffron text-charcoal"
+                : "border-white/20 bg-black/20 text-stone-100 hover:bg-white/10"
+            }`}
+          >
+            {tr("Liste categories ingredients", "Ingredient category list")}
+          </button>
+        </div>
+
+        {categoryListPanel === KIND.MENU && (
+          <CategoryTable
+            title={tr("Liste categorie menu", "Menu category list")}
+            categories={menuCategories}
+            token={token}
+            tr={tr}
+            onRefresh={async (updater) => {
+              if (typeof updater === "function") {
+                setMenuCategories((prev) => updater(prev));
+                return;
+              }
+              await refreshAfterAction();
+            }}
+            onError={setMessage}
+          />
+        )}
+
+        {categoryListPanel === KIND.INGREDIENT && (
+          <CategoryTable
+            title={tr("Liste categorie ingredients", "Ingredients category list")}
+            categories={ingredientCategories}
+            token={token}
+            tr={tr}
+            onRefresh={async (updater) => {
+              if (typeof updater === "function") {
+                setIngredientCategories((prev) => updater(prev));
+                return;
+              }
+              await refreshAfterAction();
+            }}
+            onError={setMessage}
+          />
+        )}
+      </section>
     </div>
   );
 }

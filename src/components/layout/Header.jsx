@@ -108,12 +108,10 @@ export default function Header() {
     { id: "contact", label: tr("Nous contacter", "Contact us") },
   ];
   const adminMenuLinks = isAdminUser
-    ? [
+      ? [
         { to: "/admin/orders", label: tr("Commandes", "Orders") },
         { to: "/admin/users", label: tr("Clients", "Users") },
         { to: "/admin/menu", label: tr("Menu", "Menu") },
-        { to: "/admin/ingredients", label: tr("Ingredients", "Ingredients") },
-        { to: "/admin/categories", label: tr("Categories", "Categories") },
         { to: "/admin/locations", label: tr("Emplacements", "Locations") },
         { to: "/admin/timeslots", label: tr("Creneaux", "Timeslots") },
         { to: "/admin/gallery", label: tr("Galerie", "Gallery") },
