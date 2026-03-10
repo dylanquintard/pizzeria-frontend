@@ -98,17 +98,34 @@ useEffect(() => {
 const truckTourSchedule = useMemo(
   () =>
     (Array.isArray(weeklySettings) ? weeklySettings : [])
-      .filter((entry) => entry?.isOpen && entry?.location)
-      .map((entry, index) => ({
-        key: `${entry.dayOfWeek}-${entry.locationId}-${index}`,
-        locationName: entry.location?.name || tr("Emplacement", "Location"),
-        address: formatLocationAddress(entry.location, tr),
-        dayLabel: tr(
-          DAY_LABELS[entry.dayOfWeek]?.fr || entry.dayOfWeek,
-          DAY_LABELS[entry.dayOfWeek]?.en || entry.dayOfWeek
-        ),
-        hours: `${entry.startTime || "--:--"} - ${entry.endTime || "--:--"}`,
-      })),
+      .flatMap((entry, dayIndex) => {
+        const services =
+          Array.isArray(entry?.services) && entry.services.length > 0
+            ? entry.services
+            : entry?.isOpen && entry?.location
+              ? [
+                  {
+                    startTime: entry.startTime,
+                    endTime: entry.endTime,
+                    locationId: entry.locationId,
+                    location: entry.location,
+                  },
+                ]
+              : [];
+
+        return services
+          .filter((service) => service?.location)
+          .map((service, serviceIndex) => ({
+            key: `${entry.dayOfWeek}-${service.locationId}-${dayIndex}-${serviceIndex}`,
+            locationName: service.location?.name || tr("Emplacement", "Location"),
+            address: formatLocationAddress(service.location, tr),
+            dayLabel: tr(
+              DAY_LABELS[entry.dayOfWeek]?.fr || entry.dayOfWeek,
+              DAY_LABELS[entry.dayOfWeek]?.en || entry.dayOfWeek
+            ),
+            hours: `${service.startTime || "--:--"} - ${service.endTime || "--:--"}`,
+          }));
+      }),
   [weeklySettings, tr]
 );
 

@@ -1,6 +1,10 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { getLocations } from "../api/location.api";
-import { getWeeklySettings, upsertWeeklySetting } from "../api/timeslot.api";
+import {
+  deleteWeeklyService,
+  getWeeklySettings,
+  upsertWeeklySetting,
+} from "../api/timeslot.api";
 import { AuthContext } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 
@@ -15,7 +19,6 @@ const WEEK_DAYS = [
 ];
 
 const DEFAULT_FORM = {
-  isOpen: false,
   startTime: "18:00",
   endTime: "22:00",
   slotDuration: 15,
@@ -29,30 +32,35 @@ function formatLocation(location, tr) {
   return [location.name, location.addressLine1, cityLine].filter(Boolean).join(" - ");
 }
 
-function normalizeSettingToForm(setting) {
-  if (!setting || !setting.isOpen) return { ...DEFAULT_FORM };
-  return {
-    isOpen: true,
-    startTime: setting.startTime || DEFAULT_FORM.startTime,
-    endTime: setting.endTime || DEFAULT_FORM.endTime,
-    slotDuration: Number(setting.slotDuration || DEFAULT_FORM.slotDuration),
-    maxPizzas: Number(setting.maxPizzas || DEFAULT_FORM.maxPizzas),
-    locationId: setting.locationId ? String(setting.locationId) : "",
-  };
-}
-
 function closedSetting(dayOfWeek) {
   return {
     dayOfWeek,
     isOpen: false,
-    startTime: null,
-    endTime: null,
-    slotDuration: null,
-    maxPizzas: null,
-    locationId: null,
-    location: null,
-    slotsCount: 0,
+    services: [],
   };
+}
+
+function normalizeServices(setting = {}) {
+  if (Array.isArray(setting.services) && setting.services.length > 0) {
+    return setting.services;
+  }
+
+  if (setting.isOpen && setting.startTime && setting.endTime) {
+    return [
+      {
+        id: `${setting.dayOfWeek || "DAY"}-${setting.locationId || "none"}-${setting.startTime}-${setting.endTime}`,
+        startTime: setting.startTime,
+        endTime: setting.endTime,
+        slotDuration: setting.slotDuration,
+        maxPizzas: setting.maxPizzas,
+        locationId: setting.locationId,
+        location: setting.location || null,
+        slotsCount: setting.slotsCount || 0,
+      },
+    ];
+  }
+
+  return [];
 }
 
 export default function TimeslotsAdmin() {
@@ -76,6 +84,12 @@ export default function TimeslotsAdmin() {
     [settingsByDay]
   );
 
+  const activeDaySetting = settingsByDay.get(activeDay) || closedSetting(activeDay);
+  const activeDayServices = useMemo(
+    () => normalizeServices(activeDaySetting),
+    [activeDaySetting]
+  );
+
   const refreshData = useCallback(async () => {
     setLoading(true);
     try {
@@ -89,7 +103,10 @@ export default function TimeslotsAdmin() {
       console.error(err);
       alert(
         err.response?.data?.error ||
-          tr("Impossible de charger les horaires hebdomadaires", "Unable to load weekly opening hours")
+          tr(
+            "Impossible de charger les horaires hebdomadaires",
+            "Unable to load weekly opening hours"
+          )
       );
     } finally {
       setLoading(false);
@@ -101,41 +118,96 @@ export default function TimeslotsAdmin() {
   }, [refreshData]);
 
   useEffect(() => {
-    const daySetting = settingsByDay.get(activeDay);
-    setForm(normalizeSettingToForm(daySetting));
-  }, [activeDay, settingsByDay]);
+    const firstService = normalizeServices(activeDaySetting)[0];
+    setForm((prev) => ({
+      ...prev,
+      locationId:
+        prev.locationId ||
+        (firstService?.locationId ? String(firstService.locationId) : ""),
+    }));
+  }, [activeDaySetting]);
 
-  const handleSave = async (event) => {
+  const upsertWeeklySettingInState = (dayKey, setting) => {
+    setWeeklySettings((prev) => {
+      const byDay = new Map(prev.map((entry) => [entry.dayOfWeek, entry]));
+      byDay.set(dayKey, setting || closedSetting(dayKey));
+      return WEEK_DAYS.map((day) => byDay.get(day.key) || closedSetting(day.key));
+    });
+  };
+
+  const handleAddService = async (event) => {
     event.preventDefault();
 
-    if (form.isOpen && !form.locationId) {
+    if (!form.locationId) {
       alert(tr("Selectionnez un emplacement", "Select a location"));
       return;
     }
 
     setSaving(true);
     try {
-      const payload = form.isOpen
-        ? {
-            isOpen: true,
-            startTime: form.startTime,
-            endTime: form.endTime,
-            slotDuration: Number(form.slotDuration),
-            maxPizzas: Number(form.maxPizzas),
-            locationId: Number(form.locationId),
-          }
-        : { isOpen: false };
-
-      const savedSetting = await upsertWeeklySetting(token, activeDay, payload);
-
-      setWeeklySettings((prev) => {
-        const byDay = new Map(prev.map((entry) => [entry.dayOfWeek, entry]));
-        byDay.set(activeDay, savedSetting || closedSetting(activeDay));
-        return WEEK_DAYS.map((day) => byDay.get(day.key) || closedSetting(day.key));
+      const savedSetting = await upsertWeeklySetting(token, activeDay, {
+        isOpen: true,
+        startTime: form.startTime,
+        endTime: form.endTime,
+        slotDuration: Number(form.slotDuration),
+        maxPizzas: Number(form.maxPizzas),
+        locationId: Number(form.locationId),
       });
 
-      setForm(normalizeSettingToForm(savedSetting));
-      alert(tr("Horaire enregistre", "Schedule saved"));
+      upsertWeeklySettingInState(activeDay, savedSetting);
+      alert(tr("Service ajoute", "Service added"));
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.error || err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCloseDay = async () => {
+    if (
+      !window.confirm(
+        tr(
+          "Fermer ce jour supprimera tous les services planifies. Continuer ?",
+          "Closing this day will remove all planned services. Continue?"
+        )
+      )
+    ) {
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const savedSetting = await upsertWeeklySetting(token, activeDay, { isOpen: false });
+      upsertWeeklySettingInState(activeDay, savedSetting);
+      alert(tr("Jour ferme", "Day closed"));
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.error || err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteService = async (service) => {
+    if (!service?.locationId || !service?.startTime || !service?.endTime) return;
+    if (
+      !window.confirm(
+        tr("Supprimer ce service ?", "Delete this service?")
+      )
+    ) {
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const savedSetting = await deleteWeeklyService(token, activeDay, {
+        startTime: service.startTime,
+        endTime: service.endTime,
+        locationId: Number(service.locationId),
+      });
+      upsertWeeklySettingInState(activeDay, savedSetting);
+      alert(tr("Service supprime", "Service deleted"));
     } catch (err) {
       console.error(err);
       alert(err.response?.data?.error || err.message);
@@ -152,8 +224,8 @@ export default function TimeslotsAdmin() {
         </h2>
         <p className="mt-1 text-sm text-stone-300">
           {tr(
-            "Configurez les jours d'ouverture, les horaires, la capacite par creneau et l'emplacement.",
-            "Configure opening days, opening hours, per-slot capacity, and pickup location."
+            "Ajoutez plusieurs services par jour: horaires, capacite par creneau et emplacement.",
+            "Add multiple services per day: hours, per-slot capacity and location."
           )}
         </p>
       </div>
@@ -163,6 +235,7 @@ export default function TimeslotsAdmin() {
           <div className="space-y-2">
             {WEEK_DAYS.map((day) => {
               const setting = settingsByDay.get(day.key) || closedSetting(day.key);
+              const services = normalizeServices(setting);
               const isActive = day.key === activeDay;
               return (
                 <button
@@ -178,9 +251,12 @@ export default function TimeslotsAdmin() {
                   <p className={`text-sm font-semibold ${isActive ? "text-saffron" : "text-stone-100"}`}>
                     {tr(day.labelFr, day.labelEn)}
                   </p>
-                  <p className={`text-xs ${setting.isOpen ? "text-emerald-300" : "text-stone-400"}`}>
-                    {setting.isOpen
-                      ? `${setting.startTime} - ${setting.endTime}`
+                  <p className={`text-xs ${services.length > 0 ? "text-emerald-300" : "text-stone-400"}`}>
+                    {services.length > 0
+                      ? tr(
+                          `${services.length} service(s)`,
+                          `${services.length} service(s)`
+                        )
                       : tr("Ferme", "Closed")}
                   </p>
                 </button>
@@ -193,26 +269,15 @@ export default function TimeslotsAdmin() {
           {loading ? (
             <p className="text-sm text-stone-300">{tr("Chargement...", "Loading...")}</p>
           ) : (
-            <form onSubmit={handleSave} className="space-y-4">
-              <h3 className="text-lg font-bold text-white">
-                {tr(
-                  `Reglages du ${WEEK_DAYS.find((day) => day.key === activeDay)?.labelFr || ""}`,
-                  `Settings for ${WEEK_DAYS.find((day) => day.key === activeDay)?.labelEn || ""}`
-                )}
-              </h3>
+            <div className="space-y-5">
+              <form onSubmit={handleAddService} className="space-y-4">
+                <h3 className="text-lg font-bold text-white">
+                  {tr(
+                    `Ajouter un service - ${WEEK_DAYS.find((day) => day.key === activeDay)?.labelFr || ""}`,
+                    `Add service - ${WEEK_DAYS.find((day) => day.key === activeDay)?.labelEn || ""}`
+                  )}
+                </h3>
 
-              <label className="flex items-center gap-2 text-sm text-stone-200">
-                <input
-                  type="checkbox"
-                  checked={form.isOpen}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, isOpen: event.target.checked }))
-                  }
-                />
-                <span>{tr("Jour ouvert", "Open day")}</span>
-              </label>
-
-              {form.isOpen && (
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className="text-sm text-stone-300">
                     {tr("Heure ouverture", "Opening time")}
@@ -294,16 +359,66 @@ export default function TimeslotsAdmin() {
                     </select>
                   </label>
                 </div>
-              )}
 
-              <button
-                type="submit"
-                disabled={saving}
-                className="rounded-full bg-saffron px-5 py-2 text-sm font-bold uppercase tracking-wide text-charcoal transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {saving ? tr("Enregistrement...", "Saving...") : tr("Enregistrer", "Save")}
-              </button>
-            </form>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="rounded-full bg-saffron px-5 py-2 text-sm font-bold uppercase tracking-wide text-charcoal transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {saving
+                      ? tr("Enregistrement...", "Saving...")
+                      : tr("Ajouter ce service", "Add this service")}
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={handleCloseDay}
+                    className="rounded-full border border-white/25 px-5 py-2 text-sm font-semibold text-stone-100 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {tr("Fermer ce jour", "Close this day")}
+                  </button>
+                </div>
+              </form>
+
+              <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                <h4 className="text-sm font-semibold uppercase tracking-wide text-saffron">
+                  {tr("Services du jour selectionne", "Selected day services")}
+                </h4>
+
+                {activeDayServices.length === 0 ? (
+                  <p className="mt-2 text-sm text-stone-400">{tr("Aucun service", "No service")}</p>
+                ) : (
+                  <div className="mt-3 space-y-2">
+                    {activeDayServices.map((service, index) => (
+                      <div
+                        key={service.id || `${service.startTime}-${service.endTime}-${index}`}
+                        className="rounded-xl border border-white/10 bg-charcoal/45 px-3 py-2 text-sm text-stone-200"
+                      >
+                        <p className="font-semibold text-white">
+                          {service.startTime} - {service.endTime}
+                        </p>
+                        <p className="text-xs text-stone-300">
+                          {tr("Duree", "Duration")}: {service.slotDuration} min |{" "}
+                          {tr("Max", "Max")}: {service.maxPizzas}
+                        </p>
+                        <p className="text-xs text-stone-300">
+                          {tr("Adresse", "Address")}: {formatLocation(service.location, tr)}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteService(service)}
+                          className="mt-2 rounded-lg border border-red-400/40 bg-red-500/10 px-3 py-1 text-xs font-semibold text-red-200 transition hover:bg-red-500/20"
+                        >
+                          {tr("Supprimer ce service", "Delete this service")}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           )}
         </section>
       </div>
@@ -315,24 +430,31 @@ export default function TimeslotsAdmin() {
         <div className="space-y-2">
           {mergedSettings.map((setting) => {
             const day = WEEK_DAYS.find((entry) => entry.key === setting.dayOfWeek);
+            const services = normalizeServices(setting);
             return (
               <div
                 key={setting.dayOfWeek}
                 className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-stone-200"
               >
-                <p className="font-semibold text-white">{tr(day?.labelFr || setting.dayOfWeek, day?.labelEn || setting.dayOfWeek)}</p>
-                {!setting.isOpen ? (
+                <p className="font-semibold text-white">
+                  {tr(day?.labelFr || setting.dayOfWeek, day?.labelEn || setting.dayOfWeek)}
+                </p>
+                {services.length === 0 ? (
                   <p className="text-stone-400">{tr("Ferme", "Closed")}</p>
                 ) : (
-                  <p>
-                    {setting.startTime} - {setting.endTime}
-                    {" | "}
-                    {tr("Duree", "Duration")}: {setting.slotDuration} min
-                    {" | "}
-                    {tr("Max", "Max")}: {setting.maxPizzas}
-                    {" | "}
-                    {tr("Adresse", "Address")}: {formatLocation(setting.location, tr)}
-                  </p>
+                  <div className="mt-1 space-y-1">
+                    {services.map((service, index) => (
+                      <p key={service.id || `${setting.dayOfWeek}-${index}`}>
+                        {service.startTime} - {service.endTime}
+                        {" | "}
+                        {tr("Duree", "Duration")}: {service.slotDuration} min
+                        {" | "}
+                        {tr("Max", "Max")}: {service.maxPizzas}
+                        {" | "}
+                        {tr("Adresse", "Address")}: {formatLocation(service.location, tr)}
+                      </p>
+                    ))}
+                  </div>
                 )}
               </div>
             );

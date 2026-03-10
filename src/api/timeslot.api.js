@@ -19,6 +19,14 @@ export const upsertWeeklySetting = async (token, dayOfWeek, data) => {
   return response.data;
 };
 
+export const deleteWeeklyService = async (token, dayOfWeek, data) => {
+  const response = await api.delete(`/timeslots/weekly-settings/${dayOfWeek}/service`, {
+    ...authConfig(token),
+    data,
+  });
+  return response.data;
+};
+
 export const getPickupAvailability = async (token, filters = {}) => {
   const response = await api.get("/timeslots/availability", {
     ...authConfig(token),

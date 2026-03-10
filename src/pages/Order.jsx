@@ -137,11 +137,15 @@ function ProductCustomizerModal({
                 <div key={group.key} className="space-y-2">
                   <p className="text-[11px] font-bold uppercase tracking-wide text-stone-500">{group.label}</p>
                   {group.items.map((ingredient) => (
-                    <label key={ingredient.id} className="flex items-center gap-2 text-sm">
+                    <label
+                      key={ingredient.id}
+                      className="flex items-center gap-2 rounded-md px-2 py-1 text-sm transition hover:bg-stone-100"
+                    >
                       <input
                         type="checkbox"
                         checked={selectedExtras.some((entry) => entry.id === ingredient.id)}
                         onChange={(event) => onExtrasChange(ingredient, event.target.checked)}
+                        className="h-4 w-4 cursor-pointer accent-saffron"
                       />
                       <span>
                         {ingredient.name} (+{formatPrice(ingredient.price)} EUR)
@@ -163,11 +167,15 @@ function ProductCustomizerModal({
                 <div key={group.key} className="space-y-2">
                   <p className="text-[11px] font-bold uppercase tracking-wide text-stone-500">{group.label}</p>
                   {group.items.map((ingredient) => (
-                    <label key={ingredient.id} className="flex items-center gap-2 text-sm">
+                    <label
+                      key={ingredient.id}
+                      className="flex items-center gap-2 rounded-md px-2 py-1 text-sm transition hover:bg-stone-100"
+                    >
                       <input
                         type="checkbox"
                         checked={removedIngredients.some((entry) => entry.id === ingredient.id)}
                         onChange={(event) => onRemovedChange(ingredient, event.target.checked)}
+                        className="h-4 w-4 cursor-pointer accent-saffron"
                       />
                       <span>{ingredient.name}</span>
                     </label>
@@ -184,9 +192,10 @@ function ProductCustomizerModal({
             <input
               type="number"
               min={1}
+              step={1}
               value={quantity}
               onChange={(event) => onQuantityChange(Number(event.target.value || 1))}
-              className="ml-2 w-20 rounded-md border border-stone-300 px-2 py-1"
+              className="ml-2 w-20 rounded-md border border-stone-300 bg-white px-2 py-1 text-stone-900"
             />
           </label>
           <button
@@ -559,6 +568,14 @@ export default function Order() {
     const pickupLocationName = locationForSummary?.name || tr("Emplacement", "Location");
     const pickupAddress = formatPickupAddress(locationForSummary, tr);
     const pickupTime = `${selectedDate}T${selectedPickupTime}:00`;
+    const confirmationMessage = tr(
+      `Confirmez votre retrait :\n${pickupLocationName}\n${pickupAddress}\nHoraire: ${selectedPickupTime}\n\nVerifiez bien l'adresse avant de finaliser.`,
+      `Confirm your pickup:\n${pickupLocationName}\n${pickupAddress}\nTime: ${selectedPickupTime}\n\nPlease verify the address before finalizing.`
+    );
+
+    if (!window.confirm(confirmationMessage)) {
+      return;
+    }
 
     try {
       setLoading(true);
