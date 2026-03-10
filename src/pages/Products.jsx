@@ -3,20 +3,24 @@ import { Link } from "react-router-dom";
 import { getCategories } from "../api/category.api";
 import { AuthContext } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
-import { createPizza, deletePizza, getAllPizzas, updatePizza } from "../api/admin.api";
+import {
+  createProduct,
+  deleteProduct,
+  getAllProducts,
+  updateProduct,
+} from "../api/admin.api";
 import { ActionIconButton, DeleteIcon, EditIcon } from "../components/ui/AdminActions";
 
 const emptyNewMenuItem = {
   name: "",
-  description: "",
   basePrice: "",
 };
 
-function normalizePizzaForList(pizza) {
+function normalizeProductForList(product) {
   return {
-    ...pizza,
+    ...product,
     editPrice: false,
-    tempPrice: pizza.basePrice,
+    tempPrice: product.basePrice,
   };
 }
 
@@ -25,7 +29,7 @@ function formatPrice(value) {
   return Number.isNaN(numeric) ? value : numeric.toFixed(2);
 }
 
-export default function Pizzas() {
+export default function Products() {
   const { token, user, loading: authLoading } = useContext(AuthContext);
   const { tr } = useLanguage();
   const [menuItems, setMenuItems] = useState([]);
@@ -36,8 +40,11 @@ export default function Pizzas() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [pizzasData, categoriesData] = await Promise.all([getAllPizzas(token), getCategories()]);
-      setMenuItems((Array.isArray(pizzasData) ? pizzasData : []).map(normalizePizzaForList));
+      const [productsData, categoriesData] = await Promise.all([
+        getAllProducts(token),
+        getCategories({ kind: "PRODUCT" }),
+      ]);
+      setMenuItems((Array.isArray(productsData) ? productsData : []).map(normalizeProductForList));
       setCategories(Array.isArray(categoriesData) ? categoriesData : []);
       setMessage("");
     } catch (err) {
@@ -55,24 +62,36 @@ export default function Pizzas() {
     fetchData();
   }, [authLoading, fetchData, token, user, tr]);
 
+  const categoryTabs = useMemo(() => {
+    const hasUncategorized = menuItems.some((entry) => !entry.categoryId);
+    if (!hasUncategorized) return categories;
+    return [
+      ...categories,
+      { id: "uncategorized", name: tr("Sans categorie", "Uncategorized") },
+    ];
+  }, [categories, menuItems, tr]);
+
   useEffect(() => {
-    if (categories.length === 0) {
+    if (categoryTabs.length === 0) {
       setActiveCategoryId("");
       return;
     }
 
-    const exists = categories.some((entry) => String(entry.id) === String(activeCategoryId));
+    const exists = categoryTabs.some((entry) => String(entry.id) === String(activeCategoryId));
     if (!exists) {
-      setActiveCategoryId(String(categories[0].id));
+      setActiveCategoryId(String(categoryTabs[0].id));
     }
-  }, [activeCategoryId, categories]);
+  }, [activeCategoryId, categoryTabs]);
 
   const activeCategory = useMemo(
-    () => categories.find((entry) => String(entry.id) === String(activeCategoryId)) || null,
-    [activeCategoryId, categories]
+    () => categoryTabs.find((entry) => String(entry.id) === String(activeCategoryId)) || null,
+    [activeCategoryId, categoryTabs]
   );
 
   const visibleMenuItems = useMemo(() => {
+    if (String(activeCategoryId) === "uncategorized") {
+      return menuItems.filter((entry) => !entry.categoryId);
+    }
     if (!activeCategoryId) return menuItems;
     return menuItems.filter((entry) => String(entry.categoryId ?? "") === String(activeCategoryId));
   }, [activeCategoryId, menuItems]);
@@ -90,7 +109,7 @@ export default function Pizzas() {
       setMessage(tr("Le prix est obligatoire", "Price is required"));
       return;
     }
-    if (!activeCategoryId) {
+    if (!activeCategoryId || String(activeCategoryId) === "uncategorized") {
       setMessage(tr("Selectionnez d'abord une categorie", "Select a category first"));
       return;
     }
@@ -98,13 +117,12 @@ export default function Pizzas() {
     try {
       const payload = {
         name: newMenuItem.name.trim(),
-        description: newMenuItem.description.trim() || "",
+        description: "",
         basePrice: Number(newMenuItem.basePrice),
         categoryId: Number(activeCategoryId),
-        categoryName: activeCategory?.name || "",
       };
-      const created = await createPizza(token, payload);
-      setMenuItems((prev) => [...prev, normalizePizzaForList(created)]);
+      const created = await createProduct(token, payload);
+      setMenuItems((prev) => [...prev, normalizeProductForList(created)]);
       setNewMenuItem(emptyNewMenuItem);
       setMessage("");
     } catch (err) {
@@ -118,10 +136,10 @@ export default function Pizzas() {
 
   const handleSavePrice = async (entry) => {
     try {
-      const updated = await updatePizza(token, entry.id, {
+      const updated = await updateProduct(token, entry.id, {
         basePrice: Number(entry.tempPrice),
       });
-      updateMenuItemState(entry.id, () => normalizePizzaForList(updated));
+      updateMenuItemState(entry.id, () => normalizeProductForList(updated));
       setMessage("");
     } catch (err) {
       setMessage(err.response?.data?.error || tr("Erreur lors de la mise a jour du prix", "Error while updating price"));
@@ -131,7 +149,7 @@ export default function Pizzas() {
   const handleDelete = async (id) => {
     if (!window.confirm(tr("Supprimer ce produit du menu ?", "Delete this menu product?"))) return;
     try {
-      await deletePizza(token, id);
+      await deleteProduct(token, id);
       setMenuItems((prev) => prev.filter((entry) => entry.id !== id));
       setMessage("");
     } catch (err) {
@@ -149,7 +167,7 @@ export default function Pizzas() {
       <div className="space-y-3 rounded-2xl border border-white/10 bg-black/20 p-3 sm:p-4">
         <h3 className="text-lg font-semibold text-white">{tr("Ajouter un produit au menu", "Add menu product")}</h3>
         <div className="flex gap-2 overflow-x-auto pb-1">
-          {categories.map((category) => {
+          {categoryTabs.map((category) => {
             const isActive = String(category.id) === String(activeCategoryId);
             return (
               <button
@@ -175,14 +193,9 @@ export default function Pizzas() {
             onChange={(event) => setNewMenuItem((prev) => ({ ...prev, name: event.target.value }))}
           />
           <input
-            placeholder={tr("categpryName", "categoryName")}
+            placeholder={tr("Categorie", "Category")}
             value={activeCategory?.name || ""}
             readOnly
-          />
-          <input
-            placeholder={tr("Description", "Description")}
-            value={newMenuItem.description}
-            onChange={(event) => setNewMenuItem((prev) => ({ ...prev, description: event.target.value }))}
           />
           <input
             type="number"
@@ -206,7 +219,6 @@ export default function Pizzas() {
               <tr>
                 <th>ID</th>
                 <th>{tr("Nom", "Name")}</th>
-                <th>{tr("Description", "Description")}</th>
                 <th>{tr("Categorie", "Category")}</th>
                 <th>{tr("Prix", "Price")}</th>
                 <th>{tr("Actions", "Actions")}</th>
@@ -215,14 +227,13 @@ export default function Pizzas() {
             <tbody>
               {visibleMenuItems.length === 0 ? (
                 <tr>
-                  <td colSpan={6}>{tr("Aucun produit dans cette categorie.", "No product in this category.")}</td>
+                  <td colSpan={5}>{tr("Aucun produit dans cette categorie.", "No product in this category.")}</td>
                 </tr>
               ) : (
                 visibleMenuItems.map((entry) => (
                   <tr key={entry.id}>
                     <td>{entry.id}</td>
                     <td>{entry.name}</td>
-                    <td>{entry.description || "-"}</td>
                     <td>{entry.category?.name || "-"}</td>
                     <td>
                       {entry.editPrice ? (
@@ -257,7 +268,7 @@ export default function Pizzas() {
                           </ActionIconButton>
                         )}
 
-                        <Link to={`/admin/editpizza/${entry.id}`}>
+                        <Link to={`/admin/editproduct/${entry.id}`}>
                           <button type="button">{tr("Composition", "Composition")}</button>
                         </Link>
 

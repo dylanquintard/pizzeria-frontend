@@ -50,13 +50,16 @@ export const updateMe = async (token, data) => {
   return response.data;
 };
 
-export const getAllPizzasClient = async () => {
-  const response = await api.get("/pizzas");
+export const getAllProductsClient = async () => {
+  const response = await api.get("/products");
   return response.data;
 };
 
-export const getAllIngredients = async (token) => {
-  const response = await api.get("/pizzas/ingredients", authConfig(token));
+export const getAllIngredients = async (token, filters = {}) => {
+  const response = await api.get("/products/ingredients", {
+    ...authConfig(token),
+    params: filters,
+  });
   return response.data;
 };
 
@@ -65,10 +68,10 @@ export const getCart = async (token) => {
   return response.data;
 };
 
-export const addToCart = async (token, pizzaId, quantity, customizations) => {
+export const addToCart = async (token, productId, quantity, customizations) => {
   const response = await api.post(
     "/orders/cart",
-    { pizzaId, quantity, customizations },
+    { productId, quantity, customizations },
     authConfig(token)
   );
   return response.data;
@@ -89,3 +92,4 @@ export const getUserOrders = async (token) => {
   return response.data;
 };
 
+export const getAllPizzasClient = getAllProductsClient;

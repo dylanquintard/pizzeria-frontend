@@ -12,7 +12,7 @@ function CartItemRow({ item, onRemove, tr }) {
     <div className="rounded-xl border border-stone-200 bg-stone-50 p-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-stone-900">{item.pizza?.name}</p>
+          <p className="truncate text-sm font-semibold text-stone-900">{item.product?.name || item.pizza?.name}</p>
           <p className="text-xs text-stone-600">{tr("Qte", "Qty")}: {item.quantity}</p>
           {item.addedIngredients?.length > 0 && (
             <p className="text-[11px] text-emerald-700">+ {item.addedIngredients.map((ing) => ing.name).join(", ")}</p>
@@ -111,7 +111,7 @@ export default function Header() {
     ? [
         { to: "/admin/orders", label: tr("Commandes", "Orders") },
         { to: "/admin/users", label: tr("Clients", "Users") },
-        { to: "/admin/pizzas", label: tr("Menu", "Menu") },
+        { to: "/admin/products", label: tr("Menu", "Menu") },
         { to: "/admin/ingredients", label: tr("Ingredients", "Ingredients") },
         { to: "/admin/categories", label: tr("Categories", "Categories") },
         { to: "/admin/locations", label: tr("Emplacements", "Locations") },

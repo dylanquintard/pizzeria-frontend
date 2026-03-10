@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { getCategories } from "../api/category.api";
 import { useLanguage } from "../context/LanguageContext";
-import { getAllPizzasClient } from "../api/user.api";
+import { getAllProductsClient } from "../api/user.api";
 
 function formatPrice(value) {
   const numeric = Number(value);
@@ -17,7 +17,7 @@ function normalizeText(value) {
 
 export default function Menu() {
   const { tr } = useLanguage();
-  const [pizzas, setPizzas] = useState([]);
+  const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
@@ -27,13 +27,13 @@ export default function Menu() {
 
     const fetchMenu = async () => {
       try {
-        const [pizzaData, categoryData] = await Promise.all([
-          getAllPizzasClient(),
-          getCategories({ active: true }),
+        const [productData, categoryData] = await Promise.all([
+          getAllProductsClient(),
+          getCategories({ active: true, kind: "PRODUCT" }),
         ]);
 
         if (!cancelled) {
-          setPizzas(Array.isArray(pizzaData) ? pizzaData : []);
+          setProducts(Array.isArray(productData) ? productData : []);
           setCategories(Array.isArray(categoryData) ? categoryData : []);
         }
       } catch (_err) {
@@ -58,10 +58,10 @@ export default function Menu() {
       key: `category-${category.id}`,
       title: category.name,
       description: category.description,
-      items: pizzas.filter((pizza) => pizza.categoryId === category.id),
+      items: products.filter((product) => product.categoryId === category.id),
     }));
 
-    const uncategorized = pizzas.filter((pizza) => !pizza.categoryId);
+    const uncategorized = products.filter((product) => !product.categoryId);
     if (uncategorized.length > 0) {
       grouped.push({
         key: "category-uncategorized",
@@ -71,12 +71,12 @@ export default function Menu() {
       });
     }
 
-    if (grouped.length === 0 && pizzas.length > 0) {
+    if (grouped.length === 0 && products.length > 0) {
       grouped.push({
         key: "category-default",
         title: tr("Carte", "Menu"),
         description: "",
-        items: pizzas,
+        items: products,
       });
     }
 
@@ -91,7 +91,7 @@ export default function Menu() {
         return left.index - right.index;
       })
       .map(({ bucket }) => bucket);
-  }, [pizzas, categories, tr]);
+  }, [products, categories, tr]);
 
   if (loading) {
     return (
@@ -109,7 +109,7 @@ export default function Menu() {
     );
   }
 
-  if (pizzas.length === 0) {
+  if (products.length === 0) {
     return (
       <div className="section-shell py-12">
         <p className="rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-sm text-stone-300">{tr("Aucun plat disponible.", "No dish available.")}</p>
@@ -139,21 +139,21 @@ export default function Menu() {
             </div>
 
             <div>
-              {group.items.map((pizza) => (
-                <article key={pizza.id} className="border-b border-white/10 py-4 last:border-b-0">
+              {group.items.map((product) => (
+                <article key={product.id} className="border-b border-white/10 py-4 last:border-b-0">
                   <div className="flex items-start gap-3">
-                    <h4 className="text-base font-semibold uppercase tracking-wide text-white sm:text-lg">{pizza.name}</h4>
+                    <h4 className="text-base font-semibold uppercase tracking-wide text-white sm:text-lg">{product.name}</h4>
                     <div className="mt-3 hidden h-px flex-1 border-t border-dashed border-stone-500/70 sm:block" />
                     <span className="whitespace-nowrap text-sm font-extrabold uppercase tracking-wide text-saffron sm:text-base">
-                      {formatPrice(pizza.basePrice)} EUR
+                      {formatPrice(product.basePrice)} EUR
                     </span>
                   </div>
 
-                  {pizza.description && <p className="mt-1 text-sm text-stone-300">{pizza.description}</p>}
+                  {product.description && <p className="mt-1 text-sm text-stone-300">{product.description}</p>}
 
-                  {pizza.ingredients?.length > 0 && (
+                  {product.ingredients?.length > 0 && (
                     <p className="mt-2 text-xs uppercase tracking-[0.14em] text-stone-400">
-                      {pizza.ingredients.map((pi) => pi.ingredient.name).join(" - ")}
+                      {product.ingredients.map((pi) => pi.ingredient.name).join(" - ")}
                     </p>
                   )}
                 </article>

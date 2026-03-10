@@ -19,39 +19,42 @@ export const deleteUser = async (token, userId) => {
   return response.data;
 };
 
-export const getAllPizzas = async (token) => {
-  const response = await api.get("/pizzas", authConfig(token));
+export const getAllProducts = async (token) => {
+  const response = await api.get("/products", authConfig(token));
   return response.data;
 };
 
-export const getPizzaById = async (token, id) => {
-  const response = await api.get(`/pizzas/${id}/details`, authConfig(token));
+export const getProductById = async (token, id) => {
+  const response = await api.get(`/products/${id}/details`, authConfig(token));
   return response.data;
 };
 
-export const createPizza = async (token, data) => {
-  const response = await api.post("/pizzas", data, authConfig(token));
+export const createProduct = async (token, data) => {
+  const response = await api.post("/products", data, authConfig(token));
   return response.data;
 };
 
-export const updatePizza = async (token, id, data) => {
-  const response = await api.put(`/pizzas/${id}`, data, authConfig(token));
+export const updateProduct = async (token, id, data) => {
+  const response = await api.put(`/products/${id}`, data, authConfig(token));
   return response.data;
 };
 
-export const deletePizza = async (token, id) => {
-  const response = await api.delete(`/pizzas/${id}`, authConfig(token));
+export const deleteProduct = async (token, id) => {
+  const response = await api.delete(`/products/${id}`, authConfig(token));
   return response.data;
 };
 
-export const getAllIngredients = async (token) => {
-  const response = await api.get("/pizzas/ingredients", authConfig(token));
+export const getAllIngredients = async (token, filters = {}) => {
+  const response = await api.get("/products/ingredients", {
+    ...authConfig(token),
+    params: filters,
+  });
   return response.data;
 };
 
 export const createIngredient = async (token, data) => {
   const response = await api.post(
-    "/pizzas/ingredients",
+    "/products/ingredients",
     data,
     authConfig(token)
   );
@@ -60,7 +63,7 @@ export const createIngredient = async (token, data) => {
 
 export const updateIngredient = async (token, id, data) => {
   const response = await api.put(
-    `/pizzas/ingredients/${id}`,
+    `/products/ingredients/${id}`,
     data,
     authConfig(token)
   );
@@ -68,23 +71,23 @@ export const updateIngredient = async (token, id, data) => {
 };
 
 export const deleteIngredient = async (token, id) => {
-  const response = await api.delete(`/pizzas/ingredients/${id}`, authConfig(token));
+  const response = await api.delete(`/products/ingredients/${id}`, authConfig(token));
   return response.data;
 };
 
-export const addIngredientToPizza = async (token, pizzaId, ingredientId) => {
+export const addIngredientToProduct = async (token, productId, ingredientId) => {
   const response = await api.post(
-    "/pizzas/ingredients/link",
-    { pizzaId, ingredientId },
+    "/products/ingredients/link",
+    { productId, ingredientId },
     authConfig(token)
   );
   return response.data;
 };
 
-export const removeIngredientFromPizza = async (token, pizzaId, ingredientId) => {
-  const response = await api.delete("/pizzas/ingredients/link", {
+export const removeIngredientFromProduct = async (token, productId, ingredientId) => {
+  const response = await api.delete("/products/ingredients/link", {
     ...authConfig(token),
-    data: { pizzaId, ingredientId },
+    data: { productId, ingredientId },
   });
   return response.data;
 };
@@ -111,3 +114,10 @@ export const finalizeOrderAdmin = async (token, orderId) => {
   return response.data;
 };
 
+export const getAllPizzas = getAllProducts;
+export const getPizzaById = getProductById;
+export const createPizza = createProduct;
+export const updatePizza = updateProduct;
+export const deletePizza = deleteProduct;
+export const addIngredientToPizza = addIngredientToProduct;
+export const removeIngredientFromPizza = removeIngredientFromProduct;

@@ -7,7 +7,7 @@ import { CartProvider } from "./context/CartContext";
 import { LanguageProvider, useLanguage } from "./context/LanguageContext";
 import Categories from "./pages/Categories";
 import Dashboard from "./pages/Dashboard";
-import EditPizza from "./pages/EditPizza";
+import EditProduct from "./pages/EditProduct";
 import GalleryAdmin from "./pages/GalleryAdmin";
 import ForgotPassword from "./pages/ForgotPassword";
 import Home from "./pages/Home";
@@ -17,7 +17,7 @@ import Login from "./pages/Login";
 import Order from "./pages/Order";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import OrderList from "./pages/OrderList";
-import Pizzas from "./pages/Pizzas";
+import Products from "./pages/Products";
 import Profile from "./pages/Profile";
 import Register from "./pages/Register";
 import TimeslotsAdmin from "./pages/Timeslots";
@@ -134,15 +134,16 @@ function AppRoutes() {
           }
         />
         <Route
-          path="/admin/pizzas"
+          path="/admin/products"
           element={
             <AdminRoute>
               <Dashboard>
-                <Pizzas />
+                <Products />
               </Dashboard>
             </AdminRoute>
           }
         />
+        <Route path="/admin/pizzas" element={<Navigate to="/admin/products" replace />} />
         <Route
           path="/admin/ingredients"
           element={
@@ -194,11 +195,21 @@ function AppRoutes() {
           }
         />
         <Route
+          path="/admin/editproduct/:id"
+          element={
+            <AdminRoute>
+              <Dashboard>
+                <EditProduct />
+              </Dashboard>
+            </AdminRoute>
+          }
+        />
+        <Route
           path="/admin/editpizza/:id"
           element={
             <AdminRoute>
               <Dashboard>
-                <EditPizza />
+                <EditProduct />
               </Dashboard>
             </AdminRoute>
           }

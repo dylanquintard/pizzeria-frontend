@@ -7,7 +7,7 @@ import {
   addToCart,
   finalizeOrder,
   getAllIngredients,
-  getAllPizzasClient,
+  getAllProductsClient,
 } from "../api/user.api";
 import { AuthContext } from "../context/AuthContext";
 import { CartContext } from "../context/CartContext";
@@ -67,8 +67,8 @@ function formatSlotTime(slot, locale) {
   });
 }
 
-function PizzaCustomizerModal({
-  pizza,
+function ProductCustomizerModal({
+  product,
   ingredients,
   selectedExtras,
   removedIngredients,
@@ -80,13 +80,41 @@ function PizzaCustomizerModal({
   onConfirm,
   tr,
 }) {
-  const baseIngredients = Array.isArray(pizza.ingredients) ? pizza.ingredients : [];
+  const baseIngredients = Array.isArray(product.ingredients)
+    ? product.ingredients.map((entry) => entry?.ingredient).filter(Boolean)
+    : [];
+
+  const groupedExtras = ingredients.reduce((acc, ingredient) => {
+    const key = String(ingredient.category?.id ?? "uncategorized");
+    if (!acc[key]) {
+      acc[key] = {
+        key,
+        label: ingredient.category?.name || tr("Sans categorie", "Uncategorized"),
+        items: [],
+      };
+    }
+    acc[key].items.push(ingredient);
+    return acc;
+  }, {});
+
+  const groupedBaseIngredients = baseIngredients.reduce((acc, ingredient) => {
+    const key = String(ingredient.category?.id ?? "uncategorized");
+    if (!acc[key]) {
+      acc[key] = {
+        key,
+        label: ingredient.category?.name || tr("Sans categorie", "Uncategorized"),
+        items: [],
+      };
+    }
+    acc[key].items.push(ingredient);
+    return acc;
+  }, {});
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-4">
       <div className="w-full max-w-2xl rounded-2xl bg-white p-6 text-stone-900 shadow-2xl">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-xl font-bold">{tr("Personnaliser", "Customize")}: {pizza.name}</h3>
+          <h3 className="text-xl font-bold">{tr("Personnaliser", "Customize")}: {product.name}</h3>
           <button type="button" onClick={onClose} className="rounded-md border border-stone-300 px-3 py-1 text-sm">
             {tr("Fermer", "Close")}
           </button>
@@ -95,37 +123,50 @@ function PizzaCustomizerModal({
         <div className="grid gap-6 md:grid-cols-2">
           <div>
             <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-stone-500">{tr("Supplements", "Extras")}</p>
-            <div className="space-y-2">
-              {ingredients.map((ingredient) => (
-                <label key={ingredient.id} className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={selectedExtras.some((entry) => entry.id === ingredient.id)}
-                    onChange={(event) => onExtrasChange(ingredient, event.target.checked)}
-                  />
-                  <span>
-                    {ingredient.name} (+{formatPrice(ingredient.price)} EUR)
-                  </span>
-                </label>
+            <div className="space-y-3">
+              {ingredients.length === 0 && (
+                <p className="text-xs text-stone-500">{tr("Aucun supplement disponible.", "No extra available.")}</p>
+              )}
+              {Object.values(groupedExtras).map((group) => (
+                <div key={group.key} className="space-y-2">
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-stone-500">{group.label}</p>
+                  {group.items.map((ingredient) => (
+                    <label key={ingredient.id} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={selectedExtras.some((entry) => entry.id === ingredient.id)}
+                        onChange={(event) => onExtrasChange(ingredient, event.target.checked)}
+                      />
+                      <span>
+                        {ingredient.name} (+{formatPrice(ingredient.price)} EUR)
+                      </span>
+                    </label>
+                  ))}
+                </div>
               ))}
             </div>
           </div>
 
           <div>
             <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-stone-500">{tr("Retirer ingredients", "Remove ingredients")}</p>
-            <div className="space-y-2">
+            <div className="space-y-3">
               {baseIngredients.length === 0 && (
                 <p className="text-xs text-stone-500">{tr("Aucun ingredient a retirer pour ce produit.", "No ingredient can be removed for this product.")}</p>
               )}
-              {baseIngredients.map((entry) => (
-                <label key={entry.ingredient.id} className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={removedIngredients.some((ingredient) => ingredient.id === entry.ingredient.id)}
-                    onChange={(event) => onRemovedChange(entry.ingredient, event.target.checked)}
-                  />
-                  <span>{entry.ingredient.name}</span>
-                </label>
+              {Object.values(groupedBaseIngredients).map((group) => (
+                <div key={group.key} className="space-y-2">
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-stone-500">{group.label}</p>
+                  {group.items.map((ingredient) => (
+                    <label key={ingredient.id} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={removedIngredients.some((entry) => entry.id === ingredient.id)}
+                        onChange={(event) => onRemovedChange(ingredient, event.target.checked)}
+                      />
+                      <span>{ingredient.name}</span>
+                    </label>
+                  ))}
+                </div>
               ))}
             </div>
           </div>
@@ -162,7 +203,7 @@ export default function Order() {
   const { cartItems, itemCount, cartTotal, setCartFromResponse, refreshCart, removeItem, clearCart, loading: cartLoading } =
     useContext(CartContext);
 
-  const [pizzas, setPizzas] = useState([]);
+  const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [extras, setExtras] = useState([]);
   const [locations, setLocations] = useState([]);
@@ -171,7 +212,7 @@ export default function Order() {
   const [selectedDate, setSelectedDate] = useState(toLocalIsoDate(new Date()));
   const [selectedLocationId, setSelectedLocationId] = useState("");
   const [selectedSlotId, setSelectedSlotId] = useState("");
-  const [editingPizza, setEditingPizza] = useState(null);
+  const [editingProduct, setEditingProduct] = useState(null);
   const [selectedExtras, setSelectedExtras] = useState([]);
   const [removedIngredients, setRemovedIngredients] = useState([]);
   const [quantity, setQuantity] = useState(1);
@@ -200,17 +241,17 @@ export default function Order() {
 
     async function fetchInitialData() {
       try {
-        const [pizzaData, categoryData, ingredientData, locationData] = await Promise.all([
-          getAllPizzasClient(),
-          getCategories({ active: true }),
-          getAllIngredients(token),
+        const [productData, categoryData, ingredientData, locationData] = await Promise.all([
+          getAllProductsClient(),
+          getCategories({ active: true, kind: "PRODUCT" }),
+          getAllIngredients(token, { isExtra: true }),
           getLocations({ active: true }),
         ]);
 
         if (!cancelled) {
-          setPizzas(Array.isArray(pizzaData) ? pizzaData : []);
+          setProducts(Array.isArray(productData) ? productData : []);
           setCategories(Array.isArray(categoryData) ? categoryData : []);
-          setExtras((Array.isArray(ingredientData) ? ingredientData : []).filter((entry) => entry.isExtra));
+          setExtras(Array.isArray(ingredientData) ? ingredientData : []);
           setLocations(Array.isArray(locationData) ? locationData : []);
         }
       } catch (err) {
@@ -343,10 +384,10 @@ export default function Order() {
       key: `category-${category.id}`,
       title: category.name,
       description: category.description,
-      items: pizzas.filter((pizza) => String(pizza.categoryId ?? "") === String(category.id)),
+      items: products.filter((product) => String(product.categoryId ?? "") === String(category.id)),
     }));
 
-    const uncategorized = pizzas.filter((pizza) => !pizza.categoryId);
+    const uncategorized = products.filter((product) => !product.categoryId);
     if (uncategorized.length > 0) {
       grouped.push({
         key: "category-uncategorized",
@@ -356,12 +397,12 @@ export default function Order() {
       });
     }
 
-    if (grouped.length === 0 && pizzas.length > 0) {
+    if (grouped.length === 0 && products.length > 0) {
       grouped.push({
         key: "category-default",
         title: tr("Le menu", "Menu"),
         description: "",
-        items: pizzas,
+        items: products,
       });
     }
 
@@ -378,7 +419,7 @@ export default function Order() {
         ...entry,
         isPizzaCategory: isPizzaCategoryLabel(entry.title),
       }));
-  }, [categories, pizzas, tr]);
+  }, [categories, products, tr]);
 
   useEffect(() => {
     if (menuByCategory.length === 0) {
@@ -397,8 +438,8 @@ export default function Order() {
     [activeCategoryKey, menuByCategory]
   );
 
-  const openPizzaModal = (pizza) => {
-    setEditingPizza(pizza);
+  const openProductModal = (product) => {
+    setEditingProduct(product);
     setSelectedExtras([]);
     setRemovedIngredients([]);
     setQuantity(1);
@@ -423,7 +464,7 @@ export default function Order() {
   };
 
   const handleAddToCart = async () => {
-    if (!editingPizza) return;
+    if (!editingProduct) return;
     if (!Number.isInteger(quantity) || quantity <= 0) {
       setMessage(tr("Quantite invalide", "Invalid quantity"));
       return;
@@ -431,13 +472,13 @@ export default function Order() {
 
     try {
       setLoading(true);
-      const response = await addToCart(token, editingPizza.id, quantity, {
+      const response = await addToCart(token, editingProduct.id, quantity, {
         addedIngredients: selectedExtras.map((entry) => entry.id),
         removedIngredients: removedIngredients.map((entry) => entry.id),
       });
       setCartFromResponse(response);
-      setEditingPizza(null);
-      setMessage(tr("Pizza ajoutee au panier", "Pizza added to cart"));
+      setEditingProduct(null);
+      setMessage(tr("Produit ajoute au panier", "Product added to cart"));
     } catch (err) {
       setMessage(err.response?.data?.error || tr("Impossible d'ajouter au panier", "Unable to add to cart"));
     } finally {
@@ -602,7 +643,7 @@ export default function Order() {
                           <button
                             type="button"
                             onClick={() =>
-                              visibleMenuGroup.isPizzaCategory ? openPizzaModal(product) : handleQuickAdd(product)
+                              visibleMenuGroup.isPizzaCategory ? openProductModal(product) : handleQuickAdd(product)
                             }
                             disabled={loading}
                             title={
@@ -842,14 +883,14 @@ export default function Order() {
         </section>
       </div>
 
-      {editingPizza && (
-        <PizzaCustomizerModal
-          pizza={editingPizza}
+      {editingProduct && (
+        <ProductCustomizerModal
+          product={editingProduct}
           ingredients={extras}
           selectedExtras={selectedExtras}
           removedIngredients={removedIngredients}
           quantity={quantity}
-          onClose={() => setEditingPizza(null)}
+          onClose={() => setEditingProduct(null)}
           onExtrasChange={(ingredient, checked) => {
             setSelectedExtras((prev) =>
               checked ? [...prev, ingredient] : prev.filter((entry) => entry.id !== ingredient.id)

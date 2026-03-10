@@ -1,20 +1,20 @@
 import { useContext, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
-  addIngredientToPizza,
+  addIngredientToProduct,
   getAllIngredients,
-  getPizzaById,
-  removeIngredientFromPizza,
+  getProductById,
+  removeIngredientFromProduct,
 } from "../api/admin.api";
 import { AuthContext } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 
-export default function EditPizza() {
+export default function EditProduct() {
   const { id } = useParams();
   const { token, user, loading: authLoading } = useContext(AuthContext);
   const { tr } = useLanguage();
 
-  const [pizza, setPizza] = useState(null);
+  const [product, setProduct] = useState(null);
   const [ingredients, setIngredients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
@@ -26,11 +26,11 @@ export default function EditPizza() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [pizzaData, ingredientsData] = await Promise.all([
-          getPizzaById(token, id),
+        const [productData, ingredientsData] = await Promise.all([
+          getProductById(token, id),
           getAllIngredients(token),
         ]);
-        setPizza(pizzaData);
+        setProduct(productData);
         setIngredients(Array.isArray(ingredientsData) ? ingredientsData : []);
       } catch (err) {
         setMessage(err.response?.data?.error || tr("Erreur lors du chargement", "Error while loading"));
@@ -42,15 +42,15 @@ export default function EditPizza() {
     fetchData();
   }, [authLoading, token, user, id, tr]);
 
-  const refreshPizza = async () => {
-    const pizzaData = await getPizzaById(token, id);
-    setPizza(pizzaData);
+  const refreshProduct = async () => {
+    const productData = await getProductById(token, id);
+    setProduct(productData);
   };
 
   const handleAddIngredient = async (ingredientId) => {
     try {
-      await addIngredientToPizza(token, id, ingredientId);
-      await refreshPizza();
+      await addIngredientToProduct(token, id, ingredientId);
+      await refreshProduct();
       setMessage("");
     } catch (err) {
       setMessage(err.response?.data?.error || tr("Erreur lors de l'ajout", "Error while adding"));
@@ -59,8 +59,8 @@ export default function EditPizza() {
 
   const handleRemoveIngredient = async (ingredientId) => {
     try {
-      await removeIngredientFromPizza(token, id, ingredientId);
-      await refreshPizza();
+      await removeIngredientFromProduct(token, id, ingredientId);
+      await refreshProduct();
       setMessage("");
     } catch (err) {
       setMessage(err.response?.data?.error || tr("Erreur lors de la suppression", "Error while deleting"));
@@ -69,15 +69,15 @@ export default function EditPizza() {
 
   if (authLoading || loading) return <p>{tr("Chargement...", "Loading...")}</p>;
   if (!user || user.role !== "ADMIN") return <p>{tr("Acces refuse : administrateur uniquement", "Access denied: admin only")}</p>;
-  if (!pizza) return <p>{tr("Pizza introuvable", "Pizza not found")}</p>;
+  if (!product) return <p>{tr("Produit introuvable", "Product not found")}</p>;
 
-  const linkedIngredients = (pizza.ingredients || []).map((entry) => entry.ingredient).filter(Boolean);
+  const linkedIngredients = (product.ingredients || []).map((entry) => entry.ingredient).filter(Boolean);
   const linkedIds = linkedIngredients.map((entry) => entry.id);
   const availableIngredients = ingredients.filter((entry) => !linkedIds.includes(entry.id));
 
   return (
     <div>
-      <h2>{tr("Gestion des ingredients", "Ingredient management")} - {pizza.name}</h2>
+      <h2>{tr("Gestion des ingredients", "Ingredient management")} - {product.name}</h2>
 
       {message && <p style={{ color: "red" }}>{message}</p>}
 

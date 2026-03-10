@@ -4,7 +4,7 @@ import { getCategories } from "../api/category.api";
 import { sendContactEmail } from "../api/contact.api";
 import { INSTAGRAM_URL } from "../config/env";
 import { getPublicGallery } from "../api/gallery.api";
-import { getAllPizzasClient } from "../api/user.api";
+import { getAllProductsClient } from "../api/user.api";
 import { AuthContext } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 
@@ -53,7 +53,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export default function Home() {
   const { token, user } = useContext(AuthContext);
   const { tr } = useLanguage();
-  const [pizzas, setPizzas] = useState([]);
+  const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [galleryImages, setGalleryImages] = useState([]);
   const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
@@ -70,20 +70,20 @@ export default function Home() {
 
     async function fetchHomeData() {
       try {
-        const [pizzaData, categoryData, galleryData] = await Promise.all([
-          getAllPizzasClient(),
-          getCategories({ active: true }),
+        const [productData, categoryData, galleryData] = await Promise.all([
+          getAllProductsClient(),
+          getCategories({ active: true, kind: "PRODUCT" }),
           getPublicGallery({ active: true }),
         ]);
 
         if (!cancelled) {
-          setPizzas(Array.isArray(pizzaData) ? pizzaData : []);
+          setProducts(Array.isArray(productData) ? productData : []);
           setCategories(Array.isArray(categoryData) ? categoryData : []);
           setGalleryImages(Array.isArray(galleryData) ? galleryData : []);
         }
       } catch (_err) {
         if (!cancelled) {
-          setPizzas([]);
+          setProducts([]);
           setCategories([]);
           setGalleryImages([]);
         }
@@ -101,10 +101,10 @@ export default function Home() {
       id: category.id,
       name: category.name,
       description: category.description,
-      items: pizzas.filter((pizza) => pizza.categoryId === category.id),
+      items: products.filter((product) => product.categoryId === category.id),
     }));
 
-    const uncategorized = pizzas.filter((pizza) => !pizza.categoryId);
+    const uncategorized = products.filter((product) => !product.categoryId);
     if (uncategorized.length > 0) {
       grouped.push({
         id: "uncategorized",
@@ -114,12 +114,12 @@ export default function Home() {
       });
     }
 
-    if (grouped.length === 0 && pizzas.length > 0) {
+    if (grouped.length === 0 && products.length > 0) {
       grouped.push({
         id: "default",
         name: tr("Le menu", "Menu"),
         description: tr("Pizzas napolitaines", "Neapolitan pizzas"),
-        items: pizzas,
+        items: products,
       });
     }
 
@@ -134,7 +134,7 @@ export default function Home() {
         return left.index - right.index;
       })
       .map(({ entry }) => entry);
-  }, [categories, pizzas, tr]);
+  }, [categories, products, tr]);
 
   const galleryFallback = [
     {
@@ -327,21 +327,21 @@ export default function Home() {
                 </div>
 
                 <div>
-                  {group.items.map((pizza) => (
-                    <div key={pizza.id} className="border-b border-white/10 py-4 last:border-b-0">
+                  {group.items.map((product) => (
+                    <div key={product.id} className="border-b border-white/10 py-4 last:border-b-0">
                       <div className="flex items-start gap-3">
-                        <h4 className="text-base font-semibold uppercase tracking-wide text-white sm:text-lg">{pizza.name}</h4>
+                        <h4 className="text-base font-semibold uppercase tracking-wide text-white sm:text-lg">{product.name}</h4>
                         <div className="mt-3 hidden h-px flex-1 border-t border-dashed border-stone-500/70 sm:block" />
                         <span className="whitespace-nowrap text-sm font-extrabold uppercase tracking-wide text-saffron sm:text-base">
-                          {formatPrice(pizza.basePrice)} EUR
+                          {formatPrice(product.basePrice)} EUR
                         </span>
                       </div>
 
-                      {pizza.description && <p className="mt-1 text-sm text-stone-300">{pizza.description}</p>}
+                      {product.description && <p className="mt-1 text-sm text-stone-300">{product.description}</p>}
 
-                      {pizza.ingredients?.length > 0 && (
+                      {product.ingredients?.length > 0 && (
                         <p className="mt-2 text-xs uppercase tracking-[0.14em] text-stone-400">
-                          {pizza.ingredients.map((entry) => entry.ingredient.name).join(" - ")}
+                          {product.ingredients.map((entry) => entry.ingredient.name).join(" - ")}
                         </p>
                       )}
                     </div>
