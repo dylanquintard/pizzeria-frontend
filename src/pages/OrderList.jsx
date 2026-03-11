@@ -8,6 +8,7 @@ import {
 } from "../api/admin.api";
 import { useRealtimeEvents } from "../hooks/useRealtimeEvents";
 import { ActionIconButton, DeleteIcon } from "../components/ui/AdminActions";
+import { getOrderNote } from "../utils/orderNote";
 import { splitPersonName } from "../utils/personName";
 
 function toLocalIsoDate(dateValue) {
@@ -57,6 +58,19 @@ function getClientIdentity(order, tr) {
 function formatPrice(value) {
   const numeric = Number(value);
   return Number.isNaN(numeric) ? "0.00" : numeric.toFixed(2);
+}
+
+function getOrderItemProduct(item) {
+  return item?.product || item?.menuItem || null;
+}
+
+function getOrderItemName(item, tr) {
+  const product = getOrderItemProduct(item);
+  return product?.name || item?.name || `${tr("Produit", "Product")} #${item?.id ?? "?"}`;
+}
+
+function getIngredientName(ingredient, tr) {
+  return ingredient?.name || ingredient?.ingredient?.name || tr("Ingredient", "Ingredient");
 }
 
 function normalizeWorkflowStatus(order) {
@@ -433,6 +447,7 @@ export default function OrderList() {
                   const clientIdentity = getClientIdentity(order, tr);
                   const hasPhone = Boolean(clientPhone);
                   const phoneDisplay = clientPhone || (usersLookupReady ? tr("Numero non renseigne", "No phone provided") : tr("Chargement...", "Loading..."));
+                  const orderNote = getOrderNote(order);
 
                   return (
                     <article key={order.id} className="rounded-xl border border-white/10 bg-charcoal/45 p-3">
@@ -468,6 +483,47 @@ export default function OrderList() {
                           >
                             <DeleteIcon />
                           </ActionIconButton>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 rounded-lg border border-white/10 bg-black/20 p-2">
+                        <div className="mb-3 grid gap-1 rounded-md border border-white/10 bg-charcoal/40 px-2.5 py-2 text-xs text-stone-300 sm:grid-cols-2">
+                          {orderNote && (
+                            <p className="sm:col-span-2">
+                              <strong className="text-stone-100">{tr("Note", "Note")}:</strong> {orderNote}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="space-y-2">
+                          {order.items?.length > 0 ? (
+                            order.items.map((item, index) => {
+                              const added = (item.addedIngredients || []).map((entry) => getIngredientName(entry, tr)).filter(Boolean);
+                              const removed = (item.removedIngredients || []).map((entry) => getIngredientName(entry, tr)).filter(Boolean);
+
+                              return (
+                                <div key={item.id ?? `${order.id}-${index}`} className="text-sm text-stone-200">
+                                  <div className="flex flex-wrap items-center gap-1.5">
+                                    <span className="inline-flex min-w-[34px] justify-center rounded-md bg-saffron/20 px-1.5 py-0.5 text-xs font-bold text-saffron">
+                                      {item.quantity}x
+                                    </span>
+                                    <span className="text-sm font-semibold text-white sm:text-[15px]">
+                                      {getOrderItemName(item, tr)}
+                                    </span>
+                                  </div>
+
+                                  {(added.length > 0 || removed.length > 0) && (
+                                    <div className="ml-9 mt-1 space-y-0.5">
+                                      {added.length > 0 && <p className="text-xs text-emerald-300 sm:text-sm">+ {added.join(", ")}</p>}
+                                      {removed.length > 0 && <p className="text-xs text-red-300 sm:text-sm">- {removed.join(", ")}</p>}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })
+                          ) : (
+                            <p className="text-xs text-stone-400">{tr("Aucun detail de produit.", "No product detail.")}</p>
+                          )}
                         </div>
                       </div>
                     </article>
