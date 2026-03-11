@@ -541,14 +541,6 @@ export default function OrderList() {
                       {isExpanded && (
                         <div className="mt-3 rounded-lg border border-white/10 bg-black/20 p-2">
                           <div className="mb-3 grid gap-1 rounded-md border border-white/10 bg-charcoal/40 px-2.5 py-2 text-xs text-stone-300 sm:grid-cols-2">
-                            <p>
-                              <strong className="text-stone-100">{tr("Prenom", "First name")}:</strong>{" "}
-                              {clientIdentity.firstName || "-"}
-                            </p>
-                            <p>
-                              <strong className="text-stone-100">{tr("Nom", "Last name")}:</strong>{" "}
-                              {clientIdentity.lastName || "-"}
-                            </p>
                             {orderNote && (
                               <p className="sm:col-span-2">
                                 <strong className="text-stone-100">{tr("Note", "Note")}:</strong> {orderNote}
