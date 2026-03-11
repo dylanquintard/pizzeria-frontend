@@ -470,11 +470,8 @@ const truckTourSchedule = useMemo(
 ) : (
   truckTourSchedule.map((location) => (
     <div key={location.key} className="glass-panel p-5">
-      <p className="text-[11px] uppercase tracking-wider text-saffron">{tr("Nom adresse", "Location name")}</p>
+      <p className="text-[11px] uppercase tracking-wider text-saffron">{tr("Nom", "Name")}</p>
       <p className="mt-1 text-lg font-bold text-white">{location.locationName}</p>
-
-      <p className="mt-3 text-[11px] uppercase tracking-wider text-saffron">{tr("Adresse", "Address")}</p>
-      <p className="mt-1 text-sm text-stone-200">{location.address}</p>
 
       <p className="mt-3 text-[11px] uppercase tracking-wider text-saffron">{tr("Jour d'ouverture", "Opening day")}</p>
       <p className="mt-1 text-sm text-stone-200">{location.dayLabel}</p>
