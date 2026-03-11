@@ -2,17 +2,42 @@ import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import {
+  deletePrintAgentAdmin,
+  deletePrintPrinterAdmin,
   getPrintAgentsAdmin,
   getPrintJobsAdmin,
   getPrintOverviewAdmin,
   getPrintPrintersAdmin,
   reprintJobAdmin,
+  rotatePrintAgentTokenAdmin,
   runPrintSchedulerTickAdmin,
+  upsertPrintAgentAdmin,
+  upsertPrintPrinterAdmin,
 } from "../api/admin.api";
+import { getLocations } from "../api/location.api";
 import { getOrderNote } from "../utils/orderNote";
 import { splitPersonName } from "../utils/personName";
 
 const AUTO_REFRESH_MS = 10_000;
+
+const initialAgentForm = {
+  code: "",
+  name: "",
+  status: "OFFLINE",
+};
+
+const initialPrinterForm = {
+  code: "",
+  name: "",
+  model: "",
+  paperWidthMm: 80,
+  connectionType: "ETHERNET",
+  ipAddress: "",
+  port: 9100,
+  isActive: true,
+  agentCode: "",
+  locationId: "",
+};
 
 function formatDateTime(value, locale) {
   if (!value) return "-";
@@ -46,25 +71,37 @@ export default function PrintAdmin() {
   const [jobs, setJobs] = useState([]);
   const [agents, setAgents] = useState([]);
   const [printers, setPrinters] = useState([]);
+  const [locations, setLocations] = useState([]);
+
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
   const [runningTick, setRunningTick] = useState(false);
   const [reprintingByJobId, setReprintingByJobId] = useState({});
+  const [busyByKey, setBusyByKey] = useState({});
+  const [message, setMessage] = useState("");
+
+  const [agentForm, setAgentForm] = useState(initialAgentForm);
+  const [printerForm, setPrinterForm] = useState(initialPrinterForm);
+
+  const setBusy = (key, value) => {
+    setBusyByKey((prev) => ({ ...prev, [key]: value }));
+  };
 
   const refreshAll = useCallback(async () => {
     if (!token || user?.role !== "ADMIN") return;
     setLoading(true);
     try {
-      const [nextOverview, nextJobs, nextAgents, nextPrinters] = await Promise.all([
+      const [nextOverview, nextJobs, nextAgents, nextPrinters, nextLocations] = await Promise.all([
         getPrintOverviewAdmin(token),
         getPrintJobsAdmin(token, { limit: 50 }),
         getPrintAgentsAdmin(token),
         getPrintPrintersAdmin(token),
+        getLocations(),
       ]);
       setOverview(nextOverview || null);
       setJobs(Array.isArray(nextJobs) ? nextJobs : []);
       setAgents(Array.isArray(nextAgents) ? nextAgents : []);
       setPrinters(Array.isArray(nextPrinters) ? nextPrinters : []);
+      setLocations(Array.isArray(nextLocations) ? nextLocations : []);
       setMessage("");
     } catch (err) {
       setMessage(err?.response?.data?.error || tr("Erreur de chargement impression", "Print loading error"));
@@ -87,16 +124,141 @@ export default function PrintAdmin() {
     return agentAlerts + metadataPrinterAlerts + inactivePrinterAlerts;
   }, [overview]);
 
-  const handleReprint = async (jobId) => {
-    const confirmText = tr("Relancer l'impression de ce ticket ?", "Reprint this ticket?");
-    if (!window.confirm(confirmText)) return;
+  const handleCreateOrUpdateAgent = async (event) => {
+    event.preventDefault();
+    if (!agentForm.code.trim() || !agentForm.name.trim()) {
+      setMessage(tr("Code et nom camion obligatoires", "Truck code and name are required"));
+      return;
+    }
 
+    const busyKey = "upsert-agent";
+    setBusy(busyKey, true);
+    try {
+      const result = await upsertPrintAgentAdmin(token, {
+        code: agentForm.code.trim(),
+        name: agentForm.name.trim(),
+        status: agentForm.status,
+      });
+
+      const tokenText = result?.token ? ` | token: ${result.token}` : "";
+      setMessage(`${tr("Camion enregistre", "Truck saved")}${tokenText}`);
+      setAgentForm(initialAgentForm);
+      await refreshAll();
+    } catch (err) {
+      setMessage(err?.response?.data?.error || tr("Echec enregistrement camion", "Truck save failed"));
+    } finally {
+      setBusy(busyKey, false);
+    }
+  };
+
+  const handleDeleteAgent = async (agentCode) => {
+    if (!window.confirm(tr("Supprimer ce camion ?", "Delete this truck?"))) return;
+    const busyKey = `delete-agent:${agentCode}`;
+    setBusy(busyKey, true);
+    try {
+      await deletePrintAgentAdmin(token, agentCode);
+      setMessage(tr("Camion supprime", "Truck deleted"));
+      await refreshAll();
+    } catch (err) {
+      setMessage(err?.response?.data?.error || tr("Echec suppression camion", "Truck deletion failed"));
+    } finally {
+      setBusy(busyKey, false);
+    }
+  };
+
+  const handleRotateAgentToken = async (agentCode) => {
+    const busyKey = `rotate-agent:${agentCode}`;
+    setBusy(busyKey, true);
+    try {
+      const result = await rotatePrintAgentTokenAdmin(token, agentCode);
+      setMessage(`${tr("Nouveau token pour", "New token for")} ${agentCode}: ${result?.token || "-"}`);
+      await refreshAll();
+    } catch (err) {
+      setMessage(err?.response?.data?.error || tr("Echec rotation token", "Token rotation failed"));
+    } finally {
+      setBusy(busyKey, false);
+    }
+  };
+
+  const handleCreateOrUpdatePrinter = async (event) => {
+    event.preventDefault();
+    if (!printerForm.code.trim() || !printerForm.name.trim()) {
+      setMessage(tr("Code et nom imprimante obligatoires", "Printer code and name are required"));
+      return;
+    }
+
+    const busyKey = "upsert-printer";
+    setBusy(busyKey, true);
+    try {
+      const payload = {
+        code: printerForm.code.trim(),
+        name: printerForm.name.trim(),
+        model: printerForm.model.trim() || null,
+        paperWidthMm: Number(printerForm.paperWidthMm || 80),
+        connectionType: printerForm.connectionType,
+        ipAddress: printerForm.ipAddress.trim() || null,
+        port: Number(printerForm.port || 9100),
+        isActive: Boolean(printerForm.isActive),
+        agentCode: printerForm.agentCode.trim() || null,
+        locationId: printerForm.locationId === "" ? null : Number(printerForm.locationId),
+      };
+
+      await upsertPrintPrinterAdmin(token, payload);
+      setPrinterForm(initialPrinterForm);
+      setMessage(tr("Imprimante enregistree", "Printer saved"));
+      await refreshAll();
+    } catch (err) {
+      setMessage(err?.response?.data?.error || tr("Echec enregistrement imprimante", "Printer save failed"));
+    } finally {
+      setBusy(busyKey, false);
+    }
+  };
+
+  const handleDeletePrinter = async (printerCode) => {
+    if (!window.confirm(tr("Supprimer cette imprimante ?", "Delete this printer?"))) return;
+    const busyKey = `delete-printer:${printerCode}`;
+    setBusy(busyKey, true);
+    try {
+      await deletePrintPrinterAdmin(token, printerCode);
+      setMessage(tr("Imprimante supprimee", "Printer deleted"));
+      await refreshAll();
+    } catch (err) {
+      setMessage(err?.response?.data?.error || tr("Echec suppression imprimante", "Printer deletion failed"));
+    } finally {
+      setBusy(busyKey, false);
+    }
+  };
+
+  const handleQuickLinkPrinterLocation = async (printer, nextLocationId) => {
+    const busyKey = `link-printer:${printer.code}`;
+    setBusy(busyKey, true);
+    try {
+      await upsertPrintPrinterAdmin(token, {
+        code: printer.code,
+        name: printer.name,
+        model: printer.model || null,
+        paperWidthMm: Number(printer.paperWidthMm || 80),
+        connectionType: printer.connectionType,
+        ipAddress: printer.ipAddress || null,
+        port: Number(printer.port || 9100),
+        isActive: Boolean(printer.isActive),
+        agentCode: printer.agent?.code || null,
+        locationId: nextLocationId === "" ? null : Number(nextLocationId),
+      });
+      setMessage(tr("Liaison emplacement mise a jour", "Location link updated"));
+      await refreshAll();
+    } catch (err) {
+      setMessage(err?.response?.data?.error || tr("Echec liaison emplacement", "Location link failed"));
+    } finally {
+      setBusy(busyKey, false);
+    }
+  };
+
+  const handleReprint = async (jobId) => {
+    if (!window.confirm(tr("Relancer l'impression de ce ticket ?", "Reprint this ticket?"))) return;
     setReprintingByJobId((prev) => ({ ...prev, [jobId]: true }));
     try {
-      await reprintJobAdmin(token, jobId, {
-        copies: 1,
-        reason: "manual_reprint_admin",
-      });
+      await reprintJobAdmin(token, jobId, { copies: 1, reason: "manual_reprint_admin" });
       setMessage(tr("Ticket ajoute en reimpression", "Reprint job created"));
       await refreshAll();
     } catch (err) {
@@ -131,7 +293,7 @@ export default function PrintAdmin() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-2xl font-bold text-white">{tr("Impression & tickets", "Print & tickets")}</h2>
+        <h2 className="text-2xl font-bold text-white">{tr("Impression, camions & tickets", "Print, trucks & tickets")}</h2>
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -153,9 +315,7 @@ export default function PrintAdmin() {
 
       {alertCount > 0 && (
         <div className="rounded-xl border border-red-400/40 bg-red-500/10 px-3 py-2 text-sm text-red-200">
-          <p className="font-semibold">
-            {tr("Alerte impression", "Print alert")} ({alertCount})
-          </p>
+          <p className="font-semibold">{tr("Alerte impression", "Print alert")} ({alertCount})</p>
           <p className="text-xs text-red-100">
             {tr(
               "Un agent ou une imprimante est en etat degrade/hors ligne. Verifier papier, reseau et heartbeat Pi.",
@@ -166,25 +326,20 @@ export default function PrintAdmin() {
       )}
 
       {message && (
-        <p className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm text-stone-200">
-          {message}
-        </p>
+        <p className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm text-stone-200">{message}</p>
       )}
 
       <section className="grid gap-3 md:grid-cols-3">
         <article className="rounded-xl border border-white/10 bg-white/5 p-3">
           <p className="text-xs uppercase tracking-wider text-stone-400">{tr("Jobs", "Jobs")}</p>
           <p className="mt-1 text-xl font-bold text-white">{overview?.jobs?.total ?? 0}</p>
-          <p className="text-xs text-stone-300">
-            FAILED 24h: {overview?.jobs?.failedLast24h ?? 0}
-          </p>
+          <p className="text-xs text-stone-300">FAILED 24h: {overview?.jobs?.failedLast24h ?? 0}</p>
         </article>
         <article className="rounded-xl border border-white/10 bg-white/5 p-3">
-          <p className="text-xs uppercase tracking-wider text-stone-400">{tr("Agents", "Agents")}</p>
+          <p className="text-xs uppercase tracking-wider text-stone-400">{tr("Camions (agents)", "Trucks (agents)")}</p>
           <p className="mt-1 text-xl font-bold text-white">{overview?.agents?.total ?? 0}</p>
           <p className="text-xs text-stone-300">
-            ONLINE {overview?.agents?.online ?? 0} | DEGRADED {overview?.agents?.degraded ?? 0} | OFFLINE{" "}
-            {overview?.agents?.offline ?? 0}
+            ONLINE {overview?.agents?.online ?? 0} | DEGRADED {overview?.agents?.degraded ?? 0} | OFFLINE {overview?.agents?.offline ?? 0}
           </p>
         </article>
         <article className="rounded-xl border border-white/10 bg-white/5 p-3">
@@ -197,53 +352,224 @@ export default function PrintAdmin() {
       </section>
 
       <section className="rounded-xl border border-white/10 bg-white/5 p-3">
-        <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-saffron">{tr("Agents", "Agents")}</h3>
-        {agents.length === 0 ? (
-          <p className="text-xs text-stone-400">{tr("Aucun agent", "No agent")}</p>
-        ) : (
-          <div className="space-y-2">
-            {agents.map((agent) => (
-              <article key={agent.id} className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-sm font-semibold text-white">
-                    {agent.name} <span className="text-xs text-stone-400">({agent.code})</span>
+        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-saffron">{tr("Creer/mettre a jour un camion", "Create/update a truck")}</h3>
+        <form onSubmit={handleCreateOrUpdateAgent} className="grid gap-2 md:grid-cols-4">
+          <input
+            value={agentForm.code}
+            onChange={(event) => setAgentForm((prev) => ({ ...prev, code: event.target.value }))}
+            placeholder={tr("Code camion", "Truck code")}
+            className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
+          />
+          <input
+            value={agentForm.name}
+            onChange={(event) => setAgentForm((prev) => ({ ...prev, name: event.target.value }))}
+            placeholder={tr("Nom camion", "Truck name")}
+            className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
+          />
+          <select
+            value={agentForm.status}
+            onChange={(event) => setAgentForm((prev) => ({ ...prev, status: event.target.value }))}
+            className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
+          >
+            <option value="OFFLINE">OFFLINE</option>
+            <option value="ONLINE">ONLINE</option>
+            <option value="DEGRADED">DEGRADED</option>
+          </select>
+          <button
+            type="submit"
+            disabled={busyByKey["upsert-agent"]}
+            className="rounded-lg border border-emerald-300/40 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-200 disabled:opacity-60"
+          >
+            {tr("Enregistrer camion", "Save truck")}
+          </button>
+        </form>
+
+        <div className="mt-3 space-y-2">
+          {agents.length === 0 ? (
+            <p className="text-xs text-stone-400">{tr("Aucun camion", "No truck")}</p>
+          ) : (
+            agents.map((agent) => {
+              const busyDelete = busyByKey[`delete-agent:${agent.code}`];
+              const busyRotate = busyByKey[`rotate-agent:${agent.code}`];
+              const linkedLocationNames = (agent.printers || [])
+                .map((printer) => printer?.location?.name)
+                .filter(Boolean);
+
+              return (
+                <article key={agent.id} className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-sm font-semibold text-white">
+                      {agent.name} <span className="text-xs text-stone-400">({agent.code})</span>
+                    </p>
+                    <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase ${statusBadge(agent.status)}`}>
+                      {agent.status}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-stone-300">
+                    {tr("Dernier heartbeat", "Last heartbeat")}: {formatDateTime(agent.lastHeartbeatAt, locale)}
                   </p>
-                  <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase ${statusBadge(agent.status)}`}>
-                    {agent.status}
-                  </span>
-                </div>
-                <p className="mt-1 text-xs text-stone-300">
-                  {tr("Dernier heartbeat", "Last heartbeat")}: {formatDateTime(agent.lastHeartbeatAt, locale)}
-                </p>
-              </article>
-            ))}
-          </div>
-        )}
+                  <p className="mt-1 text-xs text-stone-300">
+                    {tr("Emplacements lies", "Linked locations")}: {linkedLocationNames.length > 0 ? linkedLocationNames.join(", ") : "-"}
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      disabled={busyRotate}
+                      onClick={() => handleRotateAgentToken(agent.code)}
+                      className="rounded-lg border border-sky-300/40 bg-sky-500/10 px-3 py-1.5 text-xs font-semibold text-sky-200 disabled:opacity-60"
+                    >
+                      {tr("Rotate token", "Rotate token")}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busyDelete}
+                      onClick={() => handleDeleteAgent(agent.code)}
+                      className="rounded-lg border border-red-300/40 bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-200 disabled:opacity-60"
+                    >
+                      {tr("Supprimer camion", "Delete truck")}
+                    </button>
+                  </div>
+                </article>
+              );
+            })
+          )}
+        </div>
       </section>
 
       <section className="rounded-xl border border-white/10 bg-white/5 p-3">
-        <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-saffron">{tr("Imprimantes", "Printers")}</h3>
-        {printers.length === 0 ? (
-          <p className="text-xs text-stone-400">{tr("Aucune imprimante", "No printer")}</p>
-        ) : (
-          <div className="space-y-2">
-            {printers.map((printer) => (
-              <article key={printer.id} className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-sm font-semibold text-white">
-                    {printer.name} <span className="text-xs text-stone-400">({printer.code})</span>
-                  </p>
-                  <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase ${printer.isActive ? statusBadge("ONLINE") : statusBadge("OFFLINE")}`}>
-                    {printer.isActive ? "ACTIVE" : "INACTIVE"}
-                  </span>
-                </div>
-                <p className="mt-1 text-xs text-stone-300">
-                  {printer.ipAddress || "-"}:{printer.port} | {printer.connectionType}
-                </p>
-              </article>
+        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-saffron">{tr("Creer/mettre a jour une imprimante", "Create/update a printer")}</h3>
+        <form onSubmit={handleCreateOrUpdatePrinter} className="grid gap-2 md:grid-cols-4">
+          <input
+            value={printerForm.code}
+            onChange={(event) => setPrinterForm((prev) => ({ ...prev, code: event.target.value }))}
+            placeholder={tr("Code imprimante", "Printer code")}
+            className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
+          />
+          <input
+            value={printerForm.name}
+            onChange={(event) => setPrinterForm((prev) => ({ ...prev, name: event.target.value }))}
+            placeholder={tr("Nom imprimante", "Printer name")}
+            className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
+          />
+          <input
+            value={printerForm.ipAddress}
+            onChange={(event) => setPrinterForm((prev) => ({ ...prev, ipAddress: event.target.value }))}
+            placeholder={tr("IP imprimante", "Printer IP")}
+            className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
+          />
+          <input
+            value={printerForm.port}
+            type="number"
+            onChange={(event) => setPrinterForm((prev) => ({ ...prev, port: event.target.value }))}
+            placeholder={tr("Port", "Port")}
+            className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
+          />
+          <input
+            value={printerForm.model}
+            onChange={(event) => setPrinterForm((prev) => ({ ...prev, model: event.target.value }))}
+            placeholder={tr("Modele", "Model")}
+            className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
+          />
+          <select
+            value={printerForm.connectionType}
+            onChange={(event) => setPrinterForm((prev) => ({ ...prev, connectionType: event.target.value }))}
+            className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
+          >
+            <option value="ETHERNET">ETHERNET</option>
+            <option value="USB">USB</option>
+          </select>
+          <select
+            value={printerForm.agentCode}
+            onChange={(event) => setPrinterForm((prev) => ({ ...prev, agentCode: event.target.value }))}
+            className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
+          >
+            <option value="">{tr("Aucun camion", "No truck")}</option>
+            {agents.map((agent) => (
+              <option key={agent.id} value={agent.code}>
+                {agent.name} ({agent.code})
+              </option>
             ))}
-          </div>
-        )}
+          </select>
+          <select
+            value={printerForm.locationId}
+            onChange={(event) => setPrinterForm((prev) => ({ ...prev, locationId: event.target.value }))}
+            className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
+          >
+            <option value="">{tr("Global (toutes adresses)", "Global (all addresses)")}</option>
+            {locations.map((location) => (
+              <option key={location.id} value={location.id}>
+                {location.name} #{location.id}
+              </option>
+            ))}
+          </select>
+          <label className="flex items-center gap-2 rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100">
+            <input
+              type="checkbox"
+              checked={Boolean(printerForm.isActive)}
+              onChange={(event) => setPrinterForm((prev) => ({ ...prev, isActive: event.target.checked }))}
+            />
+            {tr("Imprimante active", "Printer active")}
+          </label>
+          <button
+            type="submit"
+            disabled={busyByKey["upsert-printer"]}
+            className="rounded-lg border border-emerald-300/40 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-200 disabled:opacity-60 md:col-span-2"
+          >
+            {tr("Enregistrer imprimante", "Save printer")}
+          </button>
+        </form>
+
+        <div className="mt-3 space-y-2">
+          {printers.length === 0 ? (
+            <p className="text-xs text-stone-400">{tr("Aucune imprimante", "No printer")}</p>
+          ) : (
+            printers.map((printer) => {
+              const busyDelete = busyByKey[`delete-printer:${printer.code}`];
+              const busyLink = busyByKey[`link-printer:${printer.code}`];
+              return (
+                <article key={printer.id} className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-sm font-semibold text-white">
+                      {printer.name} <span className="text-xs text-stone-400">({printer.code})</span>
+                    </p>
+                    <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase ${printer.isActive ? statusBadge("ONLINE") : statusBadge("OFFLINE")}`}>
+                      {printer.isActive ? "ACTIVE" : "INACTIVE"}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-stone-300">
+                    {printer.ipAddress || "-"}:{printer.port} | {printer.connectionType} | {tr("Camion", "Truck")}: {printer.agent?.name || "-"}
+                  </p>
+                  <p className="mt-1 text-xs text-stone-300">
+                    {tr("Emplacement", "Location")}: {printer.location?.name || tr("Global", "Global")}
+                  </p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <select
+                      defaultValue={printer.location?.id ?? ""}
+                      onChange={(event) => handleQuickLinkPrinterLocation(printer, event.target.value)}
+                      disabled={busyLink}
+                      className="rounded-lg border border-white/20 bg-charcoal/70 px-2 py-1.5 text-xs text-stone-100"
+                    >
+                      <option value="">{tr("Global", "Global")}</option>
+                      {locations.map((location) => (
+                        <option key={location.id} value={location.id}>
+                          {location.name} #{location.id}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      disabled={busyDelete}
+                      onClick={() => handleDeletePrinter(printer.code)}
+                      className="rounded-lg border border-red-300/40 bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-200 disabled:opacity-60"
+                    >
+                      {tr("Supprimer imprimante", "Delete printer")}
+                    </button>
+                  </div>
+                </article>
+              );
+            })
+          )}
+        </div>
       </section>
 
       <section className="rounded-xl border border-white/10 bg-white/5 p-3">
@@ -271,11 +597,7 @@ export default function PrintAdmin() {
                     {tr("Retrait", "Pickup")}: {formatDateTime(job?.payload?.order?.pickup_time, locale)} |{" "}
                     {tr("Total", "Total")}: {job?.payload?.order?.total || "-"} EUR
                   </p>
-                  {note && (
-                    <p className="mt-1 text-xs text-stone-200">
-                      {tr("Note", "Note")}: {note}
-                    </p>
-                  )}
+                  {note && <p className="mt-1 text-xs text-stone-200">{tr("Note", "Note")}: {note}</p>}
                   <p className="mt-1 text-[11px] text-stone-400">
                     {tr("Planifie", "Scheduled")}: {formatDateTime(job.scheduledAt, locale)} |{" "}
                     {tr("Derniere MAJ", "Last update")}: {formatDateTime(job.updatedAt, locale)}

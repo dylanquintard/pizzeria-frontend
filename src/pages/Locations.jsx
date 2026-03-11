@@ -8,6 +8,13 @@ import {
   getLocations,
   updateLocation,
 } from "../api/location.api";
+import {
+  deletePrintAgentAdmin,
+  getPrintAgentsAdmin,
+  getPrintPrintersAdmin,
+  upsertPrintAgentAdmin,
+  upsertPrintPrinterAdmin,
+} from "../api/admin.api";
 import { ActionIconButton, DeleteIcon, EditIcon, StatusToggle } from "../components/ui/AdminActions";
 
 const emptyLocationForm = {
@@ -63,6 +70,14 @@ export default function Locations() {
   const [editLocation, setEditLocation] = useState(emptyLocationForm);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [printAgents, setPrintAgents] = useState([]);
+  const [printPrinters, setPrintPrinters] = useState([]);
+  const [truckForm, setTruckForm] = useState({
+    code: "",
+    name: "",
+    status: "OFFLINE",
+  });
+  const [truckBusy, setTruckBusy] = useState({});
 
   const fetchLocations = useCallback(async () => {
     try {
@@ -73,11 +88,26 @@ export default function Locations() {
     }
   }, [tr]);
 
+  const fetchPrintResources = useCallback(async () => {
+    if (!token || user?.role !== "ADMIN") return;
+    try {
+      const [agents, printers] = await Promise.all([
+        getPrintAgentsAdmin(token),
+        getPrintPrintersAdmin(token),
+      ]);
+      setPrintAgents(Array.isArray(agents) ? agents : []);
+      setPrintPrinters(Array.isArray(printers) ? printers : []);
+    } catch (err) {
+      setMessage(err.response?.data?.error || tr("Erreur lors du chargement des camions", "Error while loading trucks"));
+    }
+  }, [token, user, tr]);
+
   useEffect(() => {
     if (authLoading) return;
     if (!token || user?.role !== "ADMIN") return;
     fetchLocations();
-  }, [authLoading, token, user, fetchLocations]);
+    fetchPrintResources();
+  }, [authLoading, token, user, fetchLocations, fetchPrintResources]);
 
   const handleCreate = async (event) => {
     event.preventDefault();
@@ -153,6 +183,91 @@ export default function Locations() {
       fetchLocations();
     } catch (err) {
       setMessage(err.response?.data?.error || tr("Erreur lors de la suppression", "Error while deleting"));
+    }
+  };
+
+  const setTruckBusyFlag = (key, value) => {
+    setTruckBusy((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleCreateTruck = async (event) => {
+    event.preventDefault();
+    if (!truckForm.code.trim() || !truckForm.name.trim()) {
+      setMessage(tr("Code et nom camion obligatoires", "Truck code and name are required"));
+      return;
+    }
+
+    const busyKey = "create-truck";
+    setTruckBusyFlag(busyKey, true);
+    try {
+      const result = await upsertPrintAgentAdmin(token, {
+        code: truckForm.code.trim(),
+        name: truckForm.name.trim(),
+        status: truckForm.status,
+      });
+      const tokenInfo = result?.token ? ` | token: ${result.token}` : "";
+      setMessage(`${tr("Camion enregistre", "Truck saved")}${tokenInfo}`);
+      setTruckForm({ code: "", name: "", status: "OFFLINE" });
+      await fetchPrintResources();
+    } catch (err) {
+      setMessage(err.response?.data?.error || tr("Erreur creation camion", "Truck creation error"));
+    } finally {
+      setTruckBusyFlag(busyKey, false);
+    }
+  };
+
+  const handleDeleteTruck = async (agentCode) => {
+    if (!window.confirm(tr("Supprimer ce camion ?", "Delete this truck?"))) return;
+    const busyKey = `delete-truck:${agentCode}`;
+    setTruckBusyFlag(busyKey, true);
+    try {
+      await deletePrintAgentAdmin(token, agentCode);
+      setMessage(tr("Camion supprime", "Truck deleted"));
+      await fetchPrintResources();
+    } catch (err) {
+      setMessage(err.response?.data?.error || tr("Erreur suppression camion", "Truck deletion error"));
+    } finally {
+      setTruckBusyFlag(busyKey, false);
+    }
+  };
+
+  const handleLinkTruckToLocation = async (agentCode, locationId) => {
+    const busyKey = `link-truck:${agentCode}`;
+    setTruckBusyFlag(busyKey, true);
+    try {
+      const printers = (printPrinters || []).filter((printer) => printer?.agent?.code === agentCode);
+      if (printers.length === 0) {
+        setMessage(
+          tr(
+            "Aucune imprimante liee a ce camion. Configure une imprimante dans /admin/print.",
+            "No printer linked to this truck. Configure one in /admin/print."
+          )
+        );
+        return;
+      }
+
+      for (const printer of printers) {
+        // eslint-disable-next-line no-await-in-loop
+        await upsertPrintPrinterAdmin(token, {
+          code: printer.code,
+          name: printer.name,
+          model: printer.model || null,
+          paperWidthMm: Number(printer.paperWidthMm || 80),
+          connectionType: printer.connectionType,
+          ipAddress: printer.ipAddress || null,
+          port: Number(printer.port || 9100),
+          isActive: Boolean(printer.isActive),
+          agentCode,
+          locationId: locationId === "" ? null : Number(locationId),
+        });
+      }
+
+      setMessage(tr("Camion lie a l'emplacement", "Truck linked to location"));
+      await fetchPrintResources();
+    } catch (err) {
+      setMessage(err.response?.data?.error || tr("Erreur liaison camion/emplacement", "Truck/location link error"));
+    } finally {
+      setTruckBusyFlag(busyKey, false);
     }
   };
 
@@ -281,6 +396,88 @@ export default function Locations() {
           ))}
         </tbody>
       </table>
+
+      <div className="mt-6">
+        <h3>{tr("Camions (agents impression)", "Trucks (print agents)")}</h3>
+        <form onSubmit={handleCreateTruck} className="mb-3">
+          <input
+            placeholder={tr("Code camion", "Truck code")}
+            value={truckForm.code}
+            onChange={(event) => setTruckForm((prev) => ({ ...prev, code: event.target.value }))}
+          />
+          <input
+            placeholder={tr("Nom camion", "Truck name")}
+            value={truckForm.name}
+            onChange={(event) => setTruckForm((prev) => ({ ...prev, name: event.target.value }))}
+          />
+          <select
+            value={truckForm.status}
+            onChange={(event) => setTruckForm((prev) => ({ ...prev, status: event.target.value }))}
+          >
+            <option value="OFFLINE">OFFLINE</option>
+            <option value="ONLINE">ONLINE</option>
+            <option value="DEGRADED">DEGRADED</option>
+          </select>
+          <button type="submit" disabled={truckBusy["create-truck"]}>
+            {tr("Creer camion", "Create truck")}
+          </button>
+        </form>
+
+        <table>
+          <thead>
+            <tr>
+              <th>{tr("Camion", "Truck")}</th>
+              <th>{tr("Statut", "Status")}</th>
+              <th>{tr("Emplacement lie", "Linked location")}</th>
+              <th>{tr("Lier a emplacement", "Link to location")}</th>
+              <th>{tr("Actions", "Actions")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {printAgents.length === 0 && (
+              <tr>
+                <td colSpan="5">{tr("Aucun camion", "No truck")}</td>
+              </tr>
+            )}
+            {printAgents.map((agent) => {
+              const firstPrinter = (printPrinters || []).find((printer) => printer?.agent?.code === agent.code);
+              const linkedLocationId = firstPrinter?.location?.id ?? "";
+              const linkedLocationName = firstPrinter?.location?.name || tr("Global (toutes adresses)", "Global (all addresses)");
+
+              return (
+                <tr key={agent.id}>
+                  <td>{agent.name} ({agent.code})</td>
+                  <td>{agent.status}</td>
+                  <td>{linkedLocationName}</td>
+                  <td>
+                    <select
+                      defaultValue={linkedLocationId}
+                      onChange={(event) => handleLinkTruckToLocation(agent.code, event.target.value)}
+                      disabled={truckBusy[`link-truck:${agent.code}`]}
+                    >
+                      <option value="">{tr("Global (toutes adresses)", "Global (all addresses)")}</option>
+                      {locations.map((location) => (
+                        <option key={location.id} value={location.id}>
+                          {location.name} #{location.id}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteTruck(agent.code)}
+                      disabled={truckBusy[`delete-truck:${agent.code}`]}
+                    >
+                      {tr("Supprimer", "Delete")}
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
 
       {editingId && (
         <div style={{ marginTop: "16px" }}>

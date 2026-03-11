@@ -135,8 +135,33 @@ export const getPrintAgentsAdmin = async (token) => {
   return response.data;
 };
 
+export const upsertPrintAgentAdmin = async (token, payload) => {
+  const response = await api.post("/print/admin/agents", payload, authConfig(token));
+  return response.data;
+};
+
 export const getPrintPrintersAdmin = async (token) => {
   const response = await api.get("/print/admin/printers", authConfig(token));
+  return response.data;
+};
+
+export const upsertPrintPrinterAdmin = async (token, payload) => {
+  const response = await api.post("/print/admin/printers", payload, authConfig(token));
+  return response.data;
+};
+
+export const deletePrintAgentAdmin = async (token, agentCode) => {
+  const response = await api.delete(`/print/admin/agents/${agentCode}`, authConfig(token));
+  return response.data;
+};
+
+export const deletePrintPrinterAdmin = async (token, printerCode) => {
+  const response = await api.delete(`/print/admin/printers/${printerCode}`, authConfig(token));
+  return response.data;
+};
+
+export const rotatePrintAgentTokenAdmin = async (token, agentCode) => {
+  const response = await api.post(`/print/admin/agents/${agentCode}/rotate-token`, {}, authConfig(token));
   return response.data;
 };
 
