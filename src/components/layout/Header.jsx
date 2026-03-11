@@ -110,6 +110,7 @@ export default function Header() {
   const adminMenuLinks = isAdminUser
       ? [
         { to: "/admin/orders", label: tr("Commandes", "Orders") },
+        { to: "/admin/print", label: tr("Impression", "Printing") },
         { to: "/admin/users", label: tr("Clients", "Users") },
         { to: "/admin/menu", label: tr("Menu", "Menu") },
         { to: "/admin/locations", label: tr("Emplacements", "Locations") },

@@ -21,6 +21,7 @@ import Products from "./pages/Products";
 import Profile from "./pages/Profile";
 import Register from "./pages/Register";
 import TimeslotsAdmin from "./pages/Timeslots";
+import PrintAdmin from "./pages/PrintAdmin";
 import Users from "./pages/Users";
 import UserOrders from "./pages/UsersOrders";
 import VerifyEmail from "./pages/VerifyEmail";
@@ -199,6 +200,16 @@ function AppRoutes() {
             <AdminRoute>
               <Dashboard>
                 <GalleryAdmin />
+              </Dashboard>
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/print"
+          element={
+            <AdminRoute>
+              <Dashboard>
+                <PrintAdmin />
               </Dashboard>
             </AdminRoute>
           }

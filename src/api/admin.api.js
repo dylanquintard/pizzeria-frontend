@@ -113,3 +113,39 @@ export const finalizeOrderAdmin = async (token, orderId) => {
   );
   return response.data;
 };
+
+export const getPrintOverviewAdmin = async (token, filters = {}) => {
+  const response = await api.get("/print/admin/overview", {
+    ...authConfig(token),
+    params: filters,
+  });
+  return response.data;
+};
+
+export const getPrintJobsAdmin = async (token, filters = {}) => {
+  const response = await api.get("/print/admin/jobs", {
+    ...authConfig(token),
+    params: filters,
+  });
+  return response.data;
+};
+
+export const getPrintAgentsAdmin = async (token) => {
+  const response = await api.get("/print/admin/agents", authConfig(token));
+  return response.data;
+};
+
+export const getPrintPrintersAdmin = async (token) => {
+  const response = await api.get("/print/admin/printers", authConfig(token));
+  return response.data;
+};
+
+export const reprintJobAdmin = async (token, jobId, payload = {}) => {
+  const response = await api.post(`/print/admin/jobs/${jobId}/reprint`, payload, authConfig(token));
+  return response.data;
+};
+
+export const runPrintSchedulerTickAdmin = async (token) => {
+  const response = await api.post("/print/admin/scheduler/tick", {}, authConfig(token));
+  return response.data;
+};

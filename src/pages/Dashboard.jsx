@@ -5,6 +5,7 @@ import { useLanguage } from "../context/LanguageContext";
 
 const adminLinks = [
   { to: "/admin/orders", labelFr: "Commandes", labelEn: "Orders" },
+  { to: "/admin/print", labelFr: "Impression", labelEn: "Printing" },
   { to: "/admin/users", labelFr: "Clients", labelEn: "Users" },
   { to: "/admin/menu", labelFr: "Menu", labelEn: "Menu" },
   { to: "/admin/locations", labelFr: "Emplacements", labelEn: "Locations" },
