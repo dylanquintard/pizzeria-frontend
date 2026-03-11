@@ -186,8 +186,11 @@ export default function PrintAdmin() {
         getPrintAgentsAdmin(token),
         getPrintPrintersAdmin(token),
       ]);
+      const jobsWithoutReprints = (Array.isArray(nextJobs) ? nextJobs : []).filter(
+        (job) => !job?.reprintOfJobId && !job?.payload?.reprint?.source_job_id
+      );
       setOverview(nextOverview || null);
-      setJobs(Array.isArray(nextJobs) ? nextJobs : []);
+      setJobs(jobsWithoutReprints);
       setAgents(Array.isArray(nextAgents) ? nextAgents : []);
       setPrinters(Array.isArray(nextPrinters) ? nextPrinters : []);
       setMessage("");
@@ -334,26 +337,28 @@ export default function PrintAdmin() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-2xl font-bold text-white">{tr("Impression, camions & tickets", "Print, trucks & tickets")}</h2>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={refreshAll}
-            className="rounded-lg border border-white/25 bg-white/5 px-3 py-2 text-xs font-semibold text-stone-100 transition hover:bg-white/15"
-          >
-            {loading ? tr("Actualisation...", "Refreshing...") : tr("Actualiser", "Refresh")}
-          </button>
-          <button
-            type="button"
-            onClick={handleTick}
-            disabled={runningTick}
-            className="rounded-lg border border-amber-300/40 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-200 transition hover:bg-amber-500/20 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {runningTick ? tr("Tick en cours...", "Tick running...") : tr("Forcer tick scheduler", "Force scheduler tick")}
-          </button>
+      <div className={previewJob ? "hidden md:block" : ""}>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-2xl font-bold text-white">{tr("Impressions & tickets", "Prints & tickets")}</h2>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={refreshAll}
+              className="rounded-lg border border-white/25 bg-white/5 px-3 py-2 text-xs font-semibold text-stone-100 transition hover:bg-white/15"
+            >
+              {loading ? tr("Actualisation...", "Refreshing...") : tr("Actualiser", "Refresh")}
+            </button>
+            <button
+              type="button"
+              onClick={handleTick}
+              disabled={runningTick}
+              className="rounded-lg border border-amber-300/40 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-200 transition hover:bg-amber-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {runningTick ? tr("Tick en cours...", "Tick running...") : tr("Forcer tick scheduler", "Force scheduler tick")}
+            </button>
+          </div>
         </div>
-      </div>
+      
 
       {alertCount > 0 && (
         <div className="rounded-xl border border-red-400/40 bg-red-500/10 px-3 py-2 text-sm text-red-200">
@@ -616,16 +621,17 @@ export default function PrintAdmin() {
           </div>
         )}
       </section>
+      </div>
 
       {previewJob && (
         <div
-          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4"
+          className="mt-2 md:fixed md:inset-0 md:z-[70] md:flex md:items-center md:justify-center md:bg-black/70 md:p-4"
           role="dialog"
           aria-modal="true"
           onClick={() => setPreviewJob(null)}
         >
           <div
-            className="w-full max-w-xl rounded-xl border border-white/20 bg-charcoal p-4 shadow-2xl"
+            className="w-full rounded-xl border border-white/20 bg-charcoal p-4 shadow-2xl md:max-w-xl"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="mb-3 flex items-center justify-between gap-2">
