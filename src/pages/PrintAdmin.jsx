@@ -2,7 +2,6 @@ import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import {
-  deletePrintPrinterAdmin,
   getPrintAgentsAdmin,
   getPrintJobsAdmin,
   getPrintOverviewAdmin,
@@ -175,21 +174,6 @@ export default function PrintAdmin() {
     }
   };
 
-  const handleDeletePrinter = async (printerCode) => {
-    if (!window.confirm(tr("Supprimer cette imprimante ?", "Delete this printer?"))) return;
-    const busyKey = `delete-printer:${printerCode}`;
-    setBusy(busyKey, true);
-    try {
-      await deletePrintPrinterAdmin(token, printerCode);
-      setMessage(tr("Imprimante supprimee", "Printer deleted"));
-      await refreshAll();
-    } catch (err) {
-      setMessage(err?.response?.data?.error || tr("Echec suppression imprimante", "Printer deletion failed"));
-    } finally {
-      setBusy(busyKey, false);
-    }
-  };
-
   const handleReprint = async (jobId) => {
     if (!window.confirm(tr("Relancer l'impression de ce ticket ?", "Reprint this ticket?"))) return;
     setReprintingByJobId((prev) => ({ ...prev, [jobId]: true }));
@@ -339,25 +323,17 @@ export default function PrintAdmin() {
           ) : (
             agents.map((agent) => {
               const busyRotate = busyByKey[`rotate-agent:${agent.code}`];
-              const linkedLocationNames = (agent.printers || [])
-                .map((printer) => printer?.location?.name)
-                .filter(Boolean);
 
               return (
                 <article key={agent.id} className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-sm font-semibold text-white">
-                      {agent.name} <span className="text-xs text-stone-400">({agent.code})</span>
-                    </p>
+                    <p className="text-sm font-semibold text-white">{agent.name}</p>
                     <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase ${statusBadge(agent.status)}`}>
                       {agent.status}
                     </span>
                   </div>
                   <p className="mt-1 text-xs text-stone-300">
                     {tr("Dernier heartbeat", "Last heartbeat")}: {formatDateTime(agent.lastHeartbeatAt, locale)}
-                  </p>
-                  <p className="mt-1 text-xs text-stone-300">
-                    {tr("Emplacements lies", "Linked locations")}: {linkedLocationNames.length > 0 ? linkedLocationNames.join(", ") : "-"}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     <button
@@ -366,7 +342,7 @@ export default function PrintAdmin() {
                       onClick={() => handleRotateAgentToken(agent.code)}
                       className="rounded-lg border border-sky-300/40 bg-sky-500/10 px-3 py-1.5 text-xs font-semibold text-sky-200 disabled:opacity-60"
                     >
-                      {tr("Rotate token", "Rotate token")}
+                      {tr("Generer le token", "Generate token")}
                     </button>
                   </div>
                 </article>
@@ -429,13 +405,10 @@ export default function PrintAdmin() {
             <p className="text-xs text-stone-400">{tr("Aucune imprimante", "No printer")}</p>
           ) : (
             printers.map((printer) => {
-              const busyDelete = busyByKey[`delete-printer:${printer.code}`];
               return (
                 <article key={printer.id} className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-sm font-semibold text-white">
-                      {printer.name} <span className="text-xs text-stone-400">({printer.code})</span>
-                    </p>
+                    <p className="text-sm font-semibold text-white">{printer.name}</p>
                     <span
                       className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase ${
                         statusBadge(printer?.runtime?.status || (printer.isActive ? "ONLINE" : "INACTIVE"))
@@ -443,24 +416,6 @@ export default function PrintAdmin() {
                     >
                       {formatPrinterRuntimeLabel(printer?.runtime?.status || (printer.isActive ? "ONLINE" : "INACTIVE"), tr)}
                     </span>
-                  </div>
-                  <p className="mt-1 text-xs text-stone-300">
-                    {printer.ipAddress || "-"}:{printer.port} | {printer.connectionType} | {tr("Camion", "Truck")}: {printer.agent?.name || "-"}
-                  </p>
-                  <p className="mt-1 text-xs text-stone-300">
-                    {tr("Dernier heartbeat", "Last heartbeat")}: {formatDateTime(printer?.runtime?.lastHeartbeatAt || printer?.agent?.lastHeartbeatAt, locale)}
-                    {" | "}
-                    {tr("Etat remonte Pi", "Pi-reported state")}: {String(printer?.runtime?.reportedOnline) === "true" ? tr("Connectee", "Connected") : String(printer?.runtime?.reportedOnline) === "false" ? tr("Hors ligne", "Offline") : "-"}
-                  </p>
-                  <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <button
-                      type="button"
-                      disabled={busyDelete}
-                      onClick={() => handleDeletePrinter(printer.code)}
-                      className="rounded-lg border border-red-300/40 bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-200 disabled:opacity-60"
-                    >
-                      {tr("Supprimer imprimante", "Delete printer")}
-                    </button>
                   </div>
                 </article>
               );
