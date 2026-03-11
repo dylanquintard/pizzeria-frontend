@@ -642,13 +642,6 @@ export default function Locations() {
           </form>
         )}
 
-        <p className="mt-2 text-xs text-stone-400">
-          {tr(
-            "Etat PI = heartbeat du Raspberry Pi. Etat impression = etat runtime des imprimantes liees.",
-            "PI status = Raspberry Pi heartbeat. Print status = runtime state of linked printers."
-          )}
-        </p>
-
         <div className="mt-3 overflow-x-auto">
           <table className="w-full min-w-[980px] text-sm">
             <thead>
