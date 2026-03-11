@@ -14,7 +14,6 @@ import {
   upsertPrintAgentAdmin,
   upsertPrintPrinterAdmin,
 } from "../api/admin.api";
-import { getLocations } from "../api/location.api";
 import { getOrderNote } from "../utils/orderNote";
 import { splitPersonName } from "../utils/personName";
 
@@ -26,16 +25,10 @@ const initialAgentForm = {
 };
 
 const initialPrinterForm = {
-  code: "",
   name: "",
-  model: "",
-  paperWidthMm: 80,
-  connectionType: "ETHERNET",
+  code: "",
   ipAddress: "",
-  port: 9100,
-  isActive: true,
   agentCode: "",
-  locationId: "",
 };
 
 function formatDateTime(value, locale) {
@@ -80,7 +73,6 @@ export default function PrintAdmin() {
   const [jobs, setJobs] = useState([]);
   const [agents, setAgents] = useState([]);
   const [printers, setPrinters] = useState([]);
-  const [locations, setLocations] = useState([]);
 
   const [loading, setLoading] = useState(false);
   const [runningTick, setRunningTick] = useState(false);
@@ -100,18 +92,16 @@ export default function PrintAdmin() {
     if (!token || user?.role !== "ADMIN") return;
     setLoading(true);
     try {
-      const [nextOverview, nextJobs, nextAgents, nextPrinters, nextLocations] = await Promise.all([
+      const [nextOverview, nextJobs, nextAgents, nextPrinters] = await Promise.all([
         getPrintOverviewAdmin(token),
         getPrintJobsAdmin(token, { limit: 50 }),
         getPrintAgentsAdmin(token),
         getPrintPrintersAdmin(token),
-        getLocations(),
       ]);
       setOverview(nextOverview || null);
       setJobs(Array.isArray(nextJobs) ? nextJobs : []);
       setAgents(Array.isArray(nextAgents) ? nextAgents : []);
       setPrinters(Array.isArray(nextPrinters) ? nextPrinters : []);
-      setLocations(Array.isArray(nextLocations) ? nextLocations : []);
       setMessage("");
     } catch (err) {
       setMessage(err?.response?.data?.error || tr("Erreur de chargement impression", "Print loading error"));
@@ -210,17 +200,22 @@ export default function PrintAdmin() {
     const busyKey = "upsert-printer";
     setBusy(busyKey, true);
     try {
+      const normalizedCode = printerForm.code.trim().toLowerCase();
+      const existingPrinter = (printers || []).find(
+        (entry) => String(entry?.code || "").trim().toLowerCase() === normalizedCode
+      ) || null;
+
       const payload = {
         code: printerForm.code.trim(),
         name: printerForm.name.trim(),
-        model: printerForm.model.trim() || null,
-        paperWidthMm: Number(printerForm.paperWidthMm || 80),
-        connectionType: printerForm.connectionType,
+        model: existingPrinter?.model || null,
+        paperWidthMm: Number(existingPrinter?.paperWidthMm || 80),
+        connectionType: existingPrinter?.connectionType || "ETHERNET",
         ipAddress: printerForm.ipAddress.trim() || null,
-        port: Number(printerForm.port || 9100),
-        isActive: Boolean(printerForm.isActive),
+        port: Number(existingPrinter?.port || 9100),
+        isActive: typeof existingPrinter?.isActive === "boolean" ? existingPrinter.isActive : true,
         agentCode: printerForm.agentCode.trim() || null,
-        locationId: printerForm.locationId === "" ? null : Number(printerForm.locationId),
+        locationId: existingPrinter?.location?.id ?? null,
       };
 
       await upsertPrintPrinterAdmin(token, payload);
@@ -244,31 +239,6 @@ export default function PrintAdmin() {
       await refreshAll();
     } catch (err) {
       setMessage(err?.response?.data?.error || tr("Echec suppression imprimante", "Printer deletion failed"));
-    } finally {
-      setBusy(busyKey, false);
-    }
-  };
-
-  const handleQuickLinkPrinterLocation = async (printer, nextLocationId) => {
-    const busyKey = `link-printer:${printer.code}`;
-    setBusy(busyKey, true);
-    try {
-      await upsertPrintPrinterAdmin(token, {
-        code: printer.code,
-        name: printer.name,
-        model: printer.model || null,
-        paperWidthMm: Number(printer.paperWidthMm || 80),
-        connectionType: printer.connectionType,
-        ipAddress: printer.ipAddress || null,
-        port: Number(printer.port || 9100),
-        isActive: Boolean(printer.isActive),
-        agentCode: printer.agent?.code || null,
-        locationId: nextLocationId === "" ? null : Number(nextLocationId),
-      });
-      setMessage(tr("Liaison emplacement mise a jour", "Location link updated"));
-      await refreshAll();
-    } catch (err) {
-      setMessage(err?.response?.data?.error || tr("Echec liaison emplacement", "Location link failed"));
     } finally {
       setBusy(busyKey, false);
     }
@@ -491,15 +461,15 @@ export default function PrintAdmin() {
         <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-saffron">{tr("Creer/mettre a jour une imprimante", "Create/update a printer")}</h3>
         <form onSubmit={handleCreateOrUpdatePrinter} className="grid gap-2 md:grid-cols-4">
           <input
-            value={printerForm.code}
-            onChange={(event) => setPrinterForm((prev) => ({ ...prev, code: event.target.value }))}
-            placeholder={tr("Code imprimante", "Printer code")}
-            className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
-          />
-          <input
             value={printerForm.name}
             onChange={(event) => setPrinterForm((prev) => ({ ...prev, name: event.target.value }))}
             placeholder={tr("Nom imprimante", "Printer name")}
+            className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
+          />
+          <input
+            value={printerForm.code}
+            onChange={(event) => setPrinterForm((prev) => ({ ...prev, code: event.target.value }))}
+            placeholder={tr("Code imprimante", "Printer code")}
             className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
           />
           <input
@@ -508,27 +478,6 @@ export default function PrintAdmin() {
             placeholder={tr("IP imprimante", "Printer IP")}
             className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
           />
-          <input
-            value={printerForm.port}
-            type="number"
-            onChange={(event) => setPrinterForm((prev) => ({ ...prev, port: event.target.value }))}
-            placeholder={tr("Port", "Port")}
-            className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
-          />
-          <input
-            value={printerForm.model}
-            onChange={(event) => setPrinterForm((prev) => ({ ...prev, model: event.target.value }))}
-            placeholder={tr("Modele", "Model")}
-            className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
-          />
-          <select
-            value={printerForm.connectionType}
-            onChange={(event) => setPrinterForm((prev) => ({ ...prev, connectionType: event.target.value }))}
-            className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
-          >
-            <option value="ETHERNET">ETHERNET</option>
-            <option value="USB">USB</option>
-          </select>
           <select
             value={printerForm.agentCode}
             onChange={(event) => setPrinterForm((prev) => ({ ...prev, agentCode: event.target.value }))}
@@ -541,34 +490,20 @@ export default function PrintAdmin() {
               </option>
             ))}
           </select>
-          <select
-            value={printerForm.locationId}
-            onChange={(event) => setPrinterForm((prev) => ({ ...prev, locationId: event.target.value }))}
-            className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
-          >
-            <option value="">{tr("Global (toutes adresses)", "Global (all addresses)")}</option>
-            {locations.map((location) => (
-              <option key={location.id} value={location.id}>
-                {location.name} #{location.id}
-              </option>
-            ))}
-          </select>
-          <label className="flex items-center gap-2 rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100">
-            <input
-              type="checkbox"
-              checked={Boolean(printerForm.isActive)}
-              onChange={(event) => setPrinterForm((prev) => ({ ...prev, isActive: event.target.checked }))}
-            />
-            {tr("Imprimante active", "Printer active")}
-          </label>
           <button
             type="submit"
             disabled={busyByKey["upsert-printer"]}
-            className="rounded-lg border border-emerald-300/40 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-200 disabled:opacity-60 md:col-span-2"
+            className="rounded-lg border border-emerald-300/40 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-200 disabled:opacity-60 md:col-span-4"
           >
             {tr("Enregistrer imprimante", "Save printer")}
           </button>
         </form>
+        <p className="mt-2 text-xs text-stone-300">
+          {tr(
+            "Port fixe 9100. Emplacement gere via liaison camion -> emplacement dans /admin/locations.",
+            "Fixed port 9100. Location is managed via truck -> location link in /admin/locations."
+          )}
+        </p>
 
         <div className="mt-3 space-y-2">
           {printers.length === 0 ? (
@@ -576,7 +511,6 @@ export default function PrintAdmin() {
           ) : (
             printers.map((printer) => {
               const busyDelete = busyByKey[`delete-printer:${printer.code}`];
-              const busyLink = busyByKey[`link-printer:${printer.code}`];
               return (
                 <article key={printer.id} className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">
                   <div className="flex flex-wrap items-center justify-between gap-2">
@@ -599,23 +533,7 @@ export default function PrintAdmin() {
                     {" | "}
                     {tr("Etat remonte Pi", "Pi-reported state")}: {String(printer?.runtime?.reportedOnline) === "true" ? tr("Connectee", "Connected") : String(printer?.runtime?.reportedOnline) === "false" ? tr("Hors ligne", "Offline") : "-"}
                   </p>
-                  <p className="mt-1 text-xs text-stone-300">
-                    {tr("Emplacement", "Location")}: {printer.location?.name || tr("Global", "Global")}
-                  </p>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <select
-                      defaultValue={printer.location?.id ?? ""}
-                      onChange={(event) => handleQuickLinkPrinterLocation(printer, event.target.value)}
-                      disabled={busyLink}
-                      className="rounded-lg border border-white/20 bg-charcoal/70 px-2 py-1.5 text-xs text-stone-100"
-                    >
-                      <option value="">{tr("Global", "Global")}</option>
-                      {locations.map((location) => (
-                        <option key={location.id} value={location.id}>
-                          {location.name} #{location.id}
-                        </option>
-                      ))}
-                    </select>
                     <button
                       type="button"
                       disabled={busyDelete}
