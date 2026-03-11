@@ -14,6 +14,7 @@ import {
 } from "../api/admin.api";
 import { getOrderNote } from "../utils/orderNote";
 import { splitPersonName } from "../utils/personName";
+import { ActionIconButton, DeleteIcon, EditIcon } from "../components/ui/AdminActions";
 
 const AUTO_REFRESH_MS = 10_000;
 
@@ -466,21 +467,17 @@ export default function PrintAdmin() {
                     </span>
                   </div>
                   <div className="mt-2 flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleEditPrinter(printer)}
-                      className="rounded-lg border border-white/25 bg-white/10 px-3 py-1.5 text-xs font-semibold text-stone-100 transition hover:bg-white/15"
-                    >
-                      {tr("Modifier", "Edit")}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={busyDelete}
+                    <ActionIconButton onClick={() => handleEditPrinter(printer)} label={tr("Modifier", "Edit")}>
+                      <EditIcon />
+                    </ActionIconButton>
+                    <ActionIconButton
                       onClick={() => handleDeletePrinter(printer.code)}
-                      className="rounded-lg border border-red-300/40 bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-200 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+                      label={tr("Supprimer", "Delete")}
+                      variant="danger"
+                      disabled={busyDelete}
                     >
-                      {tr("Supprimer", "Delete")}
-                    </button>
+                      <DeleteIcon />
+                    </ActionIconButton>
                   </div>
                 </article>
               );
