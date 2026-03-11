@@ -6,14 +6,18 @@ import { INSTAGRAM_URL } from "../config/env";
 import { getPublicGallery } from "../api/gallery.api";
 import { getPublicWeeklySettings } from "../api/timeslot.api";
 import { getAllProductsClient } from "../api/user.api";
+import SeoHead from "../components/seo/SeoHead";
+import SeoInternalLinks from "../components/seo/SeoInternalLinks";
 import { AuthContext } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import { useTheme } from "../context/ThemeContext";
+import { buildBaseFoodEstablishmentJsonLd } from "../seo/jsonLd";
+import { DEFAULT_TOUR_CITIES, getCityPath } from "../seo/localLandingContent";
 
 const paymentLogos = [
   {
     src: "/payments/cb.webp",
-    fallbackSrc: "/cb.png",
+    fallbackSrc: "/payments/cb.webp",
     alt: "CB",
     width: 112,
     height: 63,
@@ -21,7 +25,7 @@ const paymentLogos = [
   },
   {
     src: "/payments/visa.webp",
-    fallbackSrc: "/visa.png",
+    fallbackSrc: "/payments/visa.webp",
     alt: "VISA",
     width: 67,
     height: 63,
@@ -29,7 +33,7 @@ const paymentLogos = [
   },
   {
     src: "/payments/mastercard.webp",
-    fallbackSrc: "/mastercard.png",
+    fallbackSrc: "/payments/mastercard.webp",
     alt: "MASTERCARD",
     width: 90,
     height: 63,
@@ -37,7 +41,7 @@ const paymentLogos = [
   },
   {
     src: "/payments/especes.webp",
-    fallbackSrc: "/especes.png",
+    fallbackSrc: "/payments/especes.webp",
     alt: "Especes",
     width: 105,
     height: 105,
@@ -67,6 +71,15 @@ const DAY_LABELS = {
   SATURDAY: { fr: "Samedi", en: "Saturday" },
   SUNDAY: { fr: "Dimanche", en: "Sunday" },
 };
+const SCHEMA_DAY = {
+  MONDAY: "https://schema.org/Monday",
+  TUESDAY: "https://schema.org/Tuesday",
+  WEDNESDAY: "https://schema.org/Wednesday",
+  THURSDAY: "https://schema.org/Thursday",
+  FRIDAY: "https://schema.org/Friday",
+  SATURDAY: "https://schema.org/Saturday",
+  SUNDAY: "https://schema.org/Sunday",
+};
 const DEFAULT_HOME_BACKGROUND = "/pizza-background-1920.webp";
 const FOCUSABLE_SELECTOR =
   "button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])";
@@ -87,6 +100,12 @@ function formatHourValue(timeValue) {
 
 function formatHourRange(startTime, endTime) {
   return `${formatHourValue(startTime)}-${formatHourValue(endTime)}`;
+}
+
+function toSchemaTime(value) {
+  const match = /^([01]\d|2[0-3]):([0-5]\d)/.exec(String(value || "").trim());
+  if (!match) return null;
+  return `${match[1]}:${match[2]}`;
 }
 
 export default function Home() {
@@ -215,6 +234,104 @@ const truckTourSchedule = useMemo(
   },
   [weeklySettings, tr]
 );
+
+  const locationStructuredEntries = useMemo(() => {
+    const grouped = new Map();
+    const source = Array.isArray(weeklySettings) ? weeklySettings : [];
+
+    for (const dayEntry of source) {
+      const dayOfWeek = String(dayEntry?.dayOfWeek || "").toUpperCase();
+      const services =
+        Array.isArray(dayEntry?.services) && dayEntry.services.length > 0
+          ? dayEntry.services
+          : dayEntry?.isOpen && dayEntry?.location
+            ? [
+                {
+                  startTime: dayEntry.startTime,
+                  endTime: dayEntry.endTime,
+                  locationId: dayEntry.locationId,
+                  location: dayEntry.location,
+                },
+              ]
+            : [];
+
+      for (const service of services) {
+        const location = service?.location;
+        if (!location) continue;
+
+        const key =
+          service.locationId ||
+          `${location.name || ""}-${location.addressLine1 || ""}-${location.postalCode || ""}-${location.city || ""}`;
+        if (!grouped.has(key)) {
+          grouped.set(key, {
+            name: location.name || "Pizza Truck",
+            addressLine1: location.addressLine1 || "",
+            postalCode: location.postalCode || "",
+            city: location.city || "",
+            openingHoursSpecification: [],
+          });
+        }
+
+        const opens = toSchemaTime(service?.startTime);
+        const closes = toSchemaTime(service?.endTime);
+        const schemaDay = SCHEMA_DAY[dayOfWeek];
+        if (!opens || !closes || !schemaDay) continue;
+
+        const current = grouped.get(key);
+        const openingKey = `${schemaDay}-${opens}-${closes}`;
+        const exists = current.openingHoursSpecification.some(
+          (entry) =>
+            `${entry.dayOfWeek}-${entry.opens}-${entry.closes}` === openingKey
+        );
+
+        if (!exists) {
+          current.openingHoursSpecification.push({
+            "@type": "OpeningHoursSpecification",
+            dayOfWeek: schemaDay,
+            opens,
+            closes,
+          });
+        }
+      }
+    }
+
+    return [...grouped.values()].map((entry) => ({
+      "@type": "Place",
+      name: entry.name,
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: entry.addressLine1,
+        postalCode: entry.postalCode,
+        addressLocality: entry.city,
+        addressCountry: "FR",
+      },
+      openingHoursSpecification: entry.openingHoursSpecification,
+    }));
+  }, [weeklySettings]);
+
+  const truckTourCities = useMemo(() => {
+    const dynamicCities = locationStructuredEntries
+      .map((entry) => entry?.address?.addressLocality)
+      .filter(Boolean);
+
+    return [...new Set([...DEFAULT_TOUR_CITIES, ...dynamicCities])];
+  }, [locationStructuredEntries]);
+
+  const homeJsonLd = useMemo(() => {
+    const base = buildBaseFoodEstablishmentJsonLd({
+      pagePath: "/",
+      pageName: "Pizza napolitaine au feu de bois en Moselle",
+      description:
+        "Camion pizza artisanal autour de Thionville et Metz, avec produits italiens authentiques et retrait rapide.",
+    });
+
+    const payload = {
+      ...base,
+      areaServed: truckTourCities,
+    };
+
+    return payload;
+  }, [truckTourCities]);
 
   const menuByCategory = useMemo(() => {
     const grouped = categories.map((category) => ({
@@ -434,6 +551,12 @@ const truckTourSchedule = useMemo(
 
   return (
     <div className="space-y-20 pb-24">
+      <SeoHead
+        title="Pizza napolitaine au feu de bois en Moselle | Pizza Truck"
+        description="Camion pizza artisanal autour de Thionville et Metz, avec produits italiens authentiques et retrait rapide."
+        pathname="/"
+        jsonLd={homeJsonLd}
+      />
       <section className="relative overflow-hidden">
         <div className="absolute inset-0">
           <img
@@ -461,8 +584,8 @@ const truckTourSchedule = useMemo(
               }`}
             >
               {tr(
-                "Cuisson au four a bois, produits frais, pate a pizza maison.",
-                "Wood-fired baking, fresh products, homemade pizza dough."
+                "Pizza napolitaine au feu de bois en Moselle",
+                "Wood-fired Neapolitan pizza in Moselle"
               )}
             </h1>
             <p
@@ -471,8 +594,8 @@ const truckTourSchedule = useMemo(
               }`}
             >
               {tr(
-                "Une carte lisible, des recettes courtes et de la qualite. Nos pizzas sont mises en avant avec une experience simple, rapide et moderne.",
-                "A clear menu, short recipes and quality. Our pizzas are highlighted with a simple, fast and modern experience."
+                "Camion pizza artisanal autour de Thionville et Metz, avec produits italiens authentiques et retrait rapide.",
+                "Craft pizza truck around Thionville and Metz, with authentic Italian products and quick pickup."
               )}
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -482,6 +605,16 @@ const truckTourSchedule = useMemo(
               >
                 {tr("Voir le menu", "See menu")}
               </a>
+              <Link
+                to="/tournee-camion"
+                className={`rounded-full px-6 py-3 text-sm font-semibold uppercase tracking-wide transition ${
+                  isLightTheme
+                    ? "border border-[#3A261C]/15 bg-white/70 text-[#3A261C] hover:bg-white"
+                    : "theme-light-keep-white border border-white/30 text-white hover:bg-white/10"
+                }`}
+              >
+                {tr("Voir la tournee", "See truck tour")}
+              </Link>
               {token ? (
                 <Link
                   to="/order"
@@ -508,6 +641,97 @@ const truckTourSchedule = useMemo(
             </div>
           </div>
         </div>
+      </section>
+
+      <section className="section-shell space-y-5">
+        <article className="glass-panel p-6 sm:p-8">
+          <h2 className="font-display text-3xl uppercase tracking-wide text-white">
+            Camion pizza napolitaine autour de Thionville et Metz
+          </h2>
+          <p className="mt-3 text-sm leading-7 text-stone-300 sm:text-base">
+            Notre camion pizza propose des pizzas napolitaines artisanales dans le nord de la Moselle.
+          </p>
+          <p className="mt-2 text-sm leading-7 text-stone-300 sm:text-base">
+            La tournee du camion passe regulierement dans plusieurs villes autour de Thionville, Metz et des communes voisines.
+          </p>
+          <p className="mt-2 text-sm leading-7 text-stone-300 sm:text-base">
+            Les pizzas sont preparees avec une pate napolitaine traditionnelle et des produits italiens selectionnes.
+          </p>
+        </article>
+
+        <article className="glass-panel p-6 sm:p-8">
+          <h2 className="font-display text-3xl uppercase tracking-wide text-white">
+            Pizza napolitaine artisanale avec produits italiens
+          </h2>
+          <p className="mt-3 text-sm leading-7 text-stone-300 sm:text-base">
+            Chaque pizza est preparee avec des ingredients italiens reconnus pour leur qualite:
+          </p>
+          <ul className="mt-3 grid gap-2 text-sm text-stone-200 sm:grid-cols-2">
+            <li>• farine Nuvola Super</li>
+            <li>• tomates San Marzano</li>
+            <li>• mozzarella fior di latte</li>
+            <li>• parmigiano reggiano</li>
+            <li>• jambon de Parme</li>
+            <li>• prosciutto italien</li>
+          </ul>
+          <p className="mt-4 text-xs uppercase tracking-[0.22em] text-saffron">
+            pizza napolitaine artisanale | pizza produits italiens | pizza italienne traditionnelle
+          </p>
+        </article>
+
+        <article className="glass-panel p-6 sm:p-8">
+          <h2 className="font-display text-3xl uppercase tracking-wide text-white">
+            Cuisson au four a bois et gaz
+          </h2>
+          <p className="mt-3 text-sm leading-7 text-stone-300 sm:text-base">
+            La cuisson se fait dans un four a bois et gaz permettant d'obtenir une pizza legere, alveolee et croustillante.
+          </p>
+          <p className="mt-2 text-sm leading-7 text-stone-300 sm:text-base">
+            Chaque pizza est preparee a la commande afin de garantir une qualite constante.
+          </p>
+          <p className="mt-4 text-xs uppercase tracking-[0.22em] text-saffron">
+            pizza napolitaine feu de bois | pizza feu de bois thionville | pizza artisanale moselle
+          </p>
+        </article>
+
+        <article className="glass-panel p-6 sm:p-8">
+          <h2 className="font-display text-3xl uppercase tracking-wide text-white">
+            Ou trouver notre camion pizza
+          </h2>
+          <p className="mt-3 text-sm leading-7 text-stone-300 sm:text-base">
+            Retrouvez notre camion pizza dans plusieurs villes autour de Thionville et Metz.
+          </p>
+          <p className="mt-2 text-sm leading-7 text-stone-300 sm:text-base">
+            Les emplacements changent selon la tournee hebdomadaire.
+          </p>
+          <p className="mt-2 text-sm leading-7 text-stone-300 sm:text-base">
+            Consultez la page tournee du camion pour connaitre les horaires et points de retrait.
+          </p>
+          <Link
+            to="/tournee-camion"
+            className="mt-4 inline-flex rounded-full border border-saffron/60 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-saffron transition hover:bg-saffron/10"
+          >
+            Voir la tournee
+          </Link>
+        </article>
+
+        <article className="glass-panel p-6 sm:p-8">
+          <h2 className="font-display text-3xl uppercase tracking-wide text-white">
+            Camion pizza dans le nord de la Moselle
+          </h2>
+          <ul className="mt-3 grid gap-2 text-sm text-stone-200 sm:grid-cols-2 lg:grid-cols-3">
+            {truckTourCities.map((city) => (
+              <li key={city}>
+                <Link to={getCityPath(city)} className="hover:text-saffron">
+                  {city}
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-4 text-xs uppercase tracking-[0.22em] text-saffron">
+            camion pizza napolitaine | camion pizza thionville | pizza napolitaine metz | pizza a emporter
+          </p>
+        </article>
       </section>
 
       <section id="menu" className="section-shell space-y-8">
@@ -579,8 +803,13 @@ const truckTourSchedule = useMemo(
       <section id="emplacements" className="section-shell space-y-6">
         <div>
           <p className="theme-light-keep-dark text-sm uppercase tracking-[0.25em] text-saffron">{tr("Emplacements & horaires d'ouverture", "Locations & opening hours")}</p>
-          <h2 className="font-display text-4xl uppercase tracking-wide text-white">{tr("Tournee du camion", "Truck tour")}</h2>
-          <p className="mt-2 text-sm text-stone-400">{tr("Planning hebdomadaire en direct.", "Live weekly schedule.")}</p>
+          <h2 className="font-display text-4xl uppercase tracking-wide text-white">{tr("Emplacements du camion pizza", "Pizza truck locations")}</h2>
+          <p className="mt-2 text-sm text-stone-400">
+            {tr(
+              "Retrouvez notre camion pizza napolitaine dans plusieurs villes autour de Thionville et Metz selon la tournee hebdomadaire.",
+              "Find our Neapolitan pizza truck in several cities around Thionville and Metz according to the weekly route."
+            )}
+          </p>
         </div>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
 {truckTourSchedule.length === 0 ? (
@@ -592,6 +821,9 @@ const truckTourSchedule = useMemo(
     <div key={location.key} className="glass-panel p-5">
       <p className="text-[11px] uppercase tracking-wider text-saffron">{tr("Nom", "Name")}</p>
       <p className="mt-1 text-lg font-bold text-white">{location.locationName}</p>
+
+      <p className="mt-3 text-[11px] uppercase tracking-wider text-saffron">{tr("Adresse", "Address")}</p>
+      <p className="mt-1 text-sm text-stone-200">{location.address}</p>
 
       <p className="mt-3 text-[11px] uppercase tracking-wider text-saffron">{tr("Jour d'ouverture", "Opening day")}</p>
       <p className="mt-1 text-sm text-stone-200">{location.dayLabel}</p>
@@ -672,7 +904,7 @@ const truckTourSchedule = useMemo(
               <p className="mt-2 text-lg font-semibold text-white">adresse@email-a-venir.com</p>
             </div>
             <div className="rounded-2xl bg-charcoal/70 p-5">
-              <p className="theme-light-keep-dark text-sm uppercase tracking-wider text-saffron">{tr("RESEAU", "SOCIAL")}</p>
+              <p className="theme-light-keep-dark text-sm uppercase tracking-wider text-saffron">Instagram</p>
               <a
                 href={INSTAGRAM_URL}
                 target="_blank"
@@ -732,6 +964,10 @@ const truckTourSchedule = useMemo(
             </form>
           </div>
         </div>
+      </section>
+
+      <section className="section-shell">
+        <SeoInternalLinks />
       </section>
 
       {isGalleryModalOpen && activeGalleryImage && (

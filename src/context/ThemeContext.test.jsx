@@ -54,7 +54,7 @@ describe("ThemeContext", () => {
 
     const nextTheme = valueNode.textContent;
     expect(nextTheme).not.toBe(initialTheme);
-    expect(window.localStorage.getItem("pizzeria_theme")).toBe(nextTheme);
+    expect(window.localStorage.getItem("pizzeria_theme_v2")).toBe(nextTheme);
     expect(document.documentElement.getAttribute("data-theme")).toBe(nextTheme);
   });
 });

@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { getCategories } from "../api/category.api";
 import { useLanguage } from "../context/LanguageContext";
 import { getAllProductsClient } from "../api/user.api";
+import SeoHead from "../components/seo/SeoHead";
+import SeoInternalLinks from "../components/seo/SeoInternalLinks";
+import { buildBaseFoodEstablishmentJsonLd } from "../seo/jsonLd";
 
 function formatPrice(value) {
   const numeric = Number(value);
@@ -119,9 +122,20 @@ export default function Menu() {
 
   return (
     <div className="section-shell space-y-10 pb-20 pt-12 sm:pt-14">
+      <SeoHead
+        title="Menu pizza napolitaine | Pizza Truck Moselle"
+        description="Consultez le menu pizza napolitaine artisanal de Pizza Truck en Moselle. Recettes, ingredients et prix."
+        pathname="/menu"
+        jsonLd={buildBaseFoodEstablishmentJsonLd({
+          pagePath: "/menu",
+          pageName: "Menu pizza napolitaine",
+          description:
+            "Consultez le menu pizza napolitaine artisanal de Pizza Truck en Moselle. Recettes, ingredients et prix.",
+        })}
+      />
       <header className="space-y-3 text-center">
         <p className="text-xs uppercase tracking-[0.35em] text-saffron">{tr("Menu restaurant", "Restaurant menu")}</p>
-        <h2 className="font-display text-5xl uppercase tracking-[0.08em] text-white sm:text-6xl">{tr("Notre carte", "Our menu")}</h2>
+        <h1 className="font-display text-5xl uppercase tracking-[0.08em] text-white sm:text-6xl">{tr("Notre carte", "Our menu")}</h1>
         <p className="mx-auto max-w-2xl text-sm text-stone-300 sm:text-base">
           {tr(
             "Pizzas au four a bois et produits frais, presentes comme une vraie carte de restaurant.",
@@ -162,6 +176,8 @@ export default function Menu() {
           </section>
         ))}
       </div>
+
+      <SeoInternalLinks />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
-const STORAGE_KEY = "pizzeria_theme";
+const STORAGE_KEY = "pizzeria_theme_v2";
 
 function normalizeTheme(value) {
   const normalized = String(value || "").trim().toLowerCase();

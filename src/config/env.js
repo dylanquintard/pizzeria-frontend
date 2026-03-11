@@ -20,8 +20,10 @@ const normalizeBrandLogoUrl = (value) => {
 };
 
 const localApiBaseUrl = "http://localhost:5000/api";
+const defaultSiteUrl = "https://pizzeria-front-dqty.onrender.com";
 const isProduction = process.env.NODE_ENV === "production";
 const configuredApiBaseUrl = normalizeUrl(process.env.REACT_APP_API_BASE_URL);
+const configuredSiteUrl = normalizeUrl(process.env.REACT_APP_SITE_URL);
 
 if (isProduction) {
   if (!configuredApiBaseUrl) {
@@ -35,6 +37,8 @@ if (isProduction) {
 
 export const API_BASE_URL =
   configuredApiBaseUrl || localApiBaseUrl;
+
+export const SITE_URL = configuredSiteUrl || defaultSiteUrl;
 
 export const REALTIME_STREAM_URL = `${API_BASE_URL}/realtime/stream`;
 

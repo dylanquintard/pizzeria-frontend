@@ -109,6 +109,12 @@ export default function Header() {
     { id: "services", label: tr("Nos services", "Our services") },
     { id: "contact", label: tr("Nous contacter", "Contact us") },
   ];
+  const seoPageLinks = [
+    { to: "/menu", label: tr("Menu", "Menu") },
+    { to: "/tournee-camion", label: tr("Tournee", "Tour") },
+    { to: "/a-propos", label: tr("A propos", "About") },
+    { to: "/contact", label: tr("Contact", "Contact") },
+  ];
   const adminMenuLinks = isAdminUser
       ? [
         { to: "/admin/orders", label: tr("Commandes", "Orders") },
@@ -171,16 +177,26 @@ export default function Header() {
             )}
           </Link>
 
-          <nav className="hidden xl:flex items-center gap-4 text-[13px] font-medium text-stone-200">
-            {onePageLinks.map((item) => (
-              <a
-                key={item.id}
-                href={navHref(item.id)}
+          <nav className="hidden xl:flex items-center gap-2 text-[13px] font-medium text-stone-200">
+            {seoPageLinks.map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
                 className="whitespace-nowrap rounded-full px-3 py-1.5 transition hover:bg-saffron/10 hover:text-saffron"
               >
                 {item.label}
-              </a>
+              </Link>
             ))}
+            {location.pathname === "/" &&
+              onePageLinks.map((item) => (
+                <a
+                  key={item.id}
+                  href={navHref(item.id)}
+                  className="whitespace-nowrap rounded-full px-3 py-1.5 transition hover:bg-saffron/10 hover:text-saffron"
+                >
+                  {item.label}
+                </a>
+              ))}
           </nav>
 
           <div className="flex items-center gap-2">
@@ -380,6 +396,17 @@ export default function Header() {
                   <LanguageSelect language={language} setLanguage={setLanguage} tr={tr} isLight={isLightTheme} />
                   <ThemeToggle isLight={isLightTheme} onToggle={toggleTheme} tr={tr} />
                 </div>
+
+                {seoPageLinks.map((item) => (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    onClick={closeMobileMenus}
+                    className="rounded-md px-3 py-2 transition hover:bg-white/10"
+                  >
+                    {item.label}
+                  </Link>
+                ))}
 
                 {!isAdminRoute && onePageLinks.map((item) => (
                   <a

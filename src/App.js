@@ -13,6 +13,12 @@ const EditProduct = lazy(() => import("./pages/EditProduct"));
 const GalleryAdmin = lazy(() => import("./pages/GalleryAdmin"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const Home = lazy(() => import("./pages/Home"));
+const Menu = lazy(() => import("./pages/Menu"));
+const TourneeCamion = lazy(() => import("./pages/TourneeCamion"));
+const APropos = lazy(() => import("./pages/APropos"));
+const ContactPage = lazy(() => import("./pages/ContactPage"));
+const LocalSeoPage = lazy(() => import("./pages/LocalSeoPage"));
+const CitySeoPage = lazy(() => import("./pages/CitySeoPage"));
 const Ingredients = lazy(() => import("./pages/Ingredients"));
 const Locations = lazy(() => import("./pages/Locations"));
 const Login = lazy(() => import("./pages/Login"));
@@ -70,7 +76,14 @@ function AppRoutes() {
       <Routes>
         <Route element={<AppLayout />}>
           <Route path="/" element={<Home />} />
-          <Route path="/menu" element={<Home />} />
+          <Route path="/menu" element={<Menu />} />
+          <Route path="/tournee-camion" element={<TourneeCamion />} />
+          <Route path="/a-propos" element={<APropos />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/pizza-napolitaine-thionville" element={<LocalSeoPage cityKey="thionville" />} />
+          <Route path="/pizza-napolitaine-metz" element={<LocalSeoPage cityKey="metz" />} />
+          <Route path="/food-truck-pizza-moselle" element={<LocalSeoPage cityKey="moselle" />} />
+          <Route path="/pizza-:city" element={<CitySeoPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
