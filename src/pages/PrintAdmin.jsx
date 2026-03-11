@@ -153,6 +153,31 @@ function buildTicketPreview(job) {
   return lines.join("\n");
 }
 
+function toTimestamp(value) {
+  const parsed = new Date(value || 0);
+  return Number.isNaN(parsed.getTime()) ? 0 : parsed.getTime();
+}
+
+function dedupeTicketsByOrder(jobs) {
+  const sorted = [...(Array.isArray(jobs) ? jobs : [])].sort((left, right) => {
+    const rightTs = Math.max(toTimestamp(right?.updatedAt), toTimestamp(right?.createdAt));
+    const leftTs = Math.max(toTimestamp(left?.updatedAt), toTimestamp(left?.createdAt));
+    return rightTs - leftTs;
+  });
+
+  const seen = new Set();
+  const deduped = [];
+
+  for (const job of sorted) {
+    const key = Number(job?.orderId || 0) > 0 ? `order:${job.orderId}` : `job:${job?.id || Math.random()}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    deduped.push(job);
+  }
+
+  return deduped;
+}
+
 export default function PrintAdmin() {
   const { user, token, loading: authLoading } = useContext(AuthContext);
   const { tr, locale } = useLanguage();
@@ -165,6 +190,7 @@ export default function PrintAdmin() {
   const [loading, setLoading] = useState(false);
   const [runningTick, setRunningTick] = useState(false);
   const [reprintingByJobId, setReprintingByJobId] = useState({});
+  const [reprintingAllFailed, setReprintingAllFailed] = useState(false);
   const [busyByKey, setBusyByKey] = useState({});
   const [message, setMessage] = useState("");
   const [agentTokenInfo, setAgentTokenInfo] = useState(null);
@@ -186,14 +212,9 @@ export default function PrintAdmin() {
         getPrintAgentsAdmin(token),
         getPrintPrintersAdmin(token),
       ]);
-      const jobsWithoutReprints = (Array.isArray(nextJobs) ? nextJobs : []).filter((job) => {
-        const isReprintJob = Boolean(job?.reprintOfJobId || job?.payload?.reprint?.source_job_id);
-        if (!isReprintJob) return true;
-        const status = String(job?.status || "").toUpperCase();
-        return status === "FAILED" || status === "RETRY_WAITING";
-      });
+      const latestTicketPerOrder = dedupeTicketsByOrder(nextJobs);
       setOverview(nextOverview || null);
-      setJobs(jobsWithoutReprints);
+      setJobs(latestTicketPerOrder);
       setAgents(Array.isArray(nextAgents) ? nextAgents : []);
       setPrinters(Array.isArray(nextPrinters) ? nextPrinters : []);
       setMessage("");
@@ -313,6 +334,39 @@ export default function PrintAdmin() {
       setMessage(err?.response?.data?.error || tr("Echec de reimpression", "Reprint failed"));
     } finally {
       setReprintingByJobId((prev) => ({ ...prev, [jobId]: false }));
+    }
+  };
+
+  const handleReprintAllFailed = async () => {
+    const failedTickets = jobs.filter((job) => String(job?.status || "").toUpperCase() === "FAILED");
+    if (failedTickets.length === 0) {
+      setMessage(tr("Aucun ticket FAILED a reimprimer", "No FAILED ticket to reprint"));
+      return;
+    }
+    if (!window.confirm(tr("Relancer tous les tickets FAILED visibles ?", "Reprint all visible FAILED tickets?"))) return;
+
+    setReprintingAllFailed(true);
+    let successCount = 0;
+    let failCount = 0;
+    try {
+      for (const job of failedTickets) {
+        try {
+          // eslint-disable-next-line no-await-in-loop
+          await reprintJobAdmin(token, job.id, { copies: 1, reason: "bulk_failed_reprint_admin" });
+          successCount += 1;
+        } catch (_err) {
+          failCount += 1;
+        }
+      }
+      setMessage(
+        tr(
+          `Reimpression lancee: ${successCount} OK, ${failCount} en erreur`,
+          `Reprint started: ${successCount} OK, ${failCount} failed`
+        )
+      );
+      await refreshAll();
+    } finally {
+      setReprintingAllFailed(false);
     }
   };
 
@@ -572,7 +626,19 @@ export default function PrintAdmin() {
       </section>
 
       <section className="rounded-xl border border-white/10 bg-white/5 p-3">
-        <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-saffron">{tr("Derniers tickets", "Latest tickets")}</h3>
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-saffron">{tr("Derniers tickets", "Latest tickets")}</h3>
+          <button
+            type="button"
+            onClick={handleReprintAllFailed}
+            disabled={reprintingAllFailed}
+            className="rounded-lg border border-sky-300/40 bg-sky-500/10 px-3 py-1.5 text-xs font-semibold text-sky-200 transition hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {reprintingAllFailed
+              ? tr("Reimpression en cours...", "Reprinting...")
+              : tr("Reimprimer tous les FAILED", "Reprint all FAILED")}
+          </button>
+        </div>
         {jobs.length === 0 ? (
           <p className="text-xs text-stone-400">{tr("Aucun ticket", "No ticket")}</p>
         ) : (
