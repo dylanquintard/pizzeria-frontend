@@ -131,7 +131,8 @@ export default function PrintAdmin() {
     const agentAlerts = overview?.agents?.alerts?.length || 0;
     const metadataPrinterAlerts = overview?.printers?.alerts?.metadataIssues?.length || 0;
     const inactivePrinterAlerts = overview?.printers?.alerts?.inactive?.length || 0;
-    return agentAlerts + metadataPrinterAlerts + inactivePrinterAlerts;
+    const readyStaleAlerts = overview?.jobs?.alerts?.readyStaleCount || 0;
+    return agentAlerts + metadataPrinterAlerts + inactivePrinterAlerts + readyStaleAlerts;
   }, [overview]);
 
   const handleRotateAgentToken = async (agentCode) => {
@@ -281,8 +282,8 @@ export default function PrintAdmin() {
           <p className="font-semibold">{tr("Alerte impression", "Print alert")} ({alertCount})</p>
           <p className="text-xs text-red-100">
             {tr(
-              "Un agent ou une imprimante est en etat degrade/hors ligne. Verifier papier, reseau et heartbeat Pi.",
-              "At least one agent/printer is degraded or offline. Check paper, network, and Pi heartbeat."
+              "Un agent, une imprimante ou un job pret trop ancien est en alerte. Verifier papier, reseau, heartbeat Pi et file READY.",
+              "An agent, printer or stale READY job is in alert. Check paper, network, Pi heartbeat and READY queue."
             )}
           </p>
         </div>
@@ -331,6 +332,9 @@ export default function PrintAdmin() {
           <p className="text-xs uppercase tracking-wider text-stone-400">{tr("Jobs", "Jobs")}</p>
           <p className="mt-1 text-xl font-bold text-white">{overview?.jobs?.total ?? 0}</p>
           <p className="text-xs text-stone-300">{tr("Echecs 24h", "Failed 24h")}: {overview?.jobs?.failedLast24h ?? 0}</p>
+          <p className="text-[11px] text-stone-400">
+            {tr("READY > seuil", "READY > threshold")}: {overview?.jobs?.alerts?.readyStaleCount ?? 0}
+          </p>
         </article>
         <article className="rounded-xl border border-white/10 bg-white/5 p-3">
           <p className="text-xs uppercase tracking-wider text-stone-400">{tr("Camions (agents)", "Trucks (agents)")}</p>
