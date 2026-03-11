@@ -186,9 +186,12 @@ export default function PrintAdmin() {
         getPrintAgentsAdmin(token),
         getPrintPrintersAdmin(token),
       ]);
-      const jobsWithoutReprints = (Array.isArray(nextJobs) ? nextJobs : []).filter(
-        (job) => !job?.reprintOfJobId && !job?.payload?.reprint?.source_job_id
-      );
+      const jobsWithoutReprints = (Array.isArray(nextJobs) ? nextJobs : []).filter((job) => {
+        const isReprintJob = Boolean(job?.reprintOfJobId || job?.payload?.reprint?.source_job_id);
+        if (!isReprintJob) return true;
+        const status = String(job?.status || "").toUpperCase();
+        return status === "FAILED" || status === "RETRY_WAITING";
+      });
       setOverview(nextOverview || null);
       setJobs(jobsWithoutReprints);
       setAgents(Array.isArray(nextAgents) ? nextAgents : []);
