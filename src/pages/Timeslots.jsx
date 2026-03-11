@@ -79,11 +79,6 @@ export default function TimeslotsAdmin() {
     [weeklySettings]
   );
 
-  const mergedSettings = useMemo(
-    () => WEEK_DAYS.map((day) => settingsByDay.get(day.key) || closedSetting(day.key)),
-    [settingsByDay]
-  );
-
   const activeDaySetting = settingsByDay.get(activeDay) || closedSetting(activeDay);
   const activeDayServices = useMemo(
     () => normalizeServices(activeDaySetting),
@@ -423,44 +418,6 @@ export default function TimeslotsAdmin() {
         </section>
       </div>
 
-      <section className="rounded-2xl border border-white/10 bg-white/5 p-5">
-        <h3 className="mb-3 text-lg font-bold text-white">
-          {tr("Resume hebdomadaire", "Weekly summary")}
-        </h3>
-        <div className="space-y-2">
-          {mergedSettings.map((setting) => {
-            const day = WEEK_DAYS.find((entry) => entry.key === setting.dayOfWeek);
-            const services = normalizeServices(setting);
-            return (
-              <div
-                key={setting.dayOfWeek}
-                className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-stone-200"
-              >
-                <p className="font-semibold text-white">
-                  {tr(day?.labelFr || setting.dayOfWeek, day?.labelEn || setting.dayOfWeek)}
-                </p>
-                {services.length === 0 ? (
-                  <p className="text-stone-400">{tr("Ferme", "Closed")}</p>
-                ) : (
-                  <div className="mt-1 space-y-1">
-                    {services.map((service, index) => (
-                      <p key={service.id || `${setting.dayOfWeek}-${index}`}>
-                        {service.startTime} - {service.endTime}
-                        {" | "}
-                        {tr("Duree", "Duration")}: {service.slotDuration} min
-                        {" | "}
-                        {tr("Max", "Max")}: {service.maxPizzas}
-                        {" | "}
-                        {tr("Adresse", "Address")}: {formatLocation(service.location, tr)}
-                      </p>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </section>
     </div>
   );
 }

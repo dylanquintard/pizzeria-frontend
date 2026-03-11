@@ -102,7 +102,6 @@ export default function Users() {
         <table>
           <thead>
             <tr>
-              <th>ID</th>
               <th>{tr("Prenom", "First name")}</th>
               <th>{tr("Nom", "Last name")}</th>
               <th>{tr("Email", "Email")}</th>
@@ -114,7 +113,7 @@ export default function Users() {
           <tbody>
             {filteredUsers.length === 0 ? (
               <tr>
-                <td colSpan={7}>{tr("Aucun utilisateur trouve.", "No users found.")}</td>
+                <td colSpan={6}>{tr("Aucun utilisateur trouve.", "No users found.")}</td>
               </tr>
             ) : (
               filteredUsers.map((entry) => {
@@ -122,7 +121,6 @@ export default function Users() {
 
                 return (
                 <tr key={entry.id}>
-                  <td>{entry.id}</td>
                   <td>{parsedName.firstName || "-"}</td>
                   <td>{parsedName.lastName || "-"}</td>
                   <td>{entry.email}</td>

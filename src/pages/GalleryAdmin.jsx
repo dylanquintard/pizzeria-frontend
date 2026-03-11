@@ -316,7 +316,6 @@ export default function GalleryAdmin() {
           <table>
             <thead>
               <tr>
-                <th>ID</th>
                 <th>{tr("Apercu", "Preview")}</th>
                 <th>{tr("Titre", "Title")}</th>
                 <th>{tr("Description", "Description")}</th>
@@ -328,12 +327,11 @@ export default function GalleryAdmin() {
             <tbody>
               {images.length === 0 && (
                 <tr>
-                  <td colSpan="7">{tr("Aucune image", "No image")}</td>
+                  <td colSpan="6">{tr("Aucune image", "No image")}</td>
                 </tr>
               )}
               {images.map((image) => (
                 <tr key={image.id}>
-                  <td>{image.id}</td>
                   <td>
                     <img
                       src={image.thumbnailUrl || image.imageUrl}
@@ -371,7 +369,7 @@ export default function GalleryAdmin() {
       {editingId && (
         <div className="space-y-3 rounded-2xl border border-white/10 bg-black/20 p-3 sm:p-4">
           <h3 className="text-lg font-semibold text-white">
-            {tr("Modifier l'image", "Edit image")} #{editingId}
+            {tr("Modifier l'image", "Edit image")}
           </h3>
           <div className="grid gap-2 sm:grid-cols-2">
             <div className="sm:col-span-2">
