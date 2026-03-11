@@ -195,6 +195,7 @@ export default function PrintAdmin() {
   const [message, setMessage] = useState("");
   const [agentTokenInfo, setAgentTokenInfo] = useState(null);
   const [previewJob, setPreviewJob] = useState(null);
+  const [ticketTab, setTicketTab] = useState("non_printed");
 
   const [printerForm, setPrinterForm] = useState(initialPrinterForm);
 
@@ -239,6 +240,16 @@ export default function PrintAdmin() {
     const readyStaleAlerts = overview?.jobs?.alerts?.readyStaleCount || 0;
     return agentAlerts + metadataPrinterAlerts + inactivePrinterAlerts + readyStaleAlerts;
   }, [overview]);
+
+  const nonPrintedTickets = useMemo(
+    () => jobs.filter((job) => String(job?.status || "").toUpperCase() !== "PRINTED"),
+    [jobs]
+  );
+  const printedTickets = useMemo(
+    () => jobs.filter((job) => String(job?.status || "").toUpperCase() === "PRINTED"),
+    [jobs]
+  );
+  const visibleTickets = ticketTab === "printed" ? printedTickets : nonPrintedTickets;
 
   const handleRotateAgentToken = async (agentCode) => {
     const busyKey = `rotate-agent:${agentCode}`;
@@ -338,7 +349,7 @@ export default function PrintAdmin() {
   };
 
   const handleReprintAllFailed = async () => {
-    const failedTickets = jobs.filter((job) => String(job?.status || "").toUpperCase() === "FAILED");
+    const failedTickets = visibleTickets.filter((job) => String(job?.status || "").toUpperCase() === "FAILED");
     if (failedTickets.length === 0) {
       setMessage(tr("Aucun ticket FAILED a reimprimer", "No FAILED ticket to reprint"));
       return;
@@ -627,23 +638,53 @@ export default function PrintAdmin() {
 
       <section className="rounded-xl border border-white/10 bg-white/5 p-3">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-saffron">{tr("Derniers tickets", "Latest tickets")}</h3>
-          <button
-            type="button"
-            onClick={handleReprintAllFailed}
-            disabled={reprintingAllFailed}
-            className="rounded-lg border border-sky-300/40 bg-sky-500/10 px-3 py-1.5 text-xs font-semibold text-sky-200 transition hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {reprintingAllFailed
-              ? tr("Reimpression en cours...", "Reprinting...")
-              : tr("Reimprimer tous les FAILED", "Reprint all FAILED")}
-          </button>
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-saffron">{tr("Gestion tickets", "Ticket management")}</h3>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setTicketTab("non_printed")}
+              className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${
+                ticketTab === "non_printed"
+                  ? "border-saffron/40 bg-saffron/15 text-saffron"
+                  : "border-white/20 bg-white/5 text-stone-200 hover:bg-white/10"
+              }`}
+            >
+              {tr("Tous sauf imprimes", "All except printed")} ({nonPrintedTickets.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setTicketTab("printed")}
+              className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${
+                ticketTab === "printed"
+                  ? "border-saffron/40 bg-saffron/15 text-saffron"
+                  : "border-white/20 bg-white/5 text-stone-200 hover:bg-white/10"
+              }`}
+            >
+              {tr("Imprimes", "Printed")} ({printedTickets.length})
+            </button>
+            {ticketTab === "non_printed" && (
+              <button
+                type="button"
+                onClick={handleReprintAllFailed}
+                disabled={reprintingAllFailed}
+                className="rounded-lg border border-sky-300/40 bg-sky-500/10 px-3 py-1.5 text-xs font-semibold text-sky-200 transition hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {reprintingAllFailed
+                  ? tr("Reimpression en cours...", "Reprinting...")
+                  : tr("Reimprimer tous les FAILED", "Reprint all FAILED")}
+              </button>
+            )}
+          </div>
         </div>
-        {jobs.length === 0 ? (
-          <p className="text-xs text-stone-400">{tr("Aucun ticket", "No ticket")}</p>
+        {visibleTickets.length === 0 ? (
+          <p className="text-xs text-stone-400">
+            {ticketTab === "printed"
+              ? tr("Aucun ticket imprime", "No printed ticket")
+              : tr("Aucun ticket non imprime", "No non-printed ticket")}
+          </p>
         ) : (
           <div className="space-y-2">
-            {jobs.map((job) => {
+            {visibleTickets.map((job) => {
               const parsedName = splitPersonName(job?.order?.user || {});
               const note = getOrderNote(job?.order || {});
               const canReprint = ["PRINTED", "FAILED", "RETRY_WAITING"].includes(String(job.status || "").toUpperCase());
