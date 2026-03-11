@@ -5,11 +5,12 @@ import { useLanguage } from "../context/LanguageContext";
 
 const adminLinks = [
   { to: "/admin/orders", labelFr: "Commandes", labelEn: "Orders" },
-  { to: "/admin/print", labelFr: "Impression", labelEn: "Printing" },
-  { to: "/admin/users", labelFr: "Clients", labelEn: "Users" },
   { to: "/admin/menu", labelFr: "Menu", labelEn: "Menu" },
-  { to: "/admin/locations", labelFr: "Camions & Adresses", labelEn: "Trucks & Addresses" },
-  { to: "/admin/timeslots", labelFr: "Creneaux", labelEn: "Timeslots" },
+  { to: "/admin/locations", labelFr: "Adresses", labelEn: "Addresses" },
+  { to: "/admin/timeslots", labelFr: "Horaires", labelEn: "Schedules" },
+  { to: "/admin/print", labelFr: "Camions & Impressions", labelEn: "Trucks & Printing" },
+  { to: "/admin/tickets", labelFr: "Tickets", labelEn: "Tickets" },
+  { to: "/admin/users", labelFr: "Clients", labelEn: "Users" },
   { to: "/admin/gallery", labelFr: "Galerie", labelEn: "Gallery" },
 ];
 

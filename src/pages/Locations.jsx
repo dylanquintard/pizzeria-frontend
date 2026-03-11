@@ -12,6 +12,7 @@ import {
   deletePrintAgentAdmin,
   getPrintAgentsAdmin,
   getPrintPrintersAdmin,
+  rotatePrintAgentTokenAdmin,
   upsertPrintAgentAdmin,
   upsertPrintPrinterAdmin,
 } from "../api/admin.api";
@@ -62,6 +63,19 @@ function formatLocation(location) {
     location.country,
   ].filter(Boolean);
   return parts.join(", ");
+}
+
+function formatDateTime(value, locale) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleString(locale, {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 function normalizePrinterRuntime(printer, agentStatus) {
@@ -150,7 +164,7 @@ function getLinkedLocationInfo(printers, tr) {
 
 export default function Locations() {
   const { token, user, loading: authLoading } = useContext(AuthContext);
-  const { tr } = useLanguage();
+  const { tr, locale } = useLanguage();
 
   const [locations, setLocations] = useState([]);
   const [newLocation, setNewLocation] = useState(emptyLocationForm);
@@ -414,6 +428,25 @@ export default function Locations() {
     }
   };
 
+  const handleRotateTruckToken = async (agentCode) => {
+    const busyKey = `rotate-truck:${agentCode}`;
+    setTruckBusyFlag(busyKey, true);
+    try {
+      const result = await rotatePrintAgentTokenAdmin(token, agentCode);
+      if (result?.token) {
+        setTruckTokenInfo({
+          code: agentCode,
+          token: result.token,
+        });
+      }
+      setMessage(tr("Nouveau token genere", "New token generated"));
+    } catch (err) {
+      setMessage(err.response?.data?.error || tr("Erreur rotation token camion", "Truck token rotation error"));
+    } finally {
+      setTruckBusyFlag(busyKey, false);
+    }
+  };
+
   const handleLinkTruckToLocation = async (agentCode, locationId) => {
     const busyKey = `link-truck:${agentCode}`;
     setTruckBusyFlag(busyKey, true);
@@ -441,7 +474,7 @@ export default function Locations() {
 
       {truckTokenInfo?.token && (
         <div className="rounded-lg border border-sky-300/40 bg-sky-500/10 p-2 text-sm text-sky-100">
-          <p className="font-semibold">{tr("Token PI (affiche apres creation)", "Pi token (shown after creation)")}</p>
+          <p className="font-semibold">{tr("Token PI (affiche apres creation/rotation)", "Pi token (shown after create/rotate)")}</p>
           <p className="mt-1 break-all font-mono text-xs">
             {truckTokenInfo.code}: {truckTokenInfo.token}
           </p>
@@ -617,20 +650,22 @@ export default function Locations() {
         </p>
 
         <div className="mt-3 overflow-x-auto">
-          <table className="w-full min-w-[860px] text-sm">
+          <table className="w-full min-w-[980px] text-sm">
             <thead>
               <tr className="text-left text-xs uppercase tracking-wider text-stone-400">
                 <th className="pb-2">{tr("Nom camion", "Truck name")}</th>
                 <th className="pb-2">{tr("Etat PI", "PI status")}</th>
                 <th className="pb-2">{tr("Etat impression", "Print status")}</th>
+                <th className="pb-2">{tr("Dernier signal", "Latest signal")}</th>
                 <th className="pb-2">{tr("Selection emplacement", "Location selection")}</th>
+                <th className="pb-2">{tr("Token", "Token")}</th>
                 <th className="pb-2">{tr("Supprimer", "Delete")}</th>
               </tr>
             </thead>
             <tbody>
               {printAgents.length === 0 && (
                 <tr>
-                  <td colSpan="5" className="py-2 text-stone-400">{tr("Aucun camion", "No truck")}</td>
+                  <td colSpan="7" className="py-2 text-stone-400">{tr("Aucun camion", "No truck")}</td>
                 </tr>
               )}
               {printAgents.map((agent) => {
@@ -638,6 +673,7 @@ export default function Locations() {
                 const printStatus = computeTruckPrintStatus(agent.status, agentPrinters);
                 const linkedLocationInfo = getLinkedLocationInfo(agentPrinters, tr);
                 const isLinking = truckBusy[`link-truck:${agent.code}`];
+                const isRotating = truckBusy[`rotate-truck:${agent.code}`];
                 const isDeleting = truckBusy[`delete-truck:${agent.code}`];
 
                 return (
@@ -655,6 +691,9 @@ export default function Locations() {
                       <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase ${statusBadgeClasses(printStatus)}`}>
                         {formatStatusLabel(printStatus, tr)}
                       </span>
+                    </td>
+                    <td className="py-2 text-xs text-stone-300">
+                      {formatDateTime(agent.lastHeartbeatAt, locale)}
                     </td>
                     <td className="py-2">
                       <select
@@ -679,6 +718,16 @@ export default function Locations() {
                           </option>
                         ))}
                       </select>
+                    </td>
+                    <td className="py-2">
+                      <button
+                        type="button"
+                        onClick={() => handleRotateTruckToken(agent.code)}
+                        disabled={isRotating}
+                        className="rounded-lg border border-sky-300/40 bg-sky-500/10 px-3 py-1.5 text-xs font-semibold text-sky-200 disabled:opacity-60"
+                      >
+                        {tr("Generer token", "Generate token")}
+                      </button>
                     </td>
                     <td className="py-2">
                       <ActionIconButton
