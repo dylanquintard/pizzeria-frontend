@@ -62,6 +62,16 @@ function statusBadge(status) {
   return "bg-red-500/20 text-red-200 border-red-300/40";
 }
 
+function formatPrinterRuntimeLabel(runtimeStatus, tr) {
+  const normalized = String(runtimeStatus || "UNKNOWN").toUpperCase();
+  if (normalized === "ONLINE") return tr("Connectee", "Connected");
+  if (normalized === "DEGRADED") return tr("Degradee", "Degraded");
+  if (normalized === "OFFLINE") return tr("Hors ligne", "Offline");
+  if (normalized === "INACTIVE") return tr("Inactive", "Inactive");
+  if (normalized === "UNASSIGNED") return tr("Non assignee", "Unassigned");
+  return tr("Inconnu", "Unknown");
+}
+
 export default function PrintAdmin() {
   const { user, token, loading: authLoading } = useContext(AuthContext);
   const { tr, locale } = useLanguage();
@@ -573,12 +583,21 @@ export default function PrintAdmin() {
                     <p className="text-sm font-semibold text-white">
                       {printer.name} <span className="text-xs text-stone-400">({printer.code})</span>
                     </p>
-                    <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase ${printer.isActive ? statusBadge("ONLINE") : statusBadge("OFFLINE")}`}>
-                      {printer.isActive ? "ACTIVE" : "INACTIVE"}
+                    <span
+                      className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase ${
+                        statusBadge(printer?.runtime?.status || (printer.isActive ? "ONLINE" : "INACTIVE"))
+                      }`}
+                    >
+                      {formatPrinterRuntimeLabel(printer?.runtime?.status || (printer.isActive ? "ONLINE" : "INACTIVE"), tr)}
                     </span>
                   </div>
                   <p className="mt-1 text-xs text-stone-300">
                     {printer.ipAddress || "-"}:{printer.port} | {printer.connectionType} | {tr("Camion", "Truck")}: {printer.agent?.name || "-"}
+                  </p>
+                  <p className="mt-1 text-xs text-stone-300">
+                    {tr("Dernier heartbeat", "Last heartbeat")}: {formatDateTime(printer?.runtime?.lastHeartbeatAt || printer?.agent?.lastHeartbeatAt, locale)}
+                    {" | "}
+                    {tr("Etat remonte Pi", "Pi-reported state")}: {String(printer?.runtime?.reportedOnline) === "true" ? tr("Connectee", "Connected") : String(printer?.runtime?.reportedOnline) === "false" ? tr("Hors ligne", "Offline") : "-"}
                   </p>
                   <p className="mt-1 text-xs text-stone-300">
                     {tr("Emplacement", "Location")}: {printer.location?.name || tr("Global", "Global")}
