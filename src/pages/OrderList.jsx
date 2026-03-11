@@ -5,11 +5,9 @@ import {
   getOrdersAdmin,
   getAllUsers,
   deleteOrderAdmin,
-  finalizeOrderAdmin,
 } from "../api/admin.api";
 import { useRealtimeEvents } from "../hooks/useRealtimeEvents";
 import { ActionIconButton, DeleteIcon } from "../components/ui/AdminActions";
-import { getOrderNote } from "../utils/orderNote";
 import { splitPersonName } from "../utils/personName";
 
 function toLocalIsoDate(dateValue) {
@@ -18,19 +16,6 @@ function toLocalIsoDate(dateValue) {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
-}
-
-function getOrderItemProduct(item) {
-  return item?.product || item?.menuItem || null;
-}
-
-function getOrderItemName(item, tr) {
-  const product = getOrderItemProduct(item);
-  return product?.name || item?.name || `${tr("Produit", "Product")} #${item?.id ?? "?"}`;
-}
-
-function getIngredientName(ingredient, tr) {
-  return ingredient?.name || ingredient?.ingredient?.name || tr("Ingredient", "Ingredient");
 }
 
 function getClientPhone(order) {
@@ -65,8 +50,6 @@ function getClientIdentity(order, tr) {
   });
 
   return {
-    firstName: parsed.firstName,
-    lastName: parsed.lastName,
     fullName: parsed.fullName || tr("Client inconnu", "Unknown client"),
   };
 }
@@ -76,6 +59,15 @@ function formatPrice(value) {
   return Number.isNaN(numeric) ? "0.00" : numeric.toFixed(2);
 }
 
+function normalizeWorkflowStatus(order) {
+  const value = String(order?.workflowStatus || order?.status || "")
+    .trim()
+    .toUpperCase();
+  if (value === "PRINTED" || value === "FINALIZED") return "PRINTED";
+  if (value === "CANCELED") return "CANCELED";
+  return "IN_PROGRESS";
+}
+
 export default function OrderList() {
   const { user, token, loading: authLoading } = useContext(AuthContext);
   const { tr, locale } = useLanguage();
@@ -83,8 +75,7 @@ export default function OrderList() {
   const [message, setMessage] = useState("");
   const [selectedDate, setSelectedDate] = useState(toLocalIsoDate(new Date()));
   const [loading, setLoading] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState("COMPLETED");
-  const [expandedOrders, setExpandedOrders] = useState({});
+  const [selectedStatus, setSelectedStatus] = useState("IN_PROGRESS");
   const [usersById, setUsersById] = useState({});
   const [usersByEmail, setUsersByEmail] = useState({});
   const [usersByName, setUsersByName] = useState({});
@@ -94,6 +85,7 @@ export default function OrderList() {
   const [realtimeConnected, setRealtimeConnected] = useState(false);
   const seenOrderIdsRef = useRef(new Set());
   const snapshotInitializedRef = useRef(false);
+
   const formatTime = (dateStr) => {
     const d = new Date(dateStr);
     return d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
@@ -259,26 +251,6 @@ export default function OrderList() {
     }
   };
 
-  const handleFinalize = async (orderId) => {
-    if (!window.confirm(tr("Voulez-vous vraiment finaliser cette commande ?", "Do you really want to finalize this order?"))) return;
-
-    try {
-      await finalizeOrderAdmin(token, orderId);
-      fetchOrders();
-      setMessage(tr("Commande finalisee", "Order finalized"));
-    } catch (err) {
-      console.error(err);
-      setMessage(err.response?.data?.error || tr("Erreur lors de la finalisation", "Error while finalizing"));
-    }
-  };
-
-  const toggleDetails = (orderId) => {
-    setExpandedOrders((prev) => ({
-      ...prev,
-      [orderId]: !prev[orderId],
-    }));
-  };
-
   const resolveClientPhone = (order) => {
     const directPhone = getClientPhone(order);
     if (directPhone) return String(directPhone);
@@ -429,8 +401,8 @@ export default function OrderList() {
             onChange={(event) => setSelectedStatus(event.target.value)}
             className="h-8 rounded-lg border border-white/20 bg-charcoal/70 px-2 text-xs text-stone-100 focus:border-saffron focus:outline-none sm:h-9 sm:px-3 sm:text-sm"
           >
-            <option value="COMPLETED">{tr("En cours", "In progress")}</option>
-            <option value="FINALIZED">{tr("Termine", "Finished")}</option>
+            <option value="IN_PROGRESS">{tr("En cours", "In progress")}</option>
+            <option value="PRINTED">{tr("Termine", "Finished")}</option>
           </select>
         </div>
       </div>
@@ -455,57 +427,40 @@ export default function OrderList() {
 
               <div className="space-y-2">
                 {groupedOrders[slot].map((order) => {
-                  const isExpanded = expandedOrders[order.id] ?? true;
+                  const workflowStatus = normalizeWorkflowStatus(order);
                   const orderTotal = formatPrice(order.total ?? order.totalPrice);
-                  const statusLabel = order.status === "FINALIZED" ? tr("Terminee", "Finished") : tr("En cours", "In progress");
                   const clientPhone = resolveClientPhone(order);
                   const clientIdentity = getClientIdentity(order, tr);
                   const hasPhone = Boolean(clientPhone);
                   const phoneDisplay = clientPhone || (usersLookupReady ? tr("Numero non renseigne", "No phone provided") : tr("Chargement...", "Loading..."));
-                  const orderNote = getOrderNote(order);
 
                   return (
                     <article key={order.id} className="rounded-xl border border-white/10 bg-charcoal/45 p-3">
                       <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => toggleDetails(order.id)}
-                            className="inline-flex h-8 w-8 items-center justify-center border-none bg-transparent p-0 text-stone-100 transition hover:text-saffron"
-                            title={isExpanded ? tr("Masquer details", "Hide details") : tr("Afficher details", "Show details")}
-                            aria-label={isExpanded ? tr("Masquer details", "Hide details") : tr("Afficher details", "Show details")}
-                          >
-                            <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="2.3">
-                              <path d="M4 6h16" />
-                              <path d="M4 12h16" />
-                              <path d="M4 18h16" />
-                            </svg>
-                          </button>
-
-                          {order.status === "COMPLETED" ? (
-                            <button
-                              type="button"
-                              onClick={() => handleFinalize(order.id)}
-                              className="inline-flex h-8 w-8 items-center justify-center border-none bg-transparent p-0 text-emerald-300 transition hover:text-emerald-200"
-                              title={tr("Finaliser la commande", "Finalize order")}
-                              aria-label={tr("Finaliser la commande", "Finalize order")}
-                            >
-                              <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="2.7">
-                                <path d="m5 13 4 4L19 7" />
-                              </svg>
-                            </button>
-                          ) : (
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold uppercase tracking-wide text-white">
+                            {clientIdentity.fullName}
+                          </p>
+                          <p className={`theme-light-keep-dark mt-0.5 text-[11px] font-medium ${hasPhone ? "text-sky-200" : "text-stone-400"}`}>
+                            {phoneDisplay}
+                          </p>
+                          <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-stone-300">
+                            <span>#{order.id}</span>
+                            <span className="text-stone-500">|</span>
+                            <span>{orderTotal} EUR</span>
                             <span
-                              className="inline-flex h-8 w-8 items-center justify-center text-emerald-200/55"
-                              title={tr("Commande deja finalisee", "Order already finalized")}
-                              aria-hidden="true"
+                              className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                                workflowStatus === "PRINTED"
+                                  ? "bg-emerald-500/20 text-black"
+                                  : "bg-amber-500/20 text-black"
+                              }`}
                             >
-                              <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="2.7">
-                                <path d="m5 13 4 4L19 7" />
-                              </svg>
+                              {workflowStatus}
                             </span>
-                          )}
+                          </div>
+                        </div>
 
+                        <div className="shrink-0">
                           <ActionIconButton
                             onClick={() => handleDelete(order.id)}
                             label={tr("Supprimer la commande", "Delete order")}
@@ -514,72 +469,7 @@ export default function OrderList() {
                             <DeleteIcon />
                           </ActionIconButton>
                         </div>
-
-                        <div className="min-w-0 text-right">
-                          <p className="truncate text-sm font-semibold uppercase tracking-wide text-white">
-                            {clientIdentity.fullName}
-                          </p>
-                          <p className={`theme-light-keep-dark mt-0.5 text-[11px] font-medium ${hasPhone ? "text-sky-200" : "text-stone-400"}`}>
-                            {phoneDisplay}
-                          </p>
-                          <div className="mt-0.5 flex items-center justify-end gap-2 text-[11px] text-stone-300">
-                            <span>{orderTotal} EUR</span>
-                            <span className="text-stone-500">|</span>
-                            <span
-                              className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
-                                order.status === "FINALIZED"
-                                  ? "bg-emerald-500/20 text-black"
-                                  : "bg-amber-500/20 text-black"
-                              }`}
-                            >
-                              {statusLabel}
-                            </span>
-                          </div>
-                        </div>
                       </div>
-
-                      {isExpanded && (
-                        <div className="mt-3 rounded-lg border border-white/10 bg-black/20 p-2">
-                          <div className="mb-3 grid gap-1 rounded-md border border-white/10 bg-charcoal/40 px-2.5 py-2 text-xs text-stone-300 sm:grid-cols-2">
-                            {orderNote && (
-                              <p className="sm:col-span-2">
-                                <strong className="text-stone-100">{tr("Note", "Note")}:</strong> {orderNote}
-                              </p>
-                            )}
-                          </div>
-
-                          <div className="space-y-2">
-                            {order.items?.length > 0 ? (
-                              order.items.map((item, index) => {
-                                const added = (item.addedIngredients || []).map((entry) => getIngredientName(entry, tr)).filter(Boolean);
-                                const removed = (item.removedIngredients || []).map((entry) => getIngredientName(entry, tr)).filter(Boolean);
-
-                                return (
-                                  <div key={item.id ?? `${order.id}-${index}`} className="text-sm text-stone-200">
-                                    <div className="flex flex-wrap items-center gap-1.5">
-                                      <span className="inline-flex min-w-[34px] justify-center rounded-md bg-saffron/20 px-1.5 py-0.5 text-xs font-bold text-saffron">
-                                        {item.quantity}x
-                                      </span>
-                                      <span className="text-sm font-semibold text-white sm:text-[15px]">
-                                        {getOrderItemName(item, tr)}
-                                      </span>
-                                    </div>
-
-                                    {(added.length > 0 || removed.length > 0) && (
-                                      <div className="ml-9 mt-1 space-y-0.5">
-                                        {added.length > 0 && <p className="text-xs text-emerald-300 sm:text-sm">+ {added.join(", ")}</p>}
-                                        {removed.length > 0 && <p className="text-xs text-red-300 sm:text-sm">- {removed.join(", ")}</p>}
-                                      </div>
-                                    )}
-                                  </div>
-                                );
-                              })
-                            ) : (
-                              <p className="text-xs text-stone-400">{tr("Aucun detail de produit.", "No product detail.")}</p>
-                            )}
-                          </div>
-                        </div>
-                      )}
                     </article>
                   );
                 })}

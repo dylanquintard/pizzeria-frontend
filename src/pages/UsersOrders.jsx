@@ -29,7 +29,7 @@ function getStatusLabel(status, tr) {
   const normalized = String(status || "").trim().toUpperCase();
   if (normalized === "PENDING") return tr("En attente", "Pending");
   if (normalized === "COMPLETED") return tr("En cours", "In progress");
-  if (normalized === "FINALIZED") return tr("Finalisee", "Finalized");
+  if (normalized === "FINALIZED") return tr("Imprimee", "Printed");
   if (normalized === "CANCELED") return tr("Annulee", "Canceled");
   return normalized || "-";
 }

@@ -105,15 +105,6 @@ export const deleteOrderAdmin = async (token, orderId) => {
   return response.data;
 };
 
-export const finalizeOrderAdmin = async (token, orderId) => {
-  const response = await api.patch(
-    `/orders/${orderId}/status`,
-    { status: "FINALIZED" },
-    authConfig(token)
-  );
-  return response.data;
-};
-
 export const getPrintOverviewAdmin = async (token, filters = {}) => {
   const response = await api.get("/print/admin/overview", {
     ...authConfig(token),
