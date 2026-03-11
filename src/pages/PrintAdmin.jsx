@@ -77,6 +77,82 @@ function formatStatusLabel(status, tr) {
   return tr("Inconnu", "Unknown");
 }
 
+function sanitizeTicketText(value) {
+  return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+function formatTicketPickup(value) {
+  const raw = sanitizeTicketText(value);
+  if (!raw) return "-";
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) return raw;
+  const dd = String(parsed.getDate()).padStart(2, "0");
+  const mm = String(parsed.getMonth() + 1).padStart(2, "0");
+  const yyyy = parsed.getFullYear();
+  const hh = String(parsed.getHours()).padStart(2, "0");
+  const min = String(parsed.getMinutes()).padStart(2, "0");
+  return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
+}
+
+function buildTicketPreview(job) {
+  const payload = job?.payload || {};
+  const order = payload?.order || {};
+  const customer = order?.customer || {};
+  const items = Array.isArray(order?.items) ? order.items : [];
+  const isCopy = Boolean(job?.reprintOfJobId || payload?.reprint?.source_job_id);
+  const ticketStatus = isCopy ? "COPIE" : "ORIGINAL";
+  const agentName = sanitizeTicketText(job?.claimedByAgent?.name || "Pi Camion");
+  const orderNumber = sanitizeTicketText(order?.number || `A-${order?.id || job?.orderId || "?"}`);
+  const firstName = sanitizeTicketText(customer?.first_name || "");
+  const lastName = sanitizeTicketText(customer?.last_name || "");
+  const fullName = sanitizeTicketText(customer?.full_name || "");
+  const displayFirstName = firstName || (fullName ? fullName.split(" ")[0] : "-");
+  const displayLastName = lastName || (fullName ? fullName.split(" ").slice(1).join(" ") || "-" : "-");
+  const phone = sanitizeTicketText(customer?.phone || "-");
+  const currency = sanitizeTicketText(order?.currency || "EUR");
+  const total = sanitizeTicketText(order?.total || "0.00");
+  const note = sanitizeTicketText(order?.note || "");
+
+  const lines = [
+    ticketStatus,
+    agentName,
+    "-".repeat(42),
+    `TICKET COMMANDE N: ${orderNumber}`,
+    `Heure retrait: ${formatTicketPickup(order?.pickup_time)}`,
+    "-".repeat(42),
+    "INFOS CLIENT",
+    `Nom: ${displayLastName}`,
+    `Prenom: ${displayFirstName}`,
+    `Numero: ${phone}`,
+    "-".repeat(42),
+    "DETAILS COMMANDE",
+  ];
+
+  for (const item of items) {
+    const qty = Number(item?.qty || 0);
+    const name = sanitizeTicketText(item?.name || "Produit");
+    lines.push(`${qty}x ${name}`);
+
+    const added = Array.isArray(item?.added_ingredients) ? item.added_ingredients : [];
+    const removed = Array.isArray(item?.removed_ingredients) ? item.removed_ingredients : [];
+
+    if (added.length > 0) {
+      lines.push(`+ ${added.map((entry) => sanitizeTicketText(entry)).join(", ")}`);
+    }
+    if (removed.length > 0) {
+      lines.push(`- ${removed.map((entry) => sanitizeTicketText(entry)).join(", ")}`);
+    }
+  }
+
+  lines.push("-".repeat(42));
+  lines.push(`Total: ${total} ${currency}`);
+  if (note) {
+    lines.push(`Note: ${note}`);
+  }
+
+  return lines.join("\n");
+}
+
 export default function PrintAdmin() {
   const { user, token, loading: authLoading } = useContext(AuthContext);
   const { tr, locale } = useLanguage();
@@ -92,6 +168,7 @@ export default function PrintAdmin() {
   const [busyByKey, setBusyByKey] = useState({});
   const [message, setMessage] = useState("");
   const [agentTokenInfo, setAgentTokenInfo] = useState(null);
+  const [previewJob, setPreviewJob] = useState(null);
 
   const [printerForm, setPrinterForm] = useState(initialPrinterForm);
 
@@ -487,9 +564,9 @@ export default function PrintAdmin() {
       </section>
 
       <section className="rounded-xl border border-white/10 bg-white/5 p-3">
-        <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-saffron">{tr("Derniers jobs", "Recent jobs")}</h3>
+        <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-saffron">{tr("Derniers tickets", "Latest tickets")}</h3>
         {jobs.length === 0 ? (
-          <p className="text-xs text-stone-400">{tr("Aucun job", "No job")}</p>
+          <p className="text-xs text-stone-400">{tr("Aucun ticket", "No ticket")}</p>
         ) : (
           <div className="space-y-2">
             {jobs.map((job) => {
@@ -516,7 +593,14 @@ export default function PrintAdmin() {
                     {tr("Planifie", "Scheduled")}: {formatDateTime(job.scheduledAt, locale)} |{" "}
                     {tr("Derniere MAJ", "Last update")}: {formatDateTime(job.updatedAt, locale)}
                   </p>
-                  <div className="mt-2">
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPreviewJob(job)}
+                      className="rounded-lg border border-white/25 bg-white/10 px-3 py-1.5 text-xs font-semibold text-stone-100 transition hover:bg-white/15"
+                    >
+                      {tr("Apercu ticket", "Ticket preview")}
+                    </button>
                     <button
                       type="button"
                       disabled={!canReprint || reprintingByJobId[job.id]}
@@ -532,6 +616,36 @@ export default function PrintAdmin() {
           </div>
         )}
       </section>
+
+      {previewJob && (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setPreviewJob(null)}
+        >
+          <div
+            className="w-full max-w-xl rounded-xl border border-white/20 bg-charcoal p-4 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <h4 className="text-sm font-semibold uppercase tracking-wider text-saffron">
+                {tr("Apercu ticket", "Ticket preview")} #{previewJob?.orderId}
+              </h4>
+              <button
+                type="button"
+                onClick={() => setPreviewJob(null)}
+                className="rounded-lg border border-white/20 bg-white/10 px-2 py-1 text-xs font-semibold text-stone-100"
+              >
+                {tr("Fermer", "Close")}
+              </button>
+            </div>
+            <pre className="max-h-[60vh] overflow-auto rounded-lg border border-white/10 bg-black/30 p-3 text-xs leading-5 text-stone-100">
+              {buildTicketPreview(previewJob)}
+            </pre>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
