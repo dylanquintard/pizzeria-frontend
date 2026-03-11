@@ -109,12 +109,13 @@ function statusBadgeClasses(status) {
 
 function formatStatusLabel(status, tr) {
   const normalized = String(status || "").toUpperCase();
-  if (normalized === "ONLINE") return tr("ONLINE", "ONLINE");
-  if (normalized === "DEGRADED") return tr("DEGRADED", "DEGRADED");
-  if (normalized === "OFFLINE") return tr("OFFLINE", "OFFLINE");
-  if (normalized === "UNASSIGNED") return tr("NON ASSIGNE", "UNASSIGNED");
-  if (normalized === "INACTIVE") return tr("INACTIVE", "INACTIVE");
-  return normalized || "-";
+  if (normalized === "ONLINE") return tr("En ligne", "Online");
+  if (normalized === "DEGRADED") return tr("Degrade", "Degraded");
+  if (normalized === "OFFLINE") return tr("Hors ligne", "Offline");
+  if (normalized === "UNASSIGNED") return tr("Non assigne", "Unassigned");
+  if (normalized === "INACTIVE") return tr("Inactif", "Inactive");
+  if (normalized === "UNKNOWN") return tr("Inconnu", "Unknown");
+  return tr("Inconnu", "Unknown");
 }
 
 function getLinkedLocationInfo(printers, tr) {
@@ -610,8 +611,8 @@ export default function Locations() {
 
         <p className="mt-2 text-xs text-stone-400">
           {tr(
-            "STATUS PI = heartbeat du Raspberry Pi. STATUS PRINT = etat runtime des imprimantes liees.",
-            "PI STATUS = Raspberry Pi heartbeat. PRINT STATUS = runtime state of linked printers."
+            "Etat PI = heartbeat du Raspberry Pi. Etat impression = etat runtime des imprimantes liees.",
+            "PI status = Raspberry Pi heartbeat. Print status = runtime state of linked printers."
           )}
         </p>
 
@@ -620,8 +621,8 @@ export default function Locations() {
             <thead>
               <tr className="text-left text-xs uppercase tracking-wider text-stone-400">
                 <th className="pb-2">{tr("Nom camion", "Truck name")}</th>
-                <th className="pb-2">{tr("STATUS PI", "PI STATUS")}</th>
-                <th className="pb-2">{tr("STATUS PRINT", "PRINT STATUS")}</th>
+                <th className="pb-2">{tr("Etat PI", "PI status")}</th>
+                <th className="pb-2">{tr("Etat impression", "Print status")}</th>
                 <th className="pb-2">{tr("Selection emplacement", "Location selection")}</th>
                 <th className="pb-2">{tr("Supprimer", "Delete")}</th>
               </tr>

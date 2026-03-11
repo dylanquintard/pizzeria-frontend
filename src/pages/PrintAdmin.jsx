@@ -2,6 +2,7 @@ import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import {
+  deletePrintPrinterAdmin,
   getPrintAgentsAdmin,
   getPrintJobsAdmin,
   getPrintOverviewAdmin,
@@ -54,6 +55,24 @@ function formatPrinterRuntimeLabel(runtimeStatus, tr) {
   if (normalized === "OFFLINE") return tr("Hors ligne", "Offline");
   if (normalized === "INACTIVE") return tr("Inactive", "Inactive");
   if (normalized === "UNASSIGNED") return tr("Non assignee", "Unassigned");
+  return tr("Inconnu", "Unknown");
+}
+
+function formatStatusLabel(status, tr) {
+  const normalized = String(status || "UNKNOWN").toUpperCase();
+  if (normalized === "ONLINE") return tr("En ligne", "Online");
+  if (normalized === "DEGRADED") return tr("Degrade", "Degraded");
+  if (normalized === "OFFLINE") return tr("Hors ligne", "Offline");
+  if (normalized === "PENDING") return tr("En attente", "Pending");
+  if (normalized === "READY") return tr("Pret", "Ready");
+  if (normalized === "CLAIMED") return tr("Reserve", "Claimed");
+  if (normalized === "PRINTING") return tr("En impression", "Printing");
+  if (normalized === "PRINTED") return tr("Imprime", "Printed");
+  if (normalized === "FAILED") return tr("Echec", "Failed");
+  if (normalized === "RETRY_WAITING") return tr("Nouvel essai", "Retry waiting");
+  if (normalized === "CANCELLED") return tr("Annule", "Cancelled");
+  if (normalized === "INACTIVE") return tr("Inactif", "Inactive");
+  if (normalized === "UNASSIGNED") return tr("Non assigne", "Unassigned");
   return tr("Inconnu", "Unknown");
 }
 
@@ -174,6 +193,30 @@ export default function PrintAdmin() {
     }
   };
 
+  const handleEditPrinter = (printer) => {
+    setPrinterForm({
+      name: printer?.name || "",
+      code: printer?.code || "",
+      ipAddress: printer?.ipAddress || "",
+      agentCode: printer?.agent?.code || "",
+    });
+  };
+
+  const handleDeletePrinter = async (printerCode) => {
+    if (!window.confirm(tr("Supprimer cette imprimante ?", "Delete this printer?"))) return;
+    const busyKey = `delete-printer:${printerCode}`;
+    setBusy(busyKey, true);
+    try {
+      await deletePrintPrinterAdmin(token, printerCode);
+      setMessage(tr("Imprimante supprimee", "Printer deleted"));
+      await refreshAll();
+    } catch (err) {
+      setMessage(err?.response?.data?.error || tr("Echec suppression imprimante", "Printer deletion failed"));
+    } finally {
+      setBusy(busyKey, false);
+    }
+  };
+
   const handleReprint = async (jobId) => {
     if (!window.confirm(tr("Relancer l'impression de ce ticket ?", "Reprint this ticket?"))) return;
     setReprintingByJobId((prev) => ({ ...prev, [jobId]: true }));
@@ -287,23 +330,23 @@ export default function PrintAdmin() {
         <article className="rounded-xl border border-white/10 bg-white/5 p-3">
           <p className="text-xs uppercase tracking-wider text-stone-400">{tr("Jobs", "Jobs")}</p>
           <p className="mt-1 text-xl font-bold text-white">{overview?.jobs?.total ?? 0}</p>
-          <p className="text-xs text-stone-300">FAILED 24h: {overview?.jobs?.failedLast24h ?? 0}</p>
+          <p className="text-xs text-stone-300">{tr("Echecs 24h", "Failed 24h")}: {overview?.jobs?.failedLast24h ?? 0}</p>
         </article>
         <article className="rounded-xl border border-white/10 bg-white/5 p-3">
           <p className="text-xs uppercase tracking-wider text-stone-400">{tr("Camions (agents)", "Trucks (agents)")}</p>
           <p className="mt-1 text-xl font-bold text-white">{overview?.agents?.total ?? 0}</p>
           <p className="text-xs text-stone-300">
-            ONLINE {overview?.agents?.online ?? 0} | DEGRADED {overview?.agents?.degraded ?? 0} | OFFLINE {overview?.agents?.offline ?? 0}
+            {tr("En ligne", "Online")} {overview?.agents?.online ?? 0} | {tr("Degrades", "Degraded")} {overview?.agents?.degraded ?? 0} | {tr("Hors ligne", "Offline")} {overview?.agents?.offline ?? 0}
           </p>
         </article>
         <article className="rounded-xl border border-white/10 bg-white/5 p-3">
           <p className="text-xs uppercase tracking-wider text-stone-400">{tr("Imprimantes", "Printers")}</p>
           <p className="mt-1 text-xl font-bold text-white">{overview?.printers?.total ?? 0}</p>
           <p className="text-xs text-stone-300">
-            {tr("Connectees", "Connected")} {overview?.printers?.connected ?? 0} | {tr("Hors ligne", "Offline")} {overview?.printers?.offline ?? 0} | DEGRADED {overview?.printers?.degraded ?? 0}
+            {tr("Connectees", "Connected")} {overview?.printers?.connected ?? 0} | {tr("Hors ligne", "Offline")} {overview?.printers?.offline ?? 0} | {tr("Degradees", "Degraded")} {overview?.printers?.degraded ?? 0}
           </p>
           <p className="text-[11px] text-stone-400">
-            CONFIG ACTIVE {overview?.printers?.active ?? 0} | INACTIVE {overview?.printers?.inactive ?? 0}
+            {tr("Config actives", "Active config")} {overview?.printers?.active ?? 0} | {tr("Inactives", "Inactive")} {overview?.printers?.inactive ?? 0}
           </p>
         </article>
       </section>
@@ -329,7 +372,7 @@ export default function PrintAdmin() {
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="text-sm font-semibold text-white">{agent.name}</p>
                     <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase ${statusBadge(agent.status)}`}>
-                      {agent.status}
+                      {formatStatusLabel(agent.status, tr)}
                     </span>
                   </div>
                   <p className="mt-1 text-xs text-stone-300">
@@ -405,6 +448,7 @@ export default function PrintAdmin() {
             <p className="text-xs text-stone-400">{tr("Aucune imprimante", "No printer")}</p>
           ) : (
             printers.map((printer) => {
+              const busyDelete = busyByKey[`delete-printer:${printer.code}`];
               return (
                 <article key={printer.id} className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">
                   <div className="flex flex-wrap items-center justify-between gap-2">
@@ -416,6 +460,23 @@ export default function PrintAdmin() {
                     >
                       {formatPrinterRuntimeLabel(printer?.runtime?.status || (printer.isActive ? "ONLINE" : "INACTIVE"), tr)}
                     </span>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleEditPrinter(printer)}
+                      className="rounded-lg border border-white/25 bg-white/10 px-3 py-1.5 text-xs font-semibold text-stone-100 transition hover:bg-white/15"
+                    >
+                      {tr("Modifier", "Edit")}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busyDelete}
+                      onClick={() => handleDeletePrinter(printer.code)}
+                      className="rounded-lg border border-red-300/40 bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-200 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {tr("Supprimer", "Delete")}
+                    </button>
                   </div>
                 </article>
               );
@@ -441,7 +502,7 @@ export default function PrintAdmin() {
                       #{job.orderId} - {job.printer?.code || "-"}
                     </p>
                     <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase ${statusBadge(job.status)}`}>
-                      {job.status}
+                      {formatStatusLabel(job.status, tr)}
                     </span>
                   </div>
                   <p className="mt-1 text-xs text-stone-300">
