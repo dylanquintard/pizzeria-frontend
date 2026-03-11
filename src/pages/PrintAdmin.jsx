@@ -23,7 +23,6 @@ const AUTO_REFRESH_MS = 10_000;
 const initialAgentForm = {
   code: "",
   name: "",
-  status: "OFFLINE",
 };
 
 const initialPrinterForm = {
@@ -78,6 +77,7 @@ export default function PrintAdmin() {
   const [reprintingByJobId, setReprintingByJobId] = useState({});
   const [busyByKey, setBusyByKey] = useState({});
   const [message, setMessage] = useState("");
+  const [agentTokenInfo, setAgentTokenInfo] = useState(null);
 
   const [agentForm, setAgentForm] = useState(initialAgentForm);
   const [printerForm, setPrinterForm] = useState(initialPrinterForm);
@@ -137,11 +137,15 @@ export default function PrintAdmin() {
       const result = await upsertPrintAgentAdmin(token, {
         code: agentForm.code.trim(),
         name: agentForm.name.trim(),
-        status: agentForm.status,
       });
 
-      const tokenText = result?.token ? ` | token: ${result.token}` : "";
-      setMessage(`${tr("Camion enregistre", "Truck saved")}${tokenText}`);
+      if (result?.token) {
+        setAgentTokenInfo({
+          code: agentForm.code.trim(),
+          token: result.token,
+        });
+      }
+      setMessage(tr("Camion enregistre", "Truck saved"));
       setAgentForm(initialAgentForm);
       await refreshAll();
     } catch (err) {
@@ -171,7 +175,13 @@ export default function PrintAdmin() {
     setBusy(busyKey, true);
     try {
       const result = await rotatePrintAgentTokenAdmin(token, agentCode);
-      setMessage(`${tr("Nouveau token pour", "New token for")} ${agentCode}: ${result?.token || "-"}`);
+      if (result?.token) {
+        setAgentTokenInfo({
+          code: agentCode,
+          token: result.token,
+        });
+      }
+      setMessage(tr("Nouveau token genere", "New token generated"));
       await refreshAll();
     } catch (err) {
       setMessage(err?.response?.data?.error || tr("Echec rotation token", "Token rotation failed"));
@@ -329,6 +339,40 @@ export default function PrintAdmin() {
         <p className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm text-stone-200">{message}</p>
       )}
 
+      {agentTokenInfo?.token && (
+        <div className="rounded-xl border border-sky-300/40 bg-sky-500/10 px-3 py-3 text-sm text-sky-100">
+          <p className="font-semibold text-sky-200">
+            {tr("Token PI (affiche apres creation/rotation)", "Pi token (shown after create/rotate)")}
+          </p>
+          <p className="mt-1 break-all font-mono text-xs">
+            {agentTokenInfo.code}: {agentTokenInfo.token}
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(agentTokenInfo.token);
+                  setMessage(tr("Token copie", "Token copied"));
+                } catch (_err) {
+                  setMessage(tr("Copie impossible, copie manuelle necessaire", "Cannot copy automatically, please copy manually"));
+                }
+              }}
+              className="rounded-lg border border-sky-300/40 bg-sky-500/20 px-3 py-1.5 text-xs font-semibold text-sky-100"
+            >
+              {tr("Copier token", "Copy token")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setAgentTokenInfo(null)}
+              className="rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-stone-100"
+            >
+              {tr("Masquer", "Hide")}
+            </button>
+          </div>
+        </div>
+      )}
+
       <section className="grid gap-3 md:grid-cols-3">
         <article className="rounded-xl border border-white/10 bg-white/5 p-3">
           <p className="text-xs uppercase tracking-wider text-stone-400">{tr("Jobs", "Jobs")}</p>
@@ -366,23 +410,20 @@ export default function PrintAdmin() {
             placeholder={tr("Nom camion", "Truck name")}
             className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
           />
-          <select
-            value={agentForm.status}
-            onChange={(event) => setAgentForm((prev) => ({ ...prev, status: event.target.value }))}
-            className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
-          >
-            <option value="OFFLINE">OFFLINE</option>
-            <option value="ONLINE">ONLINE</option>
-            <option value="DEGRADED">DEGRADED</option>
-          </select>
           <button
             type="submit"
             disabled={busyByKey["upsert-agent"]}
-            className="rounded-lg border border-emerald-300/40 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-200 disabled:opacity-60"
+            className="rounded-lg border border-emerald-300/40 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-200 disabled:opacity-60 md:col-span-2"
           >
             {tr("Enregistrer camion", "Save truck")}
           </button>
         </form>
+        <p className="mt-2 text-xs text-stone-300">
+          {tr(
+            "Statut agent gere automatiquement par heartbeat PI (ONLINE/DEGRADED/OFFLINE).",
+            "Agent status is automatically managed by Pi heartbeat (ONLINE/DEGRADED/OFFLINE)."
+          )}
+        </p>
 
         <div className="mt-3 space-y-2">
           {agents.length === 0 ? (

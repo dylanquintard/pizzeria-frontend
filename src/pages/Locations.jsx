@@ -75,9 +75,9 @@ export default function Locations() {
   const [truckForm, setTruckForm] = useState({
     code: "",
     name: "",
-    status: "OFFLINE",
   });
   const [truckBusy, setTruckBusy] = useState({});
+  const [truckTokenInfo, setTruckTokenInfo] = useState(null);
 
   const fetchLocations = useCallback(async () => {
     try {
@@ -203,11 +203,15 @@ export default function Locations() {
       const result = await upsertPrintAgentAdmin(token, {
         code: truckForm.code.trim(),
         name: truckForm.name.trim(),
-        status: truckForm.status,
       });
-      const tokenInfo = result?.token ? ` | token: ${result.token}` : "";
-      setMessage(`${tr("Camion enregistre", "Truck saved")}${tokenInfo}`);
-      setTruckForm({ code: "", name: "", status: "OFFLINE" });
+      if (result?.token) {
+        setTruckTokenInfo({
+          code: truckForm.code.trim(),
+          token: result.token,
+        });
+      }
+      setMessage(tr("Camion enregistre", "Truck saved"));
+      setTruckForm({ code: "", name: "" });
       await fetchPrintResources();
     } catch (err) {
       setMessage(err.response?.data?.error || tr("Erreur creation camion", "Truck creation error"));
@@ -278,6 +282,16 @@ export default function Locations() {
     <div>
       <h2>{tr("Gestion des emplacements", "Location management")}</h2>
       {message && <p>{message}</p>}
+      {truckTokenInfo?.token && (
+        <div className="mb-3 rounded-lg border border-sky-300/40 bg-sky-500/10 p-2 text-sm text-sky-100">
+          <p className="font-semibold">
+            {tr("Token PI (affiche apres creation)", "Pi token (shown after creation)")}
+          </p>
+          <p className="mt-1 break-all font-mono text-xs">
+            {truckTokenInfo.code}: {truckTokenInfo.token}
+          </p>
+        </div>
+      )}
 
       <form onSubmit={handleCreate}>
         <h3>{tr("Ajouter un emplacement", "Add location")}</h3>
@@ -410,18 +424,16 @@ export default function Locations() {
             value={truckForm.name}
             onChange={(event) => setTruckForm((prev) => ({ ...prev, name: event.target.value }))}
           />
-          <select
-            value={truckForm.status}
-            onChange={(event) => setTruckForm((prev) => ({ ...prev, status: event.target.value }))}
-          >
-            <option value="OFFLINE">OFFLINE</option>
-            <option value="ONLINE">ONLINE</option>
-            <option value="DEGRADED">DEGRADED</option>
-          </select>
           <button type="submit" disabled={truckBusy["create-truck"]}>
             {tr("Creer camion", "Create truck")}
           </button>
         </form>
+        <p className="mb-2 text-xs text-stone-500">
+          {tr(
+            "Statut agent gere automatiquement par heartbeat PI.",
+            "Agent status is automatically managed by Pi heartbeat."
+          )}
+        </p>
 
         <table>
           <thead>
