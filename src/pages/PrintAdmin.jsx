@@ -360,8 +360,8 @@ export default function PrintAdmin() {
           <p className="font-semibold">{tr("Alerte impression", "Print alert")} ({alertCount})</p>
           <p className="text-xs text-red-100">
             {tr(
-              "Un agent, une imprimante ou un job pret trop ancien est en alerte. Verifier papier, reseau, heartbeat Pi et file READY.",
-              "An agent, printer or stale READY job is in alert. Check paper, network, Pi heartbeat and READY queue."
+              "Un agent, une imprimante ou un job pret trop ancien est en alerte. Verifier papier, reseau, dernier signal PI et tickets.",
+              "An agent, printer or stale READY job is in alert. Check paper, network, latest Pi signal and tickets."
             )}
           </p>
         </div>
@@ -434,7 +434,7 @@ export default function PrintAdmin() {
       </section>
 
       <section className="rounded-xl border border-white/10 bg-white/5 p-3">
-        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-saffron">{tr("Camions (lecture seule)", "Trucks (read-only)")}</h3>
+        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-saffron">{tr("Camions", "Trucks")}</h3>
         <p className="mt-2 text-xs text-stone-300">
           {tr(
             "Creation/lien camion disponibles dans /admin/locations. Ici: supervision + rotation token.",
@@ -458,7 +458,7 @@ export default function PrintAdmin() {
                     </span>
                   </div>
                   <p className="mt-1 text-xs text-stone-300">
-                    {tr("Dernier heartbeat", "Last heartbeat")}: {formatDateTime(agent.lastHeartbeatAt, locale)}
+                    {tr("Dernier signal", "Latest signal")}: {formatDateTime(agent.lastHeartbeatAt, locale)}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     <button
