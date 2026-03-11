@@ -39,6 +39,15 @@ export const activateGalleryImage = async (token, id, active) => {
   return response.data;
 };
 
+export const setGalleryHomeBackground = async (token, id) => {
+  const response = await api.patch(
+    `/gallery/${id}/home-background`,
+    {},
+    authConfig(token)
+  );
+  return response.data;
+};
+
 export const deleteGalleryImage = async (token, id) => {
   const response = await api.delete(`/gallery/${id}`, authConfig(token));
   return response.data;

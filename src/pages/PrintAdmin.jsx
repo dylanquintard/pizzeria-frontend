@@ -441,11 +441,11 @@ export default function PrintAdmin() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className={previewJob ? "hidden md:block" : ""}>
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <h2 className="text-2xl font-bold text-white">{tr("Impressions & tickets", "Prints & tickets")}</h2>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={refreshAll}
@@ -466,7 +466,7 @@ export default function PrintAdmin() {
       
 
       {alertCount > 0 && (
-        <div className="rounded-xl border border-red-400/40 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+        <div className="rounded-xl border border-red-400/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
           <p className="font-semibold">{tr("Alerte impression", "Print alert")} ({alertCount})</p>
           <p className="text-xs text-red-100">
             {tr(
@@ -478,11 +478,11 @@ export default function PrintAdmin() {
       )}
 
       {message && (
-        <p className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm text-stone-200">{message}</p>
+        <p className="rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm text-stone-200">{message}</p>
       )}
 
       {agentTokenInfo?.token && (
-        <div className="rounded-xl border border-sky-300/40 bg-sky-500/10 px-3 py-3 text-sm text-sky-100">
+        <div className="rounded-xl border border-sky-300/40 bg-sky-500/10 px-4 py-4 text-sm text-sky-100">
           <p className="font-semibold text-sky-200">
             {tr("Token PI (affiche apres creation/rotation)", "Pi token (shown after create/rotate)")}
           </p>
@@ -515,23 +515,23 @@ export default function PrintAdmin() {
         </div>
       )}
 
-      <section className="grid gap-3 md:grid-cols-3">
-        <article className="rounded-xl border border-white/10 bg-white/5 p-3">
-          <p className="text-xs uppercase tracking-wider text-stone-400">{tr("Jobs", "Jobs")}</p>
+      <section className="grid gap-4 md:grid-cols-3">
+        <article className="rounded-xl border border-white/10 bg-white/5 p-4">
+          <p className="text-xs uppercase tracking-wider text-stone-400">{tr("Tickets", "Tickets")}</p>
           <p className="mt-1 text-xl font-bold text-white">{overview?.jobs?.total ?? 0}</p>
           <p className="text-xs text-stone-300">{tr("Echecs 24h", "Failed 24h")}: {overview?.jobs?.failedLast24h ?? 0}</p>
           <p className="text-[11px] text-stone-400">
             {tr("READY > seuil", "READY > threshold")}: {overview?.jobs?.alerts?.readyStaleCount ?? 0}
           </p>
         </article>
-        <article className="rounded-xl border border-white/10 bg-white/5 p-3">
+        <article className="rounded-xl border border-white/10 bg-white/5 p-4">
           <p className="text-xs uppercase tracking-wider text-stone-400">{tr("Camions (agents)", "Trucks (agents)")}</p>
           <p className="mt-1 text-xl font-bold text-white">{overview?.agents?.total ?? 0}</p>
           <p className="text-xs text-stone-300">
             {tr("En ligne", "Online")} {overview?.agents?.online ?? 0} | {tr("Degrades", "Degraded")} {overview?.agents?.degraded ?? 0} | {tr("Hors ligne", "Offline")} {overview?.agents?.offline ?? 0}
           </p>
         </article>
-        <article className="rounded-xl border border-white/10 bg-white/5 p-3">
+        <article className="rounded-xl border border-white/10 bg-white/5 p-4">
           <p className="text-xs uppercase tracking-wider text-stone-400">{tr("Imprimantes", "Printers")}</p>
           <p className="mt-1 text-xl font-bold text-white">{overview?.printers?.total ?? 0}</p>
           <p className="text-xs text-stone-300">
@@ -543,7 +543,7 @@ export default function PrintAdmin() {
         </article>
       </section>
 
-      <section className="rounded-xl border border-white/10 bg-white/5 p-3">
+      <section className="rounded-xl border border-white/10 bg-white/5 p-4 md:p-5">
         <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-saffron">{tr("Camions", "Trucks")}</h3>
         <p className="mt-2 text-xs text-stone-300">
           {tr(
@@ -552,7 +552,7 @@ export default function PrintAdmin() {
           )}
         </p>
 
-        <div className="mt-3 space-y-2">
+        <div className="mt-4 space-y-3">
           {agents.length === 0 ? (
             <p className="text-xs text-stone-400">{tr("Aucun camion", "No truck")}</p>
           ) : (
@@ -560,7 +560,7 @@ export default function PrintAdmin() {
               const busyRotate = busyByKey[`rotate-agent:${agent.code}`];
 
               return (
-                <article key={agent.id} className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">
+                <article key={agent.id} className="rounded-lg border border-white/10 bg-black/20 p-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="text-sm font-semibold text-white">{agent.name}</p>
                     <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase ${statusBadge(agent.status)}`}>
@@ -570,7 +570,7 @@ export default function PrintAdmin() {
                   <p className="mt-1 text-xs text-stone-300">
                     {tr("Dernier signal", "Latest signal")}: {formatDateTime(agent.lastHeartbeatAt, locale)}
                   </p>
-                  <div className="mt-2 flex flex-wrap gap-2">
+                  <div className="mt-3 flex flex-wrap gap-2">
                     <button
                       type="button"
                       disabled={busyRotate}
@@ -587,9 +587,9 @@ export default function PrintAdmin() {
         </div>
       </section>
 
-      <section className="rounded-xl border border-white/10 bg-white/5 p-3">
+      <section className="rounded-xl border border-white/10 bg-white/5 p-4 md:p-5">
         <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-saffron">{tr("Creer/mettre a jour une imprimante", "Create/update a printer")}</h3>
-        <form onSubmit={handleCreateOrUpdatePrinter} className="grid gap-2 md:grid-cols-4">
+        <form onSubmit={handleCreateOrUpdatePrinter} className="grid gap-3 md:grid-cols-4">
           <input
             value={printerForm.name}
             onChange={(event) => setPrinterForm((prev) => ({ ...prev, name: event.target.value }))}
@@ -635,14 +635,14 @@ export default function PrintAdmin() {
           )}
         </p>
 
-        <div className="mt-3 space-y-2">
+        <div className="mt-4 space-y-3">
           {printers.length === 0 ? (
             <p className="text-xs text-stone-400">{tr("Aucune imprimante", "No printer")}</p>
           ) : (
             printers.map((printer) => {
               const busyDelete = busyByKey[`delete-printer:${printer.code}`];
               return (
-                <article key={printer.id} className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">
+                <article key={printer.id} className="rounded-lg border border-white/10 bg-black/20 p-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="text-sm font-semibold text-white">{printer.name}</p>
                     <span
@@ -673,10 +673,10 @@ export default function PrintAdmin() {
         </div>
       </section>
 
-      <section className="rounded-xl border border-white/10 bg-white/5 p-3">
-        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+      <section className="rounded-xl border border-white/10 bg-white/5 p-4 md:p-5">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <h3 className="text-sm font-semibold uppercase tracking-wider text-saffron">{tr("Gestion tickets", "Ticket management")}</h3>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
               onClick={() => setTicketTab("today")}
@@ -718,13 +718,13 @@ export default function PrintAdmin() {
               : tr("Aucun ticket du jour", "No ticket for today")}
           </p>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {visibleTickets.map((job) => {
               const parsedName = splitPersonName(job?.order?.user || {});
               const note = getOrderNote(job?.order || {});
               const canReprint = ["PRINTED", "FAILED", "RETRY_WAITING"].includes(String(job.status || "").toUpperCase());
               return (
-                <article key={job.id} className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">
+                <article key={job.id} className="rounded-lg border border-white/10 bg-black/20 p-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="text-sm font-semibold text-white">
                       #{job.orderId} - {job.printer?.code || "-"}

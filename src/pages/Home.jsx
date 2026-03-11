@@ -38,6 +38,7 @@ const DAY_LABELS = {
   SATURDAY: { fr: "Samedi", en: "Saturday" },
   SUNDAY: { fr: "Dimanche", en: "Sunday" },
 };
+const DEFAULT_HOME_BACKGROUND = "/pizza-background-1920.webp";
 
 function formatLocationAddress(location, tr) {
   if (!location) return tr("Adresse non renseignee", "Address not available");
@@ -224,11 +225,18 @@ const truckTourSchedule = useMemo(
   const galleryFallback = [
     {
       id: "fallback-1",
-      imageUrl: "/pizza-background-1920.webp",
+      imageUrl: DEFAULT_HOME_BACKGROUND,
       title: tr("Four dore", "Golden oven"),
       description: tr("Image de reference", "Reference image"),
     },
   ];
+
+  const heroBackgroundUrl = useMemo(() => {
+    const selectedBackground = galleryImages.find(
+      (image) => image?.isHomeBackground && image?.imageUrl
+    );
+    return selectedBackground?.imageUrl || DEFAULT_HOME_BACKGROUND;
+  }, [galleryImages]);
 
   const displayedGallery = galleryImages.length > 0 ? galleryImages : galleryFallback;
   const visibleGallery = displayedGallery.slice(0, 3);
@@ -345,7 +353,7 @@ const truckTourSchedule = useMemo(
           className="absolute inset-0 bg-cover bg-center"
           style={{
             backgroundImage:
-              "linear-gradient(120deg, rgba(18,16,13,0.88) 5%, rgba(18,16,13,0.62) 40%, rgba(18,16,13,0.92) 100%), url('/pizza-background-1920.webp')",
+              `linear-gradient(120deg, rgba(18,16,13,0.88) 5%, rgba(18,16,13,0.62) 40%, rgba(18,16,13,0.92) 100%), url("${heroBackgroundUrl}")`,
           }}
         />
         <div className="section-shell relative py-20 sm:py-28 lg:py-32">

@@ -6,6 +6,7 @@ import {
   createGalleryImage,
   deleteGalleryImage,
   getGalleryAdmin,
+  setGalleryHomeBackground,
   uploadGalleryImage,
   updateGalleryImage,
 } from "../api/gallery.api";
@@ -79,6 +80,7 @@ export default function GalleryAdmin() {
   const [editImageFile, setEditImageFile] = useState(null);
   const [editImagePreviewUrl, setEditImagePreviewUrl] = useState("");
   const [loading, setLoading] = useState(false);
+  const [backgroundSettingId, setBackgroundSettingId] = useState(null);
   const [message, setMessage] = useState("");
   const newImageLibraryInputRef = useRef(null);
   const newImageCameraInputRef = useRef(null);
@@ -225,6 +227,22 @@ export default function GalleryAdmin() {
     }
   };
 
+  const handleSetHomeBackground = async (image) => {
+    try {
+      setBackgroundSettingId(image.id);
+      await setGalleryHomeBackground(token, image.id);
+      setMessage(tr("Image de fond Home mise a jour.", "Home background image updated."));
+      fetchImages();
+    } catch (err) {
+      setMessage(
+        err.response?.data?.error ||
+          tr("Erreur lors du changement de fond Home", "Error while updating Home background")
+      );
+    } finally {
+      setBackgroundSettingId(null);
+    }
+  };
+
   if (authLoading) return <p>{tr("Chargement...", "Loading...")}</p>;
   if (!token || user?.role !== "ADMIN") {
     return <p>{tr("Acces refuse : administrateur uniquement", "Access denied: admin only")}</p>;
@@ -321,13 +339,14 @@ export default function GalleryAdmin() {
                 <th>{tr("Description", "Description")}</th>
                 <th>{tr("Ordre", "Order")}</th>
                 <th>{tr("Actif", "Active")}</th>
+                <th>{tr("Fond Home", "Home background")}</th>
                 <th>{tr("Actions", "Actions")}</th>
               </tr>
             </thead>
             <tbody>
               {images.length === 0 && (
                 <tr>
-                  <td colSpan="6">{tr("Aucune image", "No image")}</td>
+                  <td colSpan="7">{tr("Aucune image", "No image")}</td>
                 </tr>
               )}
               {images.map((image) => (
@@ -344,7 +363,16 @@ export default function GalleryAdmin() {
                   <td>{image.sortOrder}</td>
                   <td>{image.active ? tr("Oui", "Yes") : tr("Non", "No")}</td>
                   <td>
-                    <div className="flex min-w-[180px] items-center gap-2">
+                    {image.isHomeBackground ? (
+                      <span className="rounded-full border border-emerald-300/40 bg-emerald-500/10 px-2 py-1 text-xs font-semibold text-emerald-200">
+                        {tr("Actif", "Active")}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-stone-400">{tr("Non defini", "Not set")}</span>
+                    )}
+                  </td>
+                  <td>
+                    <div className="flex min-w-[240px] items-center gap-2">
                       <ActionIconButton onClick={() => startEditing(image)} label={tr("Modifier", "Edit")}>
                         <EditIcon />
                       </ActionIconButton>
@@ -354,6 +382,18 @@ export default function GalleryAdmin() {
                         labelOn={tr("Desactiver", "Disable")}
                         labelOff={tr("Activer", "Enable")}
                       />
+                      <button
+                        type="button"
+                        onClick={() => handleSetHomeBackground(image)}
+                        disabled={image.isHomeBackground || backgroundSettingId === image.id}
+                        className="rounded-md border border-saffron/40 bg-saffron/15 px-2 py-1 text-xs font-semibold text-saffron transition hover:bg-saffron/30 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {image.isHomeBackground
+                          ? tr("Fond Home", "Home background")
+                          : backgroundSettingId === image.id
+                            ? tr("En cours...", "Updating...")
+                            : tr("Definir fond", "Set background")}
+                      </button>
                       <ActionIconButton onClick={() => handleDelete(image.id)} label={tr("Supprimer", "Delete")} variant="danger">
                         <DeleteIcon />
                       </ActionIconButton>
