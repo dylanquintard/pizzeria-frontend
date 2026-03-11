@@ -405,19 +405,19 @@ export default function PrintAdmin() {
           <input
             value={printerForm.name}
             onChange={(event) => setPrinterForm((prev) => ({ ...prev, name: event.target.value }))}
-            placeholder={tr("Nom imprimante", "Printer name")}
+            placeholder="Imprimante camion 0"
             className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
           />
           <input
             value={printerForm.code}
             onChange={(event) => setPrinterForm((prev) => ({ ...prev, code: event.target.value }))}
-            placeholder={tr("Code imprimante", "Printer code")}
+            placeholder="print_truck_00"
             className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
           />
           <input
             value={printerForm.ipAddress}
             onChange={(event) => setPrinterForm((prev) => ({ ...prev, ipAddress: event.target.value }))}
-            placeholder={tr("IP imprimante", "Printer IP")}
+            placeholder="192.168.50.20"
             className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
           />
           <select
