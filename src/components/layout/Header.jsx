@@ -4,6 +4,7 @@ import { AuthContext } from "../../context/AuthContext";
 import { CartContext } from "../../context/CartContext";
 import { useLanguage } from "../../context/LanguageContext";
 import { useTheme } from "../../context/ThemeContext";
+import { BRAND_LOGO_URL } from "../../config/env";
 
 function CartItemRow({ item, onRemove, tr }) {
   const lineTotal = (Number(item.unitPrice || 0) * Number(item.quantity || 0)).toFixed(2);
@@ -94,6 +95,7 @@ export default function Header() {
   const [mobileAdminOpen, setMobileAdminOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [hasLogoError, setHasLogoError] = useState(false);
   const cartRef = useRef(null);
   const profileRef = useRef(null);
   const totalItems = Number(itemCount || 0);
@@ -154,13 +156,19 @@ export default function Header() {
     <header className="app-header fixed inset-x-0 top-0 z-50 border-b border-saffron/20 bg-charcoal/90 backdrop-blur-xl">
       <div className="section-shell">
         <div className="flex min-h-[84px] items-center justify-between gap-3 py-2">
-          <Link to="/" className="shrink-0">
-            <img
-              src="/logo.png"
-              alt="Pizza Truck"
-              className="block w-auto object-contain"
-              style={{ height: "72px", width: "auto", maxWidth: "none" }}
-            />
+          <Link to="/" className="shrink-0 rounded-full border border-saffron/30 bg-white/5 px-4 py-2">
+            {BRAND_LOGO_URL && !hasLogoError ? (
+              <img
+                src={BRAND_LOGO_URL}
+                alt="Pizza Truck"
+                className="block h-10 w-auto object-contain"
+                loading="eager"
+                decoding="async"
+                onError={() => setHasLogoError(true)}
+              />
+            ) : (
+              <span className="text-sm font-semibold uppercase tracking-[0.2em] text-saffron">Pizza Truck</span>
+            )}
           </Link>
 
           <nav className="hidden xl:flex items-center gap-4 text-[13px] font-medium text-stone-200">

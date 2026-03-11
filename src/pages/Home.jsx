@@ -8,12 +8,41 @@ import { getPublicWeeklySettings } from "../api/timeslot.api";
 import { getAllProductsClient } from "../api/user.api";
 import { AuthContext } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
+import { useTheme } from "../context/ThemeContext";
 
 const paymentLogos = [
-  { src: "/cb.png", alt: "CB", className: "h-9 w-auto object-contain" },
-  { src: "/visa.png", alt: "VISA", className: "h-9 w-auto object-contain" },
-  { src: "/mastercard.png", alt: "MASTERCARD", className: "h-9 w-auto object-contain" },
-  { src: "/especes.png", alt: "Especes", className: "h-[60px] w-auto object-contain" },
+  {
+    src: "/payments/cb.webp",
+    fallbackSrc: "/cb.png",
+    alt: "CB",
+    width: 112,
+    height: 63,
+    className: "h-9 w-auto object-contain",
+  },
+  {
+    src: "/payments/visa.webp",
+    fallbackSrc: "/visa.png",
+    alt: "VISA",
+    width: 67,
+    height: 63,
+    className: "h-9 w-auto object-contain",
+  },
+  {
+    src: "/payments/mastercard.webp",
+    fallbackSrc: "/mastercard.png",
+    alt: "MASTERCARD",
+    width: 90,
+    height: 63,
+    className: "h-9 w-auto object-contain",
+  },
+  {
+    src: "/payments/especes.webp",
+    fallbackSrc: "/especes.png",
+    alt: "Especes",
+    width: 105,
+    height: 105,
+    className: "h-[60px] w-auto object-contain",
+  },
 ];
 
 function formatPrice(value) {
@@ -63,6 +92,8 @@ function formatHourRange(startTime, endTime) {
 export default function Home() {
   const { token, user } = useContext(AuthContext);
   const { tr } = useLanguage();
+  const { theme } = useTheme();
+  const isLightTheme = theme === "light";
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [galleryImages, setGalleryImages] = useState([]);
@@ -241,6 +272,10 @@ const truckTourSchedule = useMemo(
     return selectedBackground?.imageUrl || DEFAULT_HOME_BACKGROUND;
   }, [galleryImages]);
 
+  const heroOverlay = theme === "light"
+    ? "linear-gradient(118deg, rgba(246,235,221,0.90) 6%, rgba(246,235,221,0.68) 42%, rgba(58,38,28,0.48) 100%)"
+    : "linear-gradient(120deg, rgba(18,16,13,0.88) 5%, rgba(18,16,13,0.62) 40%, rgba(18,16,13,0.92) 100%)";
+
   const displayedGallery = galleryImages.length > 0 ? galleryImages : galleryFallback;
   const visibleGallery = displayedGallery.slice(0, 3);
 
@@ -403,20 +438,27 @@ const truckTourSchedule = useMemo(
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage:
-              `linear-gradient(120deg, rgba(18,16,13,0.88) 5%, rgba(18,16,13,0.62) 40%, rgba(18,16,13,0.92) 100%), url("${heroBackgroundUrl}")`,
+            backgroundImage: `${heroOverlay}, url("${heroBackgroundUrl}")`,
           }}
         />
         <div className="section-shell relative py-20 sm:py-28 lg:py-32">
           <div className="max-w-3xl">
             <p className="chip mb-6">{tr("Camion pizza napolitaine", "Neapolitan pizza truck")}</p>
-            <h1 className="theme-light-keep-white font-display text-5xl uppercase leading-none tracking-wide text-white sm:text-6xl lg:text-7xl">
+            <h1
+              className={`font-display text-5xl uppercase leading-none tracking-wide sm:text-6xl lg:text-7xl ${
+                isLightTheme ? "text-[#3A261C]" : "theme-light-keep-white text-white"
+              }`}
+            >
               {tr(
                 "Cuisson au four a bois, produits frais, pate a pizza maison.",
                 "Wood-fired baking, fresh products, homemade pizza dough."
               )}
             </h1>
-            <p className="theme-light-keep-white mt-6 max-w-2xl text-base text-stone-200 sm:text-lg">
+            <p
+              className={`mt-6 max-w-2xl text-base sm:text-lg ${
+                isLightTheme ? "text-[#1A1817]/80" : "theme-light-keep-white text-stone-200"
+              }`}
+            >
               {tr(
                 "Une carte lisible, des recettes courtes et de la qualite. Nos pizzas sont mises en avant avec une experience simple, rapide et moderne.",
                 "A clear menu, short recipes and quality. Our pizzas are highlighted with a simple, fast and modern experience."
@@ -432,14 +474,22 @@ const truckTourSchedule = useMemo(
               {token ? (
                 <Link
                   to="/order"
-                  className="theme-light-keep-white rounded-full border border-white/30 px-6 py-3 text-sm font-semibold uppercase tracking-wide text-white hover:bg-white/10"
+                  className={`rounded-full px-6 py-3 text-sm font-semibold uppercase tracking-wide transition ${
+                    isLightTheme
+                      ? "border border-[#3A261C]/15 bg-white/70 text-[#3A261C] hover:bg-white"
+                      : "theme-light-keep-white border border-white/30 text-white hover:bg-white/10"
+                  }`}
                 >
                   {tr("Commander maintenant", "Order now")}
                 </Link>
               ) : (
                 <Link
                   to="/login"
-                  className="theme-light-keep-white rounded-full border border-white/30 px-6 py-3 text-sm font-semibold uppercase tracking-wide text-white hover:bg-white/10"
+                  className={`rounded-full px-6 py-3 text-sm font-semibold uppercase tracking-wide transition ${
+                    isLightTheme
+                      ? "border border-[#3A261C]/15 bg-white/70 text-[#3A261C] hover:bg-white"
+                      : "theme-light-keep-white border border-white/30 text-white hover:bg-white/10"
+                  }`}
                 >
                   {tr("Se connecter", "Sign in")}
                 </Link>
@@ -554,7 +604,18 @@ const truckTourSchedule = useMemo(
         </div>
         <div className="flex flex-wrap items-center gap-6 sm:gap-8 lg:gap-10">
           {paymentLogos.map((logo) => (
-            <img key={logo.src} src={logo.src} alt={logo.alt} className={logo.className} />
+            <picture key={logo.alt}>
+              <source srcSet={logo.src} type="image/webp" />
+              <img
+                src={logo.fallbackSrc}
+                alt={logo.alt}
+                width={logo.width}
+                height={logo.height}
+                loading="lazy"
+                decoding="async"
+                className={logo.className}
+              />
+            </picture>
           ))}
         </div>
       </section>
