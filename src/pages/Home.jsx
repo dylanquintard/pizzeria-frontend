@@ -435,12 +435,23 @@ const truckTourSchedule = useMemo(
   return (
     <div className="space-y-20 pb-24">
       <section className="relative overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage: `${heroOverlay}, url("${heroBackgroundUrl}")`,
-          }}
-        />
+        <div className="absolute inset-0">
+          <img
+            src={heroBackgroundUrl}
+            alt=""
+            aria-hidden="true"
+            fetchPriority="high"
+            loading="eager"
+            decoding="async"
+            className="h-full w-full object-cover"
+          />
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: heroOverlay,
+            }}
+          />
+        </div>
         <div className="section-shell relative py-20 sm:py-28 lg:py-32">
           <div className="max-w-3xl">
             <p className="chip mb-6">{tr("Camion pizza napolitaine", "Neapolitan pizza truck")}</p>

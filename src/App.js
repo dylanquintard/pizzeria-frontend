@@ -1,33 +1,34 @@
-import { useContext } from "react";
+import { Suspense, lazy, useContext } from "react";
 import { BrowserRouter, Navigate, Outlet, Route, Routes } from "react-router-dom";
 import Header from "./components/layout/Header";
 import MainContent from "./components/layout/MainContent";
 import { AuthContext, AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
 import { LanguageProvider, useLanguage } from "./context/LanguageContext";
-import Categories from "./pages/Categories";
-import Dashboard from "./pages/Dashboard";
-import EditProduct from "./pages/EditProduct";
-import GalleryAdmin from "./pages/GalleryAdmin";
-import ForgotPassword from "./pages/ForgotPassword";
-import Home from "./pages/Home";
-import Ingredients from "./pages/Ingredients";
-import Locations from "./pages/Locations";
-import Login from "./pages/Login";
-import Order from "./pages/Order";
-import OrderConfirmation from "./pages/OrderConfirmation";
-import OrderList from "./pages/OrderList";
-import Products from "./pages/Products";
-import Profile from "./pages/Profile";
-import Register from "./pages/Register";
-import ResetPassword from "./pages/ResetPassword";
-import TimeslotsAdmin from "./pages/Timeslots";
-import PrintAdmin from "./pages/PrintAdmin";
-import TicketsAdmin from "./pages/TicketsAdmin";
-import Users from "./pages/Users";
-import UserOrders from "./pages/UsersOrders";
-import VerifyEmail from "./pages/VerifyEmail";
 import { ThemeProvider } from "./context/ThemeContext";
+
+const Categories = lazy(() => import("./pages/Categories"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const EditProduct = lazy(() => import("./pages/EditProduct"));
+const GalleryAdmin = lazy(() => import("./pages/GalleryAdmin"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const Home = lazy(() => import("./pages/Home"));
+const Ingredients = lazy(() => import("./pages/Ingredients"));
+const Locations = lazy(() => import("./pages/Locations"));
+const Login = lazy(() => import("./pages/Login"));
+const Order = lazy(() => import("./pages/Order"));
+const OrderConfirmation = lazy(() => import("./pages/OrderConfirmation"));
+const OrderList = lazy(() => import("./pages/OrderList"));
+const Products = lazy(() => import("./pages/Products"));
+const Profile = lazy(() => import("./pages/Profile"));
+const Register = lazy(() => import("./pages/Register"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const TimeslotsAdmin = lazy(() => import("./pages/Timeslots"));
+const PrintAdmin = lazy(() => import("./pages/PrintAdmin"));
+const TicketsAdmin = lazy(() => import("./pages/TicketsAdmin"));
+const Users = lazy(() => import("./pages/Users"));
+const UserOrders = lazy(() => import("./pages/UsersOrders"));
+const VerifyEmail = lazy(() => import("./pages/VerifyEmail"));
 
 const PrivateRoute = ({ children }) => {
   const { token, loading } = useContext(AuthContext);
@@ -58,179 +59,186 @@ const AppLayout = () => (
 
 function AppRoutes() {
   const { tr } = useLanguage();
+  const loadingFallback = (
+    <p className="section-shell py-8 text-sm text-stone-400">
+      {tr("Chargement...", "Loading...")}
+    </p>
+  );
 
   return (
-    <Routes>
-      <Route element={<AppLayout />}>
-        <Route path="/" element={<Home />} />
-        <Route path="/menu" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/verify-email" element={<VerifyEmail />} />
+    <Suspense fallback={loadingFallback}>
+      <Routes>
+        <Route element={<AppLayout />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/menu" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
 
-        <Route
-          path="/order"
-          element={
-            <PrivateRoute>
-              <Order />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/order/confirmation"
-          element={
-            <PrivateRoute>
-              <OrderConfirmation />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/profile"
-          element={
-            <PrivateRoute>
-              <Profile />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/userorders"
-          element={
-            <PrivateRoute>
-              <UserOrders />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/admin"
-          element={
-            <AdminRoute>
-              <Dashboard>
-                <p className="rounded-xl border border-stone-200 bg-white p-4 text-stone-700">
-                  {tr(
-                    "Selectionnez une section dans le menu administrateur.",
-                    "Select an admin section from the menu."
-                  )}
-                </p>
-              </Dashboard>
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/admin/orders"
-          element={
-            <AdminRoute>
-              <Dashboard>
-                <OrderList />
-              </Dashboard>
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/admin/users"
-          element={
-            <AdminRoute>
-              <Dashboard>
-                <Users />
-              </Dashboard>
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/admin/menu"
-          element={
-            <AdminRoute>
-              <Dashboard>
-                <Products />
-              </Dashboard>
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/admin/ingredients"
-          element={
-            <AdminRoute>
-              <Dashboard>
-                <Ingredients />
-              </Dashboard>
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/admin/categories"
-          element={
-            <AdminRoute>
-              <Dashboard>
-                <Categories />
-              </Dashboard>
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/admin/locations"
-          element={
-            <AdminRoute>
-              <Dashboard>
-                <Locations />
-              </Dashboard>
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/admin/timeslots"
-          element={
-            <AdminRoute>
-              <Dashboard>
-                <TimeslotsAdmin />
-              </Dashboard>
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/admin/gallery"
-          element={
-            <AdminRoute>
-              <Dashboard>
-                <GalleryAdmin />
-              </Dashboard>
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/admin/print"
-          element={
-            <AdminRoute>
-              <Dashboard>
-                <PrintAdmin />
-              </Dashboard>
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/admin/tickets"
-          element={
-            <AdminRoute>
-              <Dashboard>
-                <TicketsAdmin />
-              </Dashboard>
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/admin/editproduct/:id"
-          element={
-            <AdminRoute>
-              <Dashboard>
-                <EditProduct />
-              </Dashboard>
-            </AdminRoute>
-          }
-        />
-      </Route>
+          <Route
+            path="/order"
+            element={
+              <PrivateRoute>
+                <Order />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/order/confirmation"
+            element={
+              <PrivateRoute>
+                <OrderConfirmation />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <PrivateRoute>
+                <Profile />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/userorders"
+            element={
+              <PrivateRoute>
+                <UserOrders />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <AdminRoute>
+                <Dashboard>
+                  <p className="rounded-xl border border-stone-200 bg-white p-4 text-stone-700">
+                    {tr(
+                      "Selectionnez une section dans le menu administrateur.",
+                      "Select an admin section from the menu."
+                    )}
+                  </p>
+                </Dashboard>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/orders"
+            element={
+              <AdminRoute>
+                <Dashboard>
+                  <OrderList />
+                </Dashboard>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/users"
+            element={
+              <AdminRoute>
+                <Dashboard>
+                  <Users />
+                </Dashboard>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/menu"
+            element={
+              <AdminRoute>
+                <Dashboard>
+                  <Products />
+                </Dashboard>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/ingredients"
+            element={
+              <AdminRoute>
+                <Dashboard>
+                  <Ingredients />
+                </Dashboard>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/categories"
+            element={
+              <AdminRoute>
+                <Dashboard>
+                  <Categories />
+                </Dashboard>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/locations"
+            element={
+              <AdminRoute>
+                <Dashboard>
+                  <Locations />
+                </Dashboard>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/timeslots"
+            element={
+              <AdminRoute>
+                <Dashboard>
+                  <TimeslotsAdmin />
+                </Dashboard>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/gallery"
+            element={
+              <AdminRoute>
+                <Dashboard>
+                  <GalleryAdmin />
+                </Dashboard>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/print"
+            element={
+              <AdminRoute>
+                <Dashboard>
+                  <PrintAdmin />
+                </Dashboard>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/tickets"
+            element={
+              <AdminRoute>
+                <Dashboard>
+                  <TicketsAdmin />
+                </Dashboard>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/editproduct/:id"
+            element={
+              <AdminRoute>
+                <Dashboard>
+                  <EditProduct />
+                </Dashboard>
+              </AdminRoute>
+            }
+          />
+        </Route>
 
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Suspense>
   );
 }
 

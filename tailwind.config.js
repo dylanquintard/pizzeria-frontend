@@ -12,8 +12,22 @@ module.exports = {
         charcoal: "#12100d",
       },
       fontFamily: {
-        display: ["'Bebas Neue'", "sans-serif"],
-        body: ["'Manrope'", "sans-serif"],
+        display: [
+          "Impact",
+          "'Arial Black'",
+          "'Haettenschweiler'",
+          "'Franklin Gothic Bold'",
+          "sans-serif",
+        ],
+        body: [
+          "'Segoe UI'",
+          "system-ui",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "'Helvetica Neue'",
+          "Arial",
+          "sans-serif",
+        ],
       },
       boxShadow: {
         fire: "0 10px 30px rgba(217, 75, 31, 0.25)",
