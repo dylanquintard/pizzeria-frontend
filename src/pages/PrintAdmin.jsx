@@ -442,7 +442,7 @@ export default function PrintAdmin() {
 
   return (
     <div className="space-y-6">
-      <div className={previewJob ? "hidden md:block" : ""}>
+      <div className={`space-y-6 ${previewJob ? "hidden md:block" : ""}`}>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <h2 className="text-2xl font-bold text-white">{tr("Impressions & tickets", "Prints & tickets")}</h2>
           <div className="flex items-center gap-3">
