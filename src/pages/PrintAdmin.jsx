@@ -370,7 +370,10 @@ export default function PrintAdmin() {
           <p className="text-xs uppercase tracking-wider text-stone-400">{tr("Imprimantes", "Printers")}</p>
           <p className="mt-1 text-xl font-bold text-white">{overview?.printers?.total ?? 0}</p>
           <p className="text-xs text-stone-300">
-            ACTIVE {overview?.printers?.active ?? 0} | INACTIVE {overview?.printers?.inactive ?? 0}
+            {tr("Connectees", "Connected")} {overview?.printers?.connected ?? 0} | {tr("Hors ligne", "Offline")} {overview?.printers?.offline ?? 0} | DEGRADED {overview?.printers?.degraded ?? 0}
+          </p>
+          <p className="text-[11px] text-stone-400">
+            CONFIG ACTIVE {overview?.printers?.active ?? 0} | INACTIVE {overview?.printers?.inactive ?? 0}
           </p>
         </article>
       </section>
