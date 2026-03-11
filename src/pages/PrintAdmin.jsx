@@ -496,31 +496,40 @@ export default function PrintAdmin() {
         {showTruckForm && (
           <form onSubmit={handleCreateTruck} className="grid gap-2 md:grid-cols-3">
             <div className="grid gap-2 md:col-span-2 md:grid-cols-2">
-              <input
-                placeholder="pizza_truck_00"
-                value={truckForm.code}
-                onChange={(event) => setTruckForm((prev) => ({ ...prev, code: event.target.value }))}
-                className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
-              />
-              <input
-                placeholder="Pi Camion 00"
-                value={truckForm.name}
-                onChange={(event) => setTruckForm((prev) => ({ ...prev, name: event.target.value }))}
-                className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
-              />
+              <label className="grid gap-1 text-xs text-stone-300">
+                <span>{tr("Code camion", "Truck code")}</span>
+                <input
+                  placeholder="pizza_truck_00"
+                  value={truckForm.code}
+                  onChange={(event) => setTruckForm((prev) => ({ ...prev, code: event.target.value }))}
+                  className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
+                />
+              </label>
+              <label className="grid gap-1 text-xs text-stone-300">
+                <span>{tr("Nom camion", "Truck name")}</span>
+                <input
+                  placeholder="Pi Camion 00"
+                  value={truckForm.name}
+                  onChange={(event) => setTruckForm((prev) => ({ ...prev, name: event.target.value }))}
+                  className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
+                />
+              </label>
             </div>
-            <select
-              value={truckForm.locationId}
-              onChange={(event) => setTruckForm((prev) => ({ ...prev, locationId: event.target.value }))}
-              className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
-            >
-              <option value="">{tr("Global", "Global")}</option>
-              {locationOptions.map((location) => (
-                <option key={location.id} value={location.id}>
-                  {location.name}
-                </option>
-              ))}
-            </select>
+            <label className="grid gap-1 text-xs text-stone-300">
+              <span>{tr("Emplacement", "Location")}</span>
+              <select
+                value={truckForm.locationId}
+                onChange={(event) => setTruckForm((prev) => ({ ...prev, locationId: event.target.value }))}
+                className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
+              >
+                <option value="">{tr("Global", "Global")}</option>
+                {locationOptions.map((location) => (
+                  <option key={location.id} value={location.id}>
+                    {location.name}
+                  </option>
+                ))}
+              </select>
+            </label>
             <button
               type="submit"
               disabled={busyByKey["create-truck"]}
@@ -629,36 +638,48 @@ export default function PrintAdmin() {
       <section className="rounded-xl border border-white/10 bg-white/5 p-4 md:p-5">
         <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-saffron">{tr("Creer/mettre a jour une imprimante", "Create/update a printer")}</h3>
         <form onSubmit={handleCreateOrUpdatePrinter} className="grid gap-3 md:grid-cols-4">
-          <input
-            value={printerForm.name}
-            onChange={(event) => setPrinterForm((prev) => ({ ...prev, name: event.target.value }))}
-            placeholder="Imprimante camion 0"
-            className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
-          />
-          <input
-            value={printerForm.code}
-            onChange={(event) => setPrinterForm((prev) => ({ ...prev, code: event.target.value }))}
-            placeholder="print_truck_00"
-            className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
-          />
-          <input
-            value={printerForm.ipAddress}
-            onChange={(event) => setPrinterForm((prev) => ({ ...prev, ipAddress: event.target.value }))}
-            placeholder="192.168.50.20"
-            className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
-          />
-          <select
-            value={printerForm.agentCode}
-            onChange={(event) => setPrinterForm((prev) => ({ ...prev, agentCode: event.target.value }))}
-            className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
-          >
-            <option value="">{tr("Aucun camion", "No truck")}</option>
-            {agents.map((agent) => (
-              <option key={agent.id} value={agent.code}>
-                {agent.name} ({agent.code})
-              </option>
-            ))}
-          </select>
+          <label className="grid gap-1 text-xs text-stone-300">
+            <span>{tr("Nom imprimante", "Printer name")}</span>
+            <input
+              value={printerForm.name}
+              onChange={(event) => setPrinterForm((prev) => ({ ...prev, name: event.target.value }))}
+              placeholder="Imprimante camion 0"
+              className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
+            />
+          </label>
+          <label className="grid gap-1 text-xs text-stone-300">
+            <span>{tr("Code imprimante", "Printer code")}</span>
+            <input
+              value={printerForm.code}
+              onChange={(event) => setPrinterForm((prev) => ({ ...prev, code: event.target.value }))}
+              placeholder="print_truck_00"
+              className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
+            />
+          </label>
+          <label className="grid gap-1 text-xs text-stone-300">
+            <span>{tr("Adresse IP", "IP address")}</span>
+            <input
+              value={printerForm.ipAddress}
+              onChange={(event) => setPrinterForm((prev) => ({ ...prev, ipAddress: event.target.value }))}
+              placeholder="192.168.50.20"
+              className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
+            />
+          </label>
+          <label className="grid gap-1 text-xs text-stone-300">
+            <span>{tr("Camion lie", "Linked truck")}</span>
+            <select
+              value={printerForm.agentCode}
+              onChange={(event) => setPrinterForm((prev) => ({ ...prev, agentCode: event.target.value }))}
+              className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
+            >
+              <option value="">{tr("Aucun camion", "No truck")}</option>
+              {agents.map((agent) => (
+                <option key={agent.id} value={agent.code}>
+                  {agent.name} ({agent.code})
+                </option>
+              ))}
+            </select>
+          </label>
           <button
             type="submit"
             disabled={busyByKey["upsert-printer"]}

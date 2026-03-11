@@ -299,28 +299,44 @@ export default function GalleryAdmin() {
         />
 
         <div className="grid gap-2 sm:grid-cols-2">
-          <input
-            placeholder={tr("Titre (optionnel)", "Title (optional)")}
-            value={newImage.title}
-            onChange={(event) => setNewImage((prev) => ({ ...prev, title: event.target.value }))}
-          />
-          <input
-            placeholder={tr("Description", "Description")}
-            value={newImage.description}
-            onChange={(event) => setNewImage((prev) => ({ ...prev, description: event.target.value }))}
-          />
-          <input
-            placeholder={tr("Texte alternatif", "Alt text")}
-            value={newImage.altText}
-            onChange={(event) => setNewImage((prev) => ({ ...prev, altText: event.target.value }))}
-          />
-          <input
-            type="number"
-            min="0"
-            placeholder={tr("Ordre", "Order")}
-            value={newImage.sortOrder}
-            onChange={(event) => setNewImage((prev) => ({ ...prev, sortOrder: event.target.value }))}
-          />
+          <label className="grid gap-1 text-xs text-stone-300">
+            <span>{tr("Titre (optionnel)", "Title (optional)")}</span>
+            <input
+              id="gallery-new-title"
+              placeholder={tr("Titre (optionnel)", "Title (optional)")}
+              value={newImage.title}
+              onChange={(event) => setNewImage((prev) => ({ ...prev, title: event.target.value }))}
+            />
+          </label>
+          <label className="grid gap-1 text-xs text-stone-300">
+            <span>{tr("Description", "Description")}</span>
+            <input
+              id="gallery-new-description"
+              placeholder={tr("Description", "Description")}
+              value={newImage.description}
+              onChange={(event) => setNewImage((prev) => ({ ...prev, description: event.target.value }))}
+            />
+          </label>
+          <label className="grid gap-1 text-xs text-stone-300">
+            <span>{tr("Texte alternatif", "Alt text")}</span>
+            <input
+              id="gallery-new-alt-text"
+              placeholder={tr("Texte alternatif", "Alt text")}
+              value={newImage.altText}
+              onChange={(event) => setNewImage((prev) => ({ ...prev, altText: event.target.value }))}
+            />
+          </label>
+          <label className="grid gap-1 text-xs text-stone-300">
+            <span>{tr("Ordre", "Order")}</span>
+            <input
+              id="gallery-new-sort-order"
+              type="number"
+              min="0"
+              placeholder={tr("Ordre", "Order")}
+              value={newImage.sortOrder}
+              onChange={(event) => setNewImage((prev) => ({ ...prev, sortOrder: event.target.value }))}
+            />
+          </label>
         </div>
 
         <button type="submit" disabled={loading} className="w-full">
@@ -445,28 +461,44 @@ export default function GalleryAdmin() {
                 onChange={(event) => handleImagePick(setEditImageFile, event)}
               />
             </div>
-            <input
-              placeholder={tr("Titre", "Title")}
-              value={editImage.title}
-              onChange={(event) => setEditImage((prev) => ({ ...prev, title: event.target.value }))}
-            />
-            <input
-              placeholder={tr("Description", "Description")}
-              value={editImage.description}
-              onChange={(event) => setEditImage((prev) => ({ ...prev, description: event.target.value }))}
-            />
-            <input
-              placeholder={tr("Texte alternatif", "Alt text")}
-              value={editImage.altText}
-              onChange={(event) => setEditImage((prev) => ({ ...prev, altText: event.target.value }))}
-            />
-            <input
-              type="number"
-              min="0"
-              placeholder={tr("Ordre", "Order")}
-              value={editImage.sortOrder}
-              onChange={(event) => setEditImage((prev) => ({ ...prev, sortOrder: event.target.value }))}
-            />
+            <label className="grid gap-1 text-xs text-stone-300">
+              <span>{tr("Titre", "Title")}</span>
+              <input
+                id="gallery-edit-title"
+                placeholder={tr("Titre", "Title")}
+                value={editImage.title}
+                onChange={(event) => setEditImage((prev) => ({ ...prev, title: event.target.value }))}
+              />
+            </label>
+            <label className="grid gap-1 text-xs text-stone-300">
+              <span>{tr("Description", "Description")}</span>
+              <input
+                id="gallery-edit-description"
+                placeholder={tr("Description", "Description")}
+                value={editImage.description}
+                onChange={(event) => setEditImage((prev) => ({ ...prev, description: event.target.value }))}
+              />
+            </label>
+            <label className="grid gap-1 text-xs text-stone-300">
+              <span>{tr("Texte alternatif", "Alt text")}</span>
+              <input
+                id="gallery-edit-alt-text"
+                placeholder={tr("Texte alternatif", "Alt text")}
+                value={editImage.altText}
+                onChange={(event) => setEditImage((prev) => ({ ...prev, altText: event.target.value }))}
+              />
+            </label>
+            <label className="grid gap-1 text-xs text-stone-300">
+              <span>{tr("Ordre", "Order")}</span>
+              <input
+                id="gallery-edit-sort-order"
+                type="number"
+                min="0"
+                placeholder={tr("Ordre", "Order")}
+                value={editImage.sortOrder}
+                onChange={(event) => setEditImage((prev) => ({ ...prev, sortOrder: event.target.value }))}
+              />
+            </label>
           </div>
 
           <ImagePreviewCard

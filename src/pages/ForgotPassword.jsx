@@ -28,8 +28,8 @@ export default function ForgotPassword() {
       await forgotPassword({ email: normalizedEmail });
       setInfo(
         tr(
-          "Si ce compte existe, un nouveau mot de passe temporaire a ete envoye par email.",
-          "If this account exists, a temporary password has been sent by email."
+          "Si ce compte existe, un lien de reinitialisation a ete envoye par email.",
+          "If this account exists, a reset link has been sent by email."
         )
       );
     } catch (err) {
@@ -54,8 +54,8 @@ export default function ForgotPassword() {
 
         <p className="mt-3 text-sm text-stone-300">
           {tr(
-            "Entrez votre email. Nous enverrons un mot de passe temporaire de 10 caracteres.",
-            "Enter your email. We will send a 10-character temporary password."
+            "Entrez votre email. Nous enverrons un lien securise pour definir un nouveau mot de passe.",
+            "Enter your email. We will send a secure link to set a new password."
           )}
         </p>
 
@@ -86,7 +86,7 @@ export default function ForgotPassword() {
             disabled={loading}
             className="w-full rounded-full bg-saffron px-5 py-3 text-sm font-bold uppercase tracking-wide text-charcoal hover:bg-yellow-300 disabled:opacity-60"
           >
-            {loading ? tr("Envoi...", "Sending...") : tr("Recevoir un nouveau mot de passe", "Send new password")}
+            {loading ? tr("Envoi...", "Sending...") : tr("Recevoir le lien de reinitialisation", "Send reset link")}
           </button>
         </form>
 

@@ -20,6 +20,7 @@ import OrderList from "./pages/OrderList";
 import Products from "./pages/Products";
 import Profile from "./pages/Profile";
 import Register from "./pages/Register";
+import ResetPassword from "./pages/ResetPassword";
 import TimeslotsAdmin from "./pages/Timeslots";
 import PrintAdmin from "./pages/PrintAdmin";
 import TicketsAdmin from "./pages/TicketsAdmin";
@@ -65,6 +66,7 @@ function AppRoutes() {
         <Route path="/menu" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/register" element={<Register />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
 
@@ -137,16 +139,6 @@ function AppRoutes() {
         />
         <Route
           path="/admin/menu"
-          element={
-            <AdminRoute>
-              <Dashboard>
-                <Products />
-              </Dashboard>
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/admin/products"
           element={
             <AdminRoute>
               <Dashboard>

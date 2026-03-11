@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { getCategories } from "../api/category.api";
 import { sendContactEmail } from "../api/contact.api";
@@ -39,6 +39,8 @@ const DAY_LABELS = {
   SUNDAY: { fr: "Dimanche", en: "Sunday" },
 };
 const DEFAULT_HOME_BACKGROUND = "/pizza-background-1920.webp";
+const FOCUSABLE_SELECTOR =
+  "button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])";
 
 function formatLocationAddress(location, tr) {
   if (!location) return tr("Adresse non renseignee", "Address not available");
@@ -73,6 +75,7 @@ export default function Home() {
   const [contactMessage, setContactMessage] = useState("");
   const [contactFeedback, setContactFeedback] = useState("");
   const [submittingContact, setSubmittingContact] = useState(false);
+  const galleryModalRef = useRef(null);
 
 useEffect(() => {
   let cancelled = false;
@@ -258,22 +261,70 @@ const truckTourSchedule = useMemo(
 
   useEffect(() => {
     if (!isGalleryModalOpen) return;
+    const modalElement = galleryModalRef.current;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+    const getFocusableElements = () => {
+      if (!modalElement) return [];
+      return Array.from(modalElement.querySelectorAll(FOCUSABLE_SELECTOR)).filter(
+        (element) => element instanceof HTMLElement && !element.hasAttribute("disabled")
+      );
+    };
+
+    const focusableElements = getFocusableElements();
+    if (focusableElements.length > 0) {
+      focusableElements[0].focus();
+    } else {
+      modalElement?.focus();
+    }
 
     const onKeyDown = (event) => {
       if (event.key === "Escape") {
+        event.preventDefault();
         closeGallery();
+        return;
       }
+
+      if (event.key === "Tab") {
+        const elements = getFocusableElements();
+        if (elements.length === 0) {
+          event.preventDefault();
+          modalElement?.focus();
+          return;
+        }
+
+        const first = elements[0];
+        const last = elements[elements.length - 1];
+        const active = document.activeElement;
+
+        if (!event.shiftKey && active === last) {
+          event.preventDefault();
+          first.focus();
+        } else if (event.shiftKey && active === first) {
+          event.preventDefault();
+          last.focus();
+        }
+        return;
+      }
+
       if (displayedGallery.length <= 1) return;
       if (event.key === "ArrowLeft") {
+        event.preventDefault();
         showPreviousInGallery();
       }
       if (event.key === "ArrowRight") {
+        event.preventDefault();
         showNextInGallery();
       }
     };
 
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      if (previousFocus && typeof previousFocus.focus === "function") {
+        previousFocus.focus();
+      }
+    };
   }, [closeGallery, displayedGallery.length, isGalleryModalOpen, showNextInGallery, showPreviousInGallery]);
 
   useEffect(() => {
@@ -613,7 +664,14 @@ const truckTourSchedule = useMemo(
 
       {isGalleryModalOpen && activeGalleryImage && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/90 p-4">
-          <div className="w-full max-w-6xl rounded-2xl border border-white/20 bg-charcoal/95 p-4 sm:p-6">
+          <div
+            ref={galleryModalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="gallery-modal-title"
+            tabIndex={-1}
+            className="w-full max-w-6xl rounded-2xl border border-white/20 bg-charcoal/95 p-4 sm:p-6"
+          >
             <div className="mb-3 flex items-center justify-between">
               <p className="text-xs uppercase tracking-wider text-stone-400">
                 {tr("Photo", "Photo")} {activeGalleryIndex + 1} / {displayedGallery.length}
@@ -626,6 +684,9 @@ const truckTourSchedule = useMemo(
                 {tr("Fermer", "Close")}
               </button>
             </div>
+            <h2 id="gallery-modal-title" className="sr-only">
+              {tr("Galerie en plein ecran", "Fullscreen gallery")}
+            </h2>
 
             <div className="relative">
               <div className="relative mx-auto w-fit overflow-hidden rounded-xl">

@@ -18,19 +18,10 @@ const emptyLocationForm = {
   postalCode: "",
   city: "",
   country: "France",
-  latitude: "",
-  longitude: "",
-  notes: "",
   active: true,
 };
 
 function normalizeLocationPayload(form) {
-  const toNullableNumber = (value) => {
-    if (value === "" || value === null || value === undefined) return null;
-    const parsed = Number(value);
-    return Number.isNaN(parsed) ? null : parsed;
-  };
-
   const city = form.city.trim();
 
   return {
@@ -40,9 +31,6 @@ function normalizeLocationPayload(form) {
     postalCode: form.postalCode.trim(),
     city,
     country: form.country.trim() || "France",
-    latitude: toNullableNumber(form.latitude),
-    longitude: toNullableNumber(form.longitude),
-    notes: form.notes.trim() || null,
     active: Boolean(form.active),
   };
 }
@@ -120,10 +108,7 @@ export default function Locations() {
     setEditLocation({
       ...emptyLocationForm,
       ...location,
-      latitude: location.latitude ?? "",
-      longitude: location.longitude ?? "",
       addressLine2: location.addressLine2 ?? "",
-      notes: location.notes ?? "",
     });
   };
 
@@ -208,51 +193,62 @@ export default function Locations() {
 
         {showLocationForm && (
           <form onSubmit={handleCreate} className="grid gap-2 md:grid-cols-2">
-            <input
-              placeholder={tr("Adresse", "Address")}
-              value={newLocation.addressLine1}
-              onChange={(event) =>
-                setNewLocation((prev) => ({ ...prev, addressLine1: event.target.value }))
-              }
-              className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
-            />
-            <input
-              placeholder={tr("Complement d'adresse", "Address line 2")}
-              value={newLocation.addressLine2}
-              onChange={(event) =>
-                setNewLocation((prev) => ({ ...prev, addressLine2: event.target.value }))
-              }
-              className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
-            />
-            <input
-              placeholder={tr("Code postal", "Postal code")}
-              value={newLocation.postalCode}
-              onChange={(event) =>
-                setNewLocation((prev) => ({ ...prev, postalCode: event.target.value }))
-              }
-              className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
-            />
-            <input
-              placeholder={tr("Ville", "City")}
-              value={newLocation.city}
-              onChange={(event) =>
-                setNewLocation((prev) => ({ ...prev, city: event.target.value }))
-              }
-              className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
-            />
-            <select
-              value={newLocation.country}
-              onChange={(event) =>
-                setNewLocation((prev) => ({ ...prev, country: event.target.value }))
-              }
-              className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100 md:col-span-2"
-            >
-              {COUNTRY_OPTIONS.map((country) => (
-                <option key={country} value={country}>
-                  {country}
-                </option>
-              ))}
-            </select>
+            <label className="grid gap-1 text-xs text-stone-300">
+              <span>{tr("Adresse", "Address")}</span>
+              <input
+                value={newLocation.addressLine1}
+                onChange={(event) =>
+                  setNewLocation((prev) => ({ ...prev, addressLine1: event.target.value }))
+                }
+                className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
+              />
+            </label>
+            <label className="grid gap-1 text-xs text-stone-300">
+              <span>{tr("Complement d'adresse", "Address line 2")}</span>
+              <input
+                value={newLocation.addressLine2}
+                onChange={(event) =>
+                  setNewLocation((prev) => ({ ...prev, addressLine2: event.target.value }))
+                }
+                className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
+              />
+            </label>
+            <label className="grid gap-1 text-xs text-stone-300">
+              <span>{tr("Code postal", "Postal code")}</span>
+              <input
+                value={newLocation.postalCode}
+                onChange={(event) =>
+                  setNewLocation((prev) => ({ ...prev, postalCode: event.target.value }))
+                }
+                className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
+              />
+            </label>
+            <label className="grid gap-1 text-xs text-stone-300">
+              <span>{tr("Ville", "City")}</span>
+              <input
+                value={newLocation.city}
+                onChange={(event) =>
+                  setNewLocation((prev) => ({ ...prev, city: event.target.value }))
+                }
+                className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
+              />
+            </label>
+            <label className="grid gap-1 text-xs text-stone-300 md:col-span-2">
+              <span>{tr("Pays", "Country")}</span>
+              <select
+                value={newLocation.country}
+                onChange={(event) =>
+                  setNewLocation((prev) => ({ ...prev, country: event.target.value }))
+                }
+                className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
+              >
+                {COUNTRY_OPTIONS.map((country) => (
+                  <option key={country} value={country}>
+                    {country}
+                  </option>
+                ))}
+              </select>
+            </label>
             <button type="submit" disabled={loading} className="rounded-lg border border-saffron/40 bg-saffron/15 px-3 py-2 text-xs font-semibold text-saffron md:col-span-2">
               {tr("Creer", "Create")}
             </button>
@@ -309,51 +305,62 @@ export default function Locations() {
             {tr("Modifier l'emplacement", "Edit address")}
           </h3>
           <div className="grid gap-2 md:grid-cols-2">
-            <input
-              placeholder={tr("Adresse", "Address")}
-              value={editLocation.addressLine1}
-              onChange={(event) =>
-                setEditLocation((prev) => ({ ...prev, addressLine1: event.target.value }))
-              }
-              className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
-            />
-            <input
-              placeholder={tr("Complement d'adresse", "Address line 2")}
-              value={editLocation.addressLine2}
-              onChange={(event) =>
-                setEditLocation((prev) => ({ ...prev, addressLine2: event.target.value }))
-              }
-              className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
-            />
-            <input
-              placeholder={tr("Code postal", "Postal code")}
-              value={editLocation.postalCode}
-              onChange={(event) =>
-                setEditLocation((prev) => ({ ...prev, postalCode: event.target.value }))
-              }
-              className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
-            />
-            <input
-              placeholder={tr("Ville", "City")}
-              value={editLocation.city}
-              onChange={(event) =>
-                setEditLocation((prev) => ({ ...prev, city: event.target.value }))
-              }
-              className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
-            />
-            <select
-              value={editLocation.country}
-              onChange={(event) =>
-                setEditLocation((prev) => ({ ...prev, country: event.target.value }))
-              }
-              className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
-            >
-              {COUNTRY_OPTIONS.map((country) => (
-                <option key={country} value={country}>
-                  {country}
-                </option>
-              ))}
-            </select>
+            <label className="grid gap-1 text-xs text-stone-300">
+              <span>{tr("Adresse", "Address")}</span>
+              <input
+                value={editLocation.addressLine1}
+                onChange={(event) =>
+                  setEditLocation((prev) => ({ ...prev, addressLine1: event.target.value }))
+                }
+                className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
+              />
+            </label>
+            <label className="grid gap-1 text-xs text-stone-300">
+              <span>{tr("Complement d'adresse", "Address line 2")}</span>
+              <input
+                value={editLocation.addressLine2}
+                onChange={(event) =>
+                  setEditLocation((prev) => ({ ...prev, addressLine2: event.target.value }))
+                }
+                className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
+              />
+            </label>
+            <label className="grid gap-1 text-xs text-stone-300">
+              <span>{tr("Code postal", "Postal code")}</span>
+              <input
+                value={editLocation.postalCode}
+                onChange={(event) =>
+                  setEditLocation((prev) => ({ ...prev, postalCode: event.target.value }))
+                }
+                className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
+              />
+            </label>
+            <label className="grid gap-1 text-xs text-stone-300">
+              <span>{tr("Ville", "City")}</span>
+              <input
+                value={editLocation.city}
+                onChange={(event) =>
+                  setEditLocation((prev) => ({ ...prev, city: event.target.value }))
+                }
+                className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
+              />
+            </label>
+            <label className="grid gap-1 text-xs text-stone-300">
+              <span>{tr("Pays", "Country")}</span>
+              <select
+                value={editLocation.country}
+                onChange={(event) =>
+                  setEditLocation((prev) => ({ ...prev, country: event.target.value }))
+                }
+                className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
+              >
+                {COUNTRY_OPTIONS.map((country) => (
+                  <option key={country} value={country}>
+                    {country}
+                  </option>
+                ))}
+              </select>
+            </label>
             <label className="inline-flex items-center gap-2 text-sm text-stone-100">
               <input
                 type="checkbox"

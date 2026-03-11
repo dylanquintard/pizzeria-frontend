@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getCategories } from "../api/category.api";
 import { getLocations } from "../api/location.api";
@@ -13,6 +13,9 @@ import { AuthContext } from "../context/AuthContext";
 import { CartContext } from "../context/CartContext";
 import { useLanguage } from "../context/LanguageContext";
 import { useRealtimeEvents } from "../hooks/useRealtimeEvents";
+
+const FOCUSABLE_SELECTOR =
+  "button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])";
 
 function toLocalIsoDate(dateValue) {
   const date = new Date(dateValue);
@@ -237,6 +240,7 @@ export default function Order() {
   const [realtimeConnected, setRealtimeConnected] = useState(false);
   const [activeCategoryKey, setActiveCategoryKey] = useState("");
   const [orderNote, setOrderNote] = useState("");
+  const finalizeModalRef = useRef(null);
 
   const todayIso = toLocalIsoDate(new Date());
   const canGoPreviousDate = selectedDate > todayIso;
@@ -617,6 +621,63 @@ export default function Order() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!isFinalizeConfirmOpen) return;
+    const modalElement = finalizeModalRef.current;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+    const getFocusableElements = () => {
+      if (!modalElement) return [];
+      return Array.from(modalElement.querySelectorAll(FOCUSABLE_SELECTOR)).filter(
+        (element) => element instanceof HTMLElement && !element.hasAttribute("disabled")
+      );
+    };
+
+    const focusableElements = getFocusableElements();
+    if (focusableElements.length > 0) {
+      focusableElements[0].focus();
+    } else {
+      modalElement?.focus();
+    }
+
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setIsFinalizeConfirmOpen(false);
+        return;
+      }
+
+      if (event.key !== "Tab") return;
+
+      const elements = getFocusableElements();
+      if (elements.length === 0) {
+        event.preventDefault();
+        modalElement?.focus();
+        return;
+      }
+
+      const first = elements[0];
+      const last = elements[elements.length - 1];
+      const active = document.activeElement;
+
+      if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      } else if (event.shiftKey && active === first) {
+        event.preventDefault();
+        last.focus();
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      if (previousFocus && typeof previousFocus.focus === "function") {
+        previousFocus.focus();
+      }
+    };
+  }, [isFinalizeConfirmOpen]);
 
   const handleValidateCart = () => {
     if (cartItems.length === 0) {
@@ -1016,11 +1077,18 @@ export default function Order() {
 
       {isFinalizeConfirmOpen && (
         <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/75 p-4">
-          <div className="w-full max-w-lg rounded-2xl border border-saffron/45 bg-charcoal/95 p-5 shadow-2xl">
+          <div
+            ref={finalizeModalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="finalize-order-title"
+            tabIndex={-1}
+            className="w-full max-w-lg rounded-2xl border border-saffron/45 bg-charcoal/95 p-5 shadow-2xl"
+          >
             <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-saffron">
               {tr("Verification retrait", "Pickup check")}
             </p>
-            <h3 className="mt-2 text-xl font-bold text-white">
+            <h3 id="finalize-order-title" className="mt-2 text-xl font-bold text-white">
               {tr("Confirmez votre adresse de retrait", "Confirm your pickup address")}
             </h3>
 

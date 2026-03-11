@@ -215,6 +215,7 @@ export default function Header() {
                     setMobileAdminOpen(false);
                   }}
                   title={tr("Panier", "Cart")}
+                  aria-label={tr("Panier", "Cart")}
                   className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-saffron/35 bg-white/5 transition hover:bg-white/10"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={`h-7 w-7 ${iconColorClass}`}>
@@ -289,6 +290,7 @@ export default function Header() {
                     setMobileAdminOpen(false);
                   }}
                   title={tr("Espace client", "Account")}
+                  aria-label={tr("Espace client", "Account")}
                   className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-saffron/35 bg-white/5 transition hover:bg-white/10"
                   aria-expanded={profileOpen}
                 >
