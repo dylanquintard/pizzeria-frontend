@@ -113,7 +113,7 @@ export default function Header() {
         { to: "/admin/print", label: tr("Impression", "Printing") },
         { to: "/admin/users", label: tr("Clients", "Users") },
         { to: "/admin/menu", label: tr("Menu", "Menu") },
-        { to: "/admin/locations", label: tr("Emplacements", "Locations") },
+        { to: "/admin/locations", label: tr("Camions & Adresses", "Trucks & Addresses") },
         { to: "/admin/timeslots", label: tr("Creneaux", "Timeslots") },
         { to: "/admin/gallery", label: tr("Galerie", "Gallery") },
       ]

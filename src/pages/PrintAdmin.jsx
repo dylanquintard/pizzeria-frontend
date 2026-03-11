@@ -2,7 +2,6 @@ import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import {
-  deletePrintAgentAdmin,
   deletePrintPrinterAdmin,
   getPrintAgentsAdmin,
   getPrintJobsAdmin,
@@ -11,18 +10,12 @@ import {
   reprintJobAdmin,
   rotatePrintAgentTokenAdmin,
   runPrintSchedulerTickAdmin,
-  upsertPrintAgentAdmin,
   upsertPrintPrinterAdmin,
 } from "../api/admin.api";
 import { getOrderNote } from "../utils/orderNote";
 import { splitPersonName } from "../utils/personName";
 
 const AUTO_REFRESH_MS = 10_000;
-
-const initialAgentForm = {
-  code: "",
-  name: "",
-};
 
 const initialPrinterForm = {
   name: "",
@@ -81,7 +74,6 @@ export default function PrintAdmin() {
   const [message, setMessage] = useState("");
   const [agentTokenInfo, setAgentTokenInfo] = useState(null);
 
-  const [agentForm, setAgentForm] = useState(initialAgentForm);
   const [printerForm, setPrinterForm] = useState(initialPrinterForm);
 
   const setBusy = (key, value) => {
@@ -123,52 +115,6 @@ export default function PrintAdmin() {
     const inactivePrinterAlerts = overview?.printers?.alerts?.inactive?.length || 0;
     return agentAlerts + metadataPrinterAlerts + inactivePrinterAlerts;
   }, [overview]);
-
-  const handleCreateOrUpdateAgent = async (event) => {
-    event.preventDefault();
-    if (!agentForm.code.trim() || !agentForm.name.trim()) {
-      setMessage(tr("Code et nom camion obligatoires", "Truck code and name are required"));
-      return;
-    }
-
-    const busyKey = "upsert-agent";
-    setBusy(busyKey, true);
-    try {
-      const result = await upsertPrintAgentAdmin(token, {
-        code: agentForm.code.trim(),
-        name: agentForm.name.trim(),
-      });
-
-      if (result?.token) {
-        setAgentTokenInfo({
-          code: agentForm.code.trim(),
-          token: result.token,
-        });
-      }
-      setMessage(tr("Camion enregistre", "Truck saved"));
-      setAgentForm(initialAgentForm);
-      await refreshAll();
-    } catch (err) {
-      setMessage(err?.response?.data?.error || tr("Echec enregistrement camion", "Truck save failed"));
-    } finally {
-      setBusy(busyKey, false);
-    }
-  };
-
-  const handleDeleteAgent = async (agentCode) => {
-    if (!window.confirm(tr("Supprimer ce camion ?", "Delete this truck?"))) return;
-    const busyKey = `delete-agent:${agentCode}`;
-    setBusy(busyKey, true);
-    try {
-      await deletePrintAgentAdmin(token, agentCode);
-      setMessage(tr("Camion supprime", "Truck deleted"));
-      await refreshAll();
-    } catch (err) {
-      setMessage(err?.response?.data?.error || tr("Echec suppression camion", "Truck deletion failed"));
-    } finally {
-      setBusy(busyKey, false);
-    }
-  };
 
   const handleRotateAgentToken = async (agentCode) => {
     const busyKey = `rotate-agent:${agentCode}`;
@@ -379,32 +325,11 @@ export default function PrintAdmin() {
       </section>
 
       <section className="rounded-xl border border-white/10 bg-white/5 p-3">
-        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-saffron">{tr("Creer/mettre a jour un camion", "Create/update a truck")}</h3>
-        <form onSubmit={handleCreateOrUpdateAgent} className="grid gap-2 md:grid-cols-4">
-          <input
-            value={agentForm.code}
-            onChange={(event) => setAgentForm((prev) => ({ ...prev, code: event.target.value }))}
-            placeholder={tr("Code camion", "Truck code")}
-            className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
-          />
-          <input
-            value={agentForm.name}
-            onChange={(event) => setAgentForm((prev) => ({ ...prev, name: event.target.value }))}
-            placeholder={tr("Nom camion", "Truck name")}
-            className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
-          />
-          <button
-            type="submit"
-            disabled={busyByKey["upsert-agent"]}
-            className="rounded-lg border border-emerald-300/40 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-200 disabled:opacity-60 md:col-span-2"
-          >
-            {tr("Enregistrer camion", "Save truck")}
-          </button>
-        </form>
+        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-saffron">{tr("Camions (lecture seule)", "Trucks (read-only)")}</h3>
         <p className="mt-2 text-xs text-stone-300">
           {tr(
-            "Statut agent gere automatiquement par heartbeat PI (ONLINE/DEGRADED/OFFLINE).",
-            "Agent status is automatically managed by Pi heartbeat (ONLINE/DEGRADED/OFFLINE)."
+            "Creation/lien camion disponibles dans /admin/locations. Ici: supervision + rotation token.",
+            "Truck creation/linking is handled in /admin/locations. This page is for monitoring + token rotation."
           )}
         </p>
 
@@ -413,7 +338,6 @@ export default function PrintAdmin() {
             <p className="text-xs text-stone-400">{tr("Aucun camion", "No truck")}</p>
           ) : (
             agents.map((agent) => {
-              const busyDelete = busyByKey[`delete-agent:${agent.code}`];
               const busyRotate = busyByKey[`rotate-agent:${agent.code}`];
               const linkedLocationNames = (agent.printers || [])
                 .map((printer) => printer?.location?.name)
@@ -443,14 +367,6 @@ export default function PrintAdmin() {
                       className="rounded-lg border border-sky-300/40 bg-sky-500/10 px-3 py-1.5 text-xs font-semibold text-sky-200 disabled:opacity-60"
                     >
                       {tr("Rotate token", "Rotate token")}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={busyDelete}
-                      onClick={() => handleDeleteAgent(agent.code)}
-                      className="rounded-lg border border-red-300/40 bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-200 disabled:opacity-60"
-                    >
-                      {tr("Supprimer camion", "Delete truck")}
                     </button>
                   </div>
                 </article>

@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import {
@@ -17,8 +17,9 @@ import {
 } from "../api/admin.api";
 import { ActionIconButton, DeleteIcon, EditIcon, StatusToggle } from "../components/ui/AdminActions";
 
+const COUNTRY_OPTIONS = ["France", "Belgique", "Luxembourg", "Allemagne"];
+
 const emptyLocationForm = {
-  name: "",
   addressLine1: "",
   addressLine2: "",
   postalCode: "",
@@ -37,12 +38,14 @@ function normalizeLocationPayload(form) {
     return Number.isNaN(parsed) ? null : parsed;
   };
 
+  const city = form.city.trim();
+
   return {
-    name: form.name.trim(),
+    name: city,
     addressLine1: form.addressLine1.trim(),
     addressLine2: form.addressLine2.trim() || null,
     postalCode: form.postalCode.trim(),
-    city: form.city.trim(),
+    city,
     country: form.country.trim() || "France",
     latitude: toNullableNumber(form.latitude),
     longitude: toNullableNumber(form.longitude),
@@ -61,23 +64,121 @@ function formatLocation(location) {
   return parts.join(", ");
 }
 
+function normalizePrinterRuntime(printer, agentStatus) {
+  if (!printer?.isActive) return "INACTIVE";
+  const runtime = String(printer?.runtime?.status || "").toUpperCase();
+  if (runtime) return runtime;
+  const agent = String(agentStatus || "").toUpperCase();
+  if (agent === "OFFLINE") return "OFFLINE";
+  if (agent === "DEGRADED") return "DEGRADED";
+  if (agent === "ONLINE") return "ONLINE";
+  return "UNKNOWN";
+}
+
+function computeTruckPrintStatus(agentStatus, printers) {
+  const normalizedAgentStatus = String(agentStatus || "").toUpperCase();
+  if (normalizedAgentStatus === "OFFLINE") return "OFFLINE";
+
+  const activePrinters = (printers || []).filter((printer) => printer?.isActive);
+  if (activePrinters.length === 0) {
+    return (printers || []).length > 0 ? "INACTIVE" : "UNASSIGNED";
+  }
+
+  const statuses = activePrinters.map((printer) => normalizePrinterRuntime(printer, normalizedAgentStatus));
+  if (statuses.some((status) => status === "OFFLINE")) return "OFFLINE";
+  if (statuses.some((status) => status === "DEGRADED")) return "DEGRADED";
+  if (statuses.every((status) => status === "ONLINE")) return "ONLINE";
+  if (statuses.some((status) => status === "ONLINE")) return "DEGRADED";
+  if (statuses.every((status) => status === "INACTIVE")) return "INACTIVE";
+  return "UNKNOWN";
+}
+
+function statusBadgeClasses(status) {
+  const normalized = String(status || "").toUpperCase();
+  if (["ONLINE", "PRINTED", "READY"].includes(normalized)) {
+    return "border-emerald-300/40 bg-emerald-500/15 text-emerald-200";
+  }
+  if (["DEGRADED", "PENDING", "RETRY_WAITING", "CLAIMED", "PRINTING"].includes(normalized)) {
+    return "border-amber-300/40 bg-amber-500/15 text-amber-200";
+  }
+  if (["UNASSIGNED", "INACTIVE", "UNKNOWN"].includes(normalized)) {
+    return "border-stone-300/40 bg-stone-500/15 text-stone-200";
+  }
+  return "border-red-300/40 bg-red-500/15 text-red-200";
+}
+
+function formatStatusLabel(status, tr) {
+  const normalized = String(status || "").toUpperCase();
+  if (normalized === "ONLINE") return tr("ONLINE", "ONLINE");
+  if (normalized === "DEGRADED") return tr("DEGRADED", "DEGRADED");
+  if (normalized === "OFFLINE") return tr("OFFLINE", "OFFLINE");
+  if (normalized === "UNASSIGNED") return tr("NON ASSIGNE", "UNASSIGNED");
+  if (normalized === "INACTIVE") return tr("INACTIVE", "INACTIVE");
+  return normalized || "-";
+}
+
+function getLinkedLocationInfo(printers, tr) {
+  const locationMap = new Map();
+
+  for (const printer of printers || []) {
+    if (printer?.location?.id) {
+      locationMap.set(String(printer.location.id), printer.location.name || String(printer.location.id));
+    }
+  }
+
+  const ids = Array.from(locationMap.keys());
+  if (ids.length === 0) {
+    return {
+      label: tr("Global", "Global"),
+      selectValue: "",
+    };
+  }
+
+  if (ids.length === 1) {
+    return {
+      label: locationMap.get(ids[0]),
+      selectValue: ids[0],
+    };
+  }
+
+  return {
+    label: Array.from(locationMap.values()).join(", "),
+    selectValue: "__MULTI__",
+  };
+}
+
 export default function Locations() {
   const { token, user, loading: authLoading } = useContext(AuthContext);
   const { tr } = useLanguage();
+
   const [locations, setLocations] = useState([]);
   const [newLocation, setNewLocation] = useState(emptyLocationForm);
+  const [showLocationForm, setShowLocationForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editLocation, setEditLocation] = useState(emptyLocationForm);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+
   const [printAgents, setPrintAgents] = useState([]);
   const [printPrinters, setPrintPrinters] = useState([]);
+  const [showTruckForm, setShowTruckForm] = useState(false);
   const [truckForm, setTruckForm] = useState({
     code: "",
     name: "",
+    locationId: "",
   });
   const [truckBusy, setTruckBusy] = useState({});
   const [truckTokenInfo, setTruckTokenInfo] = useState(null);
+
+  const locationOptions = useMemo(() => {
+    const map = new Map();
+    for (const location of locations) {
+      if (!map.has(location.id)) {
+        map.set(location.id, location);
+      }
+    }
+    return Array.from(map.values());
+  }, [locations]);
 
   const fetchLocations = useCallback(async () => {
     try {
@@ -109,16 +210,60 @@ export default function Locations() {
     fetchPrintResources();
   }, [authLoading, token, user, fetchLocations, fetchPrintResources]);
 
+  const setTruckBusyFlag = (key, value) => {
+    setTruckBusy((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const applyTruckLocationLink = async (agentCode, locationId, { silentNoPrinter = false, skipRefresh = false } = {}) => {
+    const targetPrinters = (printPrinters || []).filter((printer) => printer?.agent?.code === agentCode);
+    if (targetPrinters.length === 0) {
+      if (!silentNoPrinter) {
+        setMessage(
+          tr(
+            "Aucune imprimante liee a ce camion. Configure une imprimante dans /admin/print.",
+            "No printer linked to this truck. Configure one in /admin/print."
+          )
+        );
+      }
+      return false;
+    }
+
+    for (const printer of targetPrinters) {
+      // eslint-disable-next-line no-await-in-loop
+      await upsertPrintPrinterAdmin(token, {
+        code: printer.code,
+        name: printer.name,
+        model: printer.model || null,
+        paperWidthMm: Number(printer.paperWidthMm || 80),
+        connectionType: printer.connectionType || "ETHERNET",
+        ipAddress: printer.ipAddress || null,
+        port: Number(printer.port || 9100),
+        isActive: Boolean(printer.isActive),
+        agentCode,
+        locationId: locationId === "" ? null : Number(locationId),
+      });
+    }
+
+    if (!skipRefresh) {
+      await fetchPrintResources();
+    }
+    return true;
+  };
+
   const handleCreate = async (event) => {
     event.preventDefault();
 
     if (
-      !newLocation.name.trim() ||
       !newLocation.addressLine1.trim() ||
       !newLocation.postalCode.trim() ||
       !newLocation.city.trim()
     ) {
-      setMessage(tr("Nom, adresse, code postal et ville sont obligatoires", "Name, address, postal code and city are required"));
+      setMessage(
+        tr(
+          "Adresse, code postal et ville sont obligatoires",
+          "Address, postal code and city are required"
+        )
+      );
       return;
     }
 
@@ -126,8 +271,9 @@ export default function Locations() {
       setLoading(true);
       await createLocation(token, normalizeLocationPayload(newLocation));
       setNewLocation(emptyLocationForm);
+      setShowLocationForm(false);
       setMessage("");
-      fetchLocations();
+      await fetchLocations();
     } catch (err) {
       setMessage(err.response?.data?.error || tr("Erreur lors de la creation", "Error while creating"));
     } finally {
@@ -153,12 +299,26 @@ export default function Locations() {
   };
 
   const handleUpdate = async () => {
+    if (
+      !editLocation.addressLine1.trim() ||
+      !editLocation.postalCode.trim() ||
+      !editLocation.city.trim()
+    ) {
+      setMessage(
+        tr(
+          "Adresse, code postal et ville sont obligatoires",
+          "Address, postal code and city are required"
+        )
+      );
+      return;
+    }
+
     try {
       setLoading(true);
       await updateLocation(token, editingId, normalizeLocationPayload(editLocation));
       setMessage("");
       cancelEditing();
-      fetchLocations();
+      await fetchLocations();
     } catch (err) {
       setMessage(err.response?.data?.error || tr("Erreur lors de la mise a jour", "Error while updating"));
     } finally {
@@ -169,7 +329,7 @@ export default function Locations() {
   const handleToggleActive = async (location) => {
     try {
       await activateLocation(token, location.id, !location.active);
-      fetchLocations();
+      await fetchLocations();
     } catch (err) {
       setMessage(err.response?.data?.error || tr("Erreur lors du changement de statut", "Error while changing status"));
     }
@@ -180,14 +340,10 @@ export default function Locations() {
 
     try {
       await deleteLocation(token, locationId);
-      fetchLocations();
+      await fetchLocations();
     } catch (err) {
       setMessage(err.response?.data?.error || tr("Erreur lors de la suppression", "Error while deleting"));
     }
-  };
-
-  const setTruckBusyFlag = (key, value) => {
-    setTruckBusy((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleCreateTruck = async (event) => {
@@ -200,19 +356,41 @@ export default function Locations() {
     const busyKey = "create-truck";
     setTruckBusyFlag(busyKey, true);
     try {
+      const normalizedCode = truckForm.code.trim();
       const result = await upsertPrintAgentAdmin(token, {
-        code: truckForm.code.trim(),
+        code: normalizedCode,
         name: truckForm.name.trim(),
       });
+
       if (result?.token) {
         setTruckTokenInfo({
-          code: truckForm.code.trim(),
+          code: normalizedCode,
           token: result.token,
         });
       }
-      setMessage(tr("Camion enregistre", "Truck saved"));
-      setTruckForm({ code: "", name: "" });
+
       await fetchPrintResources();
+
+      let feedback = tr("Camion enregistre", "Truck saved");
+      if (truckForm.locationId !== "") {
+        const linked = await applyTruckLocationLink(normalizedCode, truckForm.locationId, {
+          silentNoPrinter: true,
+          skipRefresh: true,
+        });
+        if (linked) {
+          feedback = tr("Camion enregistre et lie a l'emplacement", "Truck saved and linked to location");
+        } else {
+          feedback = tr(
+            "Camion enregistre. L'emplacement sera applique une fois une imprimante liee.",
+            "Truck saved. Location will be applied once a printer is linked."
+          );
+        }
+        await fetchPrintResources();
+      }
+
+      setMessage(feedback);
+      setTruckForm({ code: "", name: "", locationId: "" });
+      setShowTruckForm(false);
     } catch (err) {
       setMessage(err.response?.data?.error || tr("Erreur creation camion", "Truck creation error"));
     } finally {
@@ -239,35 +417,10 @@ export default function Locations() {
     const busyKey = `link-truck:${agentCode}`;
     setTruckBusyFlag(busyKey, true);
     try {
-      const printers = (printPrinters || []).filter((printer) => printer?.agent?.code === agentCode);
-      if (printers.length === 0) {
-        setMessage(
-          tr(
-            "Aucune imprimante liee a ce camion. Configure une imprimante dans /admin/print.",
-            "No printer linked to this truck. Configure one in /admin/print."
-          )
-        );
-        return;
+      const linked = await applyTruckLocationLink(agentCode, locationId);
+      if (linked) {
+        setMessage(tr("Camion lie a l'emplacement", "Truck linked to location"));
       }
-
-      for (const printer of printers) {
-        // eslint-disable-next-line no-await-in-loop
-        await upsertPrintPrinterAdmin(token, {
-          code: printer.code,
-          name: printer.name,
-          model: printer.model || null,
-          paperWidthMm: Number(printer.paperWidthMm || 80),
-          connectionType: printer.connectionType,
-          ipAddress: printer.ipAddress || null,
-          port: Number(printer.port || 9100),
-          isActive: Boolean(printer.isActive),
-          agentCode,
-          locationId: locationId === "" ? null : Number(locationId),
-        });
-      }
-
-      setMessage(tr("Camion lie a l'emplacement", "Truck linked to location"));
-      await fetchPrintResources();
     } catch (err) {
       setMessage(err.response?.data?.error || tr("Erreur liaison camion/emplacement", "Truck/location link error"));
     } finally {
@@ -279,235 +432,284 @@ export default function Locations() {
   if (!token || user?.role !== "ADMIN") return <p>{tr("Acces refuse : administrateur uniquement", "Access denied: admin only")}</p>;
 
   return (
-    <div>
-      <h2>{tr("Gestion des emplacements", "Location management")}</h2>
-      {message && <p>{message}</p>}
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold text-white">{tr("Camions & adresses", "Trucks & addresses")}</h2>
+      {message && (
+        <p className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm text-stone-100">{message}</p>
+      )}
+
       {truckTokenInfo?.token && (
-        <div className="mb-3 rounded-lg border border-sky-300/40 bg-sky-500/10 p-2 text-sm text-sky-100">
-          <p className="font-semibold">
-            {tr("Token PI (affiche apres creation)", "Pi token (shown after creation)")}
-          </p>
+        <div className="rounded-lg border border-sky-300/40 bg-sky-500/10 p-2 text-sm text-sky-100">
+          <p className="font-semibold">{tr("Token PI (affiche apres creation)", "Pi token (shown after creation)")}</p>
           <p className="mt-1 break-all font-mono text-xs">
             {truckTokenInfo.code}: {truckTokenInfo.token}
           </p>
         </div>
       )}
 
-      <form onSubmit={handleCreate}>
-        <h3>{tr("Ajouter un emplacement", "Add location")}</h3>
-        <input
-          placeholder={tr("Nom", "Name")}
-          value={newLocation.name}
-          onChange={(event) =>
-            setNewLocation((prev) => ({ ...prev, name: event.target.value }))
-          }
-        />
-        <input
-          placeholder={tr("Adresse", "Address")}
-          value={newLocation.addressLine1}
-          onChange={(event) =>
-            setNewLocation((prev) => ({ ...prev, addressLine1: event.target.value }))
-          }
-        />
-        <input
-          placeholder={tr("Complement d'adresse", "Address line 2")}
-          value={newLocation.addressLine2}
-          onChange={(event) =>
-            setNewLocation((prev) => ({ ...prev, addressLine2: event.target.value }))
-          }
-        />
-        <input
-          placeholder={tr("Code postal", "Postal code")}
-          value={newLocation.postalCode}
-          onChange={(event) =>
-            setNewLocation((prev) => ({ ...prev, postalCode: event.target.value }))
-          }
-        />
-        <input
-          placeholder={tr("Ville", "City")}
-          value={newLocation.city}
-          onChange={(event) =>
-            setNewLocation((prev) => ({ ...prev, city: event.target.value }))
-          }
-        />
-        <input
-          placeholder={tr("Pays", "Country")}
-          value={newLocation.country}
-          onChange={(event) =>
-            setNewLocation((prev) => ({ ...prev, country: event.target.value }))
-          }
-        />
-        <input
-          type="number"
-          step="0.000001"
-          placeholder={tr("Latitude", "Latitude")}
-          value={newLocation.latitude}
-          onChange={(event) =>
-            setNewLocation((prev) => ({ ...prev, latitude: event.target.value }))
-          }
-        />
-        <input
-          type="number"
-          step="0.000001"
-          placeholder={tr("Longitude", "Longitude")}
-          value={newLocation.longitude}
-          onChange={(event) =>
-            setNewLocation((prev) => ({ ...prev, longitude: event.target.value }))
-          }
-        />
-        <input
-          placeholder={tr("Notes", "Notes")}
-          value={newLocation.notes}
-          onChange={(event) =>
-            setNewLocation((prev) => ({ ...prev, notes: event.target.value }))
-          }
-        />
-        <button type="submit" disabled={loading} className="mt-2 w-full">
-          {tr("Creer", "Create")}
-        </button>
-      </form>
-
-      <h3>{tr("Liste des emplacements", "Locations list")}</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>{tr("Nom", "Name")}</th>
-            <th>{tr("Adresse", "Address")}</th>
-            <th>{tr("Actif", "Active")}</th>
-            <th>{tr("Actions", "Actions")}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {locations.length === 0 && (
-            <tr>
-              <td colSpan="5">{tr("Aucun emplacement", "No location")}</td>
-            </tr>
-          )}
-          {locations.map((location) => (
-            <tr key={location.id}>
-              <td>{location.id}</td>
-              <td>{location.name}</td>
-              <td>{formatLocation(location)}</td>
-              <td>{location.active ? tr("Oui", "Yes") : tr("Non", "No")}</td>
-              <td>
-                <div className="flex items-center gap-2">
-                  <ActionIconButton onClick={() => startEditing(location)} label={tr("Modifier", "Edit")}>
-                    <EditIcon />
-                  </ActionIconButton>
-                  <StatusToggle
-                    checked={location.active}
-                    onChange={() => handleToggleActive(location)}
-                    labelOn={tr("Desactiver", "Disable")}
-                    labelOff={tr("Activer", "Enable")}
-                  />
-                  <ActionIconButton onClick={() => handleDelete(location.id)} label={tr("Supprimer", "Delete")} variant="danger">
-                    <DeleteIcon />
-                  </ActionIconButton>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      <div className="mt-6">
-        <h3>{tr("Camions (agents impression)", "Trucks (print agents)")}</h3>
-        <form onSubmit={handleCreateTruck} className="mb-3">
-          <input
-            placeholder={tr("Code camion", "Truck code")}
-            value={truckForm.code}
-            onChange={(event) => setTruckForm((prev) => ({ ...prev, code: event.target.value }))}
-          />
-          <input
-            placeholder={tr("Nom camion", "Truck name")}
-            value={truckForm.name}
-            onChange={(event) => setTruckForm((prev) => ({ ...prev, name: event.target.value }))}
-          />
-          <button type="submit" disabled={truckBusy["create-truck"]}>
-            {tr("Creer camion", "Create truck")}
+      <section className="rounded-xl border border-white/10 bg-white/5 p-4">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-saffron">
+            {tr("Gestion emplacement", "Address management")}
+          </h3>
+          <button
+            type="button"
+            onClick={() => setShowLocationForm((prev) => !prev)}
+            className="rounded-lg border border-emerald-300/40 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-200"
+          >
+            {showLocationForm
+              ? tr("Fermer le formulaire", "Close form")
+              : tr("Ajouter un emplacement", "Add address")}
           </button>
-        </form>
-        <p className="mb-2 text-xs text-stone-500">
+        </div>
+
+        {showLocationForm && (
+          <form onSubmit={handleCreate} className="grid gap-2 md:grid-cols-2">
+            <input
+              placeholder={tr("Adresse", "Address")}
+              value={newLocation.addressLine1}
+              onChange={(event) =>
+                setNewLocation((prev) => ({ ...prev, addressLine1: event.target.value }))
+              }
+              className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
+            />
+            <input
+              placeholder={tr("Complement d'adresse", "Address line 2")}
+              value={newLocation.addressLine2}
+              onChange={(event) =>
+                setNewLocation((prev) => ({ ...prev, addressLine2: event.target.value }))
+              }
+              className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
+            />
+            <input
+              placeholder={tr("Code postal", "Postal code")}
+              value={newLocation.postalCode}
+              onChange={(event) =>
+                setNewLocation((prev) => ({ ...prev, postalCode: event.target.value }))
+              }
+              className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
+            />
+            <input
+              placeholder={tr("Ville", "City")}
+              value={newLocation.city}
+              onChange={(event) =>
+                setNewLocation((prev) => ({ ...prev, city: event.target.value }))
+              }
+              className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
+            />
+            <select
+              value={newLocation.country}
+              onChange={(event) =>
+                setNewLocation((prev) => ({ ...prev, country: event.target.value }))
+              }
+              className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100 md:col-span-2"
+            >
+              {COUNTRY_OPTIONS.map((country) => (
+                <option key={country} value={country}>
+                  {country}
+                </option>
+              ))}
+            </select>
+            <button type="submit" disabled={loading} className="rounded-lg border border-saffron/40 bg-saffron/15 px-3 py-2 text-xs font-semibold text-saffron md:col-span-2">
+              {tr("Creer", "Create")}
+            </button>
+          </form>
+        )}
+
+        <div className="mt-4 overflow-x-auto">
+          <table className="w-full min-w-[680px] text-sm">
+            <thead>
+              <tr className="text-left text-xs uppercase tracking-wider text-stone-400">
+                <th className="pb-2">{tr("Nom", "Name")}</th>
+                <th className="pb-2">{tr("Adresse", "Address")}</th>
+                <th className="pb-2">{tr("Actif", "Active")}</th>
+                <th className="pb-2">{tr("Actions", "Actions")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {locations.length === 0 && (
+                <tr>
+                  <td colSpan="4" className="py-2 text-stone-400">{tr("Aucun emplacement", "No address")}</td>
+                </tr>
+              )}
+              {locations.map((location) => (
+                <tr key={location.id} className="border-t border-white/10">
+                  <td className="py-2 text-stone-100">{location.name}</td>
+                  <td className="py-2 text-stone-300">{formatLocation(location)}</td>
+                  <td className="py-2 text-stone-100">{location.active ? tr("Oui", "Yes") : tr("Non", "No")}</td>
+                  <td className="py-2">
+                    <div className="flex items-center gap-2">
+                      <ActionIconButton onClick={() => startEditing(location)} label={tr("Modifier", "Edit")}>
+                        <EditIcon />
+                      </ActionIconButton>
+                      <StatusToggle
+                        checked={location.active}
+                        onChange={() => handleToggleActive(location)}
+                        labelOn={tr("Desactiver", "Disable")}
+                        labelOff={tr("Activer", "Enable")}
+                      />
+                      <ActionIconButton onClick={() => handleDelete(location.id)} label={tr("Supprimer", "Delete")} variant="danger">
+                        <DeleteIcon />
+                      </ActionIconButton>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-white/10 bg-white/5 p-4">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-saffron">
+            {tr("Gestion camions", "Truck management")}
+          </h3>
+          <button
+            type="button"
+            onClick={() => setShowTruckForm((prev) => !prev)}
+            className="rounded-lg border border-emerald-300/40 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-200"
+          >
+            {showTruckForm ? tr("Fermer le formulaire", "Close form") : tr("Ajouter un camion", "Add truck")}
+          </button>
+        </div>
+
+        {showTruckForm && (
+          <form onSubmit={handleCreateTruck} className="grid gap-2 md:grid-cols-3">
+            <div className="grid gap-2 md:col-span-2 md:grid-cols-2">
+              <input
+                placeholder="pizza_truck_00"
+                value={truckForm.code}
+                onChange={(event) => setTruckForm((prev) => ({ ...prev, code: event.target.value }))}
+                className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
+              />
+              <input
+                placeholder="Pi Camion 00"
+                value={truckForm.name}
+                onChange={(event) => setTruckForm((prev) => ({ ...prev, name: event.target.value }))}
+                className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
+              />
+            </div>
+            <select
+              value={truckForm.locationId}
+              onChange={(event) => setTruckForm((prev) => ({ ...prev, locationId: event.target.value }))}
+              className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
+            >
+              <option value="">{tr("Global", "Global")}</option>
+              {locationOptions.map((location) => (
+                <option key={location.id} value={location.id}>
+                  {location.name}
+                </option>
+              ))}
+            </select>
+            <button type="submit" disabled={truckBusy["create-truck"]} className="rounded-lg border border-saffron/40 bg-saffron/15 px-3 py-2 text-xs font-semibold text-saffron md:col-span-3">
+              {tr("Creer camion", "Create truck")}
+            </button>
+          </form>
+        )}
+
+        <p className="mt-2 text-xs text-stone-400">
           {tr(
-            "Statut agent gere automatiquement par heartbeat PI.",
-            "Agent status is automatically managed by Pi heartbeat."
+            "STATUS PI = heartbeat du Raspberry Pi. STATUS PRINT = etat runtime des imprimantes liees.",
+            "PI STATUS = Raspberry Pi heartbeat. PRINT STATUS = runtime state of linked printers."
           )}
         </p>
 
-        <table>
-          <thead>
-            <tr>
-              <th>{tr("Camion", "Truck")}</th>
-              <th>{tr("Statut", "Status")}</th>
-              <th>{tr("Emplacement lie", "Linked location")}</th>
-              <th>{tr("Lier a emplacement", "Link to location")}</th>
-              <th>{tr("Actions", "Actions")}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {printAgents.length === 0 && (
-              <tr>
-                <td colSpan="5">{tr("Aucun camion", "No truck")}</td>
+        <div className="mt-3 overflow-x-auto">
+          <table className="w-full min-w-[860px] text-sm">
+            <thead>
+              <tr className="text-left text-xs uppercase tracking-wider text-stone-400">
+                <th className="pb-2">{tr("Nom camion", "Truck name")}</th>
+                <th className="pb-2">{tr("STATUS PI", "PI STATUS")}</th>
+                <th className="pb-2">{tr("STATUS PRINT", "PRINT STATUS")}</th>
+                <th className="pb-2">{tr("Selection emplacement", "Location selection")}</th>
+                <th className="pb-2">{tr("Supprimer", "Delete")}</th>
               </tr>
-            )}
-            {printAgents.map((agent) => {
-              const firstPrinter = (printPrinters || []).find((printer) => printer?.agent?.code === agent.code);
-              const linkedLocationId = firstPrinter?.location?.id ?? "";
-              const linkedLocationName = firstPrinter?.location?.name || tr("Global (toutes adresses)", "Global (all addresses)");
-
-              return (
-                <tr key={agent.id}>
-                  <td>{agent.name} ({agent.code})</td>
-                  <td>{agent.status}</td>
-                  <td>{linkedLocationName}</td>
-                  <td>
-                    <select
-                      defaultValue={linkedLocationId}
-                      onChange={(event) => handleLinkTruckToLocation(agent.code, event.target.value)}
-                      disabled={truckBusy[`link-truck:${agent.code}`]}
-                    >
-                      <option value="">{tr("Global (toutes adresses)", "Global (all addresses)")}</option>
-                      {locations.map((location) => (
-                        <option key={location.id} value={location.id}>
-                          {location.name} #{location.id}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-                  <td>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteTruck(agent.code)}
-                      disabled={truckBusy[`delete-truck:${agent.code}`]}
-                    >
-                      {tr("Supprimer", "Delete")}
-                    </button>
-                  </td>
+            </thead>
+            <tbody>
+              {printAgents.length === 0 && (
+                <tr>
+                  <td colSpan="5" className="py-2 text-stone-400">{tr("Aucun camion", "No truck")}</td>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+              )}
+              {printAgents.map((agent) => {
+                const agentPrinters = (printPrinters || []).filter((printer) => printer?.agent?.code === agent.code);
+                const printStatus = computeTruckPrintStatus(agent.status, agentPrinters);
+                const linkedLocationInfo = getLinkedLocationInfo(agentPrinters, tr);
+                const isLinking = truckBusy[`link-truck:${agent.code}`];
+                const isDeleting = truckBusy[`delete-truck:${agent.code}`];
+
+                return (
+                  <tr key={agent.id} className="border-t border-white/10">
+                    <td className="py-2 text-stone-100">
+                      <span className="font-medium">{agent.name}</span>
+                      <span className="ml-2 text-xs text-stone-400">({agent.code})</span>
+                    </td>
+                    <td className="py-2">
+                      <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase ${statusBadgeClasses(agent.status)}`}>
+                        {formatStatusLabel(agent.status, tr)}
+                      </span>
+                    </td>
+                    <td className="py-2">
+                      <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase ${statusBadgeClasses(printStatus)}`}>
+                        {formatStatusLabel(printStatus, tr)}
+                      </span>
+                    </td>
+                    <td className="py-2">
+                      <select
+                        value={linkedLocationInfo.selectValue}
+                        onChange={(event) => {
+                          const value = event.target.value;
+                          if (value === "__MULTI__") return;
+                          handleLinkTruckToLocation(agent.code, value);
+                        }}
+                        disabled={isLinking}
+                        className="rounded-lg border border-white/20 bg-charcoal/70 px-2 py-1.5 text-xs text-stone-100"
+                      >
+                        {linkedLocationInfo.selectValue === "__MULTI__" && (
+                          <option value="__MULTI__" disabled>
+                            {tr("Multiple", "Multiple")}
+                          </option>
+                        )}
+                        <option value="">{tr("Global", "Global")}</option>
+                        {locationOptions.map((location) => (
+                          <option key={location.id} value={location.id}>
+                            {location.name}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="py-2">
+                      <ActionIconButton
+                        onClick={() => handleDeleteTruck(agent.code)}
+                        label={tr("Supprimer", "Delete")}
+                        variant="danger"
+                        disabled={isDeleting}
+                      >
+                        <DeleteIcon />
+                      </ActionIconButton>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </section>
 
       {editingId && (
-        <div style={{ marginTop: "16px" }}>
-          <h3>{tr("Modifier l'emplacement", "Edit location")} #{editingId}</h3>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-            <input
-              placeholder={tr("Nom", "Name")}
-              value={editLocation.name}
-              onChange={(event) =>
-                setEditLocation((prev) => ({ ...prev, name: event.target.value }))
-              }
-            />
+        <section className="rounded-xl border border-white/10 bg-white/5 p-4">
+          <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-saffron">
+            {tr("Modifier l'emplacement", "Edit address")}
+          </h3>
+          <div className="grid gap-2 md:grid-cols-2">
             <input
               placeholder={tr("Adresse", "Address")}
               value={editLocation.addressLine1}
               onChange={(event) =>
                 setEditLocation((prev) => ({ ...prev, addressLine1: event.target.value }))
               }
+              className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
             />
             <input
               placeholder={tr("Complement d'adresse", "Address line 2")}
@@ -515,6 +717,7 @@ export default function Locations() {
               onChange={(event) =>
                 setEditLocation((prev) => ({ ...prev, addressLine2: event.target.value }))
               }
+              className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
             />
             <input
               placeholder={tr("Code postal", "Postal code")}
@@ -522,6 +725,7 @@ export default function Locations() {
               onChange={(event) =>
                 setEditLocation((prev) => ({ ...prev, postalCode: event.target.value }))
               }
+              className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
             />
             <input
               placeholder={tr("Ville", "City")}
@@ -529,57 +733,50 @@ export default function Locations() {
               onChange={(event) =>
                 setEditLocation((prev) => ({ ...prev, city: event.target.value }))
               }
+              className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
             />
-            <input
-              placeholder={tr("Pays", "Country")}
+            <select
               value={editLocation.country}
               onChange={(event) =>
                 setEditLocation((prev) => ({ ...prev, country: event.target.value }))
               }
-            />
-            <input
-              type="number"
-              step="0.000001"
-              placeholder={tr("Latitude", "Latitude")}
-              value={editLocation.latitude}
-              onChange={(event) =>
-                setEditLocation((prev) => ({ ...prev, latitude: event.target.value }))
-              }
-            />
-            <input
-              type="number"
-              step="0.000001"
-              placeholder={tr("Longitude", "Longitude")}
-              value={editLocation.longitude}
-              onChange={(event) =>
-                setEditLocation((prev) => ({ ...prev, longitude: event.target.value }))
-              }
-            />
-            <input
-              placeholder={tr("Notes", "Notes")}
-              value={editLocation.notes}
-              onChange={(event) =>
-                setEditLocation((prev) => ({ ...prev, notes: event.target.value }))
-              }
-            />
-            <label>
+              className="rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-sm text-stone-100"
+            >
+              {COUNTRY_OPTIONS.map((country) => (
+                <option key={country} value={country}>
+                  {country}
+                </option>
+              ))}
+            </select>
+            <label className="inline-flex items-center gap-2 text-sm text-stone-100">
               <input
                 type="checkbox"
                 checked={editLocation.active}
                 onChange={(event) =>
-                setEditLocation((prev) => ({ ...prev, active: event.target.checked }))
-              }
+                  setEditLocation((prev) => ({ ...prev, active: event.target.checked }))
+                }
               />
               {tr("Actif", "Active")}
             </label>
           </div>
-          <div style={{ marginTop: "10px" }}>
-            <button onClick={handleUpdate} disabled={loading}>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={handleUpdate}
+              disabled={loading}
+              className="rounded-lg border border-saffron/40 bg-saffron/15 px-3 py-2 text-xs font-semibold text-saffron"
+            >
               {tr("Sauvegarder", "Save")}
             </button>
-            <button onClick={cancelEditing}>{tr("Annuler", "Cancel")}</button>
+            <button
+              type="button"
+              onClick={cancelEditing}
+              className="rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-xs font-semibold text-stone-200"
+            >
+              {tr("Annuler", "Cancel")}
+            </button>
           </div>
-        </div>
+        </section>
       )}
     </div>
   );

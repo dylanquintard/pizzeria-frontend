@@ -8,7 +8,7 @@ const adminLinks = [
   { to: "/admin/print", labelFr: "Impression", labelEn: "Printing" },
   { to: "/admin/users", labelFr: "Clients", labelEn: "Users" },
   { to: "/admin/menu", labelFr: "Menu", labelEn: "Menu" },
-  { to: "/admin/locations", labelFr: "Emplacements", labelEn: "Locations" },
+  { to: "/admin/locations", labelFr: "Camions & Adresses", labelEn: "Trucks & Addresses" },
   { to: "/admin/timeslots", labelFr: "Creneaux", labelEn: "Timeslots" },
   { to: "/admin/gallery", labelFr: "Galerie", labelEn: "Gallery" },
 ];
