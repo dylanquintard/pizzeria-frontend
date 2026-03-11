@@ -236,6 +236,7 @@ export default function Order() {
   const [validatedCartSignature, setValidatedCartSignature] = useState("");
   const [realtimeConnected, setRealtimeConnected] = useState(false);
   const [activeCategoryKey, setActiveCategoryKey] = useState("");
+  const [orderNote, setOrderNote] = useState("");
 
   const todayIso = toLocalIsoDate(new Date());
   const canGoPreviousDate = selectedDate > todayIso;
@@ -579,6 +580,7 @@ export default function Order() {
     const pickupLocationName = locationForSummary?.name || tr("Emplacement", "Location");
     const pickupAddress = formatPickupAddress(locationForSummary, tr);
     const pickupTime = `${selectedDate}T${selectedPickupTime}:00`;
+    const trimmedOrderNote = orderNote.trim();
 
     try {
       setIsFinalizeConfirmOpen(false);
@@ -587,12 +589,15 @@ export default function Order() {
         pickupDate: selectedDate,
         pickupTime: selectedPickupTime,
         locationId: Number(selectedLocationId),
+        note: trimmedOrderNote || null,
+        customerNote: trimmedOrderNote || null,
       });
       const orderId = finalizedOrder?.id ?? finalizedOrder?.order?.id ?? finalizedOrder?.orderId ?? null;
       await refreshCart();
       setAvailabilitySlots([]);
       setSelectedPickupTime("");
       setSelectedLocationId("");
+      setOrderNote("");
       setMessage("");
 
       navigate("/order/confirmation", {
@@ -601,6 +606,7 @@ export default function Order() {
           pickupTime,
           pickupLocationName,
           pickupAddress,
+          orderNote: trimmedOrderNote,
         },
       });
     } catch (err) {
@@ -970,6 +976,25 @@ export default function Order() {
                 </div>
               )}
 
+              <div className="space-y-1.5">
+                <label htmlFor="order-note" className="text-sm text-stone-300">
+                  {tr("Note pour la commande (optionnel)", "Order note (optional)")}
+                </label>
+                <textarea
+                  id="order-note"
+                  value={orderNote}
+                  onChange={(event) => setOrderNote(event.target.value)}
+                  maxLength={300}
+                  rows={3}
+                  placeholder={tr(
+                    "Ex: Allergie, demande de cuisson, precision utile...",
+                    "e.g. Allergy, cooking request, helpful detail..."
+                  )}
+                  className="w-full rounded-xl border border-white/20 bg-charcoal/60 px-3 py-2 text-sm text-stone-100 placeholder:text-stone-400 focus:border-saffron focus:outline-none focus:ring-2 focus:ring-saffron/25"
+                />
+                <p className="text-right text-[11px] text-stone-400">{orderNote.length}/300</p>
+              </div>
+
               <button
                 type="button"
                 disabled={
@@ -1020,6 +1045,12 @@ export default function Order() {
                   <p className="text-stone-200">{selectedPickupTime || "--:--"}</p>
                 </div>
               </div>
+              {orderNote.trim() && (
+                <div>
+                  <p className="text-[11px] uppercase tracking-wide text-stone-400">{tr("Note", "Note")}</p>
+                  <p className="text-stone-200">{orderNote.trim()}</p>
+                </div>
+              )}
             </div>
 
             <p className="mt-3 text-xs text-amber-200">

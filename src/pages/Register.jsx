@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { registerUser } from "../api/user.api";
 import { AuthContext } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
+import { buildFullName } from "../utils/personName";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const E164_PHONE_REGEX = /^\+[1-9]\d{7,14}$/;
@@ -16,7 +17,8 @@ function normalizePhone(value) {
 }
 
 export default function Register() {
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
@@ -38,6 +40,13 @@ export default function Register() {
 
     const normalizedEmail = email.trim().toLowerCase();
     const normalizedPhone = normalizePhone(phone);
+    const fullName = buildFullName(firstName, lastName);
+
+    if (!firstName.trim() || !lastName.trim()) {
+      setError(tr("Le prenom et le nom sont obligatoires", "First and last names are required"));
+      setLoading(false);
+      return;
+    }
 
     if (!EMAIL_REGEX.test(normalizedEmail)) {
       setError(tr("Format d'email invalide", "Invalid email format"));
@@ -58,7 +67,9 @@ export default function Register() {
 
     try {
       const registration = await registerUser({
-        name: name.trim(),
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        name: fullName,
         email: normalizedEmail,
         phone: normalizedPhone,
         password,
@@ -102,9 +113,16 @@ export default function Register() {
 
         <form onSubmit={handleSubmit} className="mt-6 grid gap-4">
           <input
-            placeholder={tr("Nom", "Name")}
-            value={name}
-            onChange={(event) => setName(event.target.value)}
+            placeholder={tr("Prenom", "First name")}
+            value={firstName}
+            onChange={(event) => setFirstName(event.target.value)}
+            className="w-full rounded-xl border border-white/20 bg-charcoal/70 px-4 py-3 text-white placeholder:text-stone-400"
+            required
+          />
+          <input
+            placeholder={tr("Nom", "Last name")}
+            value={lastName}
+            onChange={(event) => setLastName(event.target.value)}
             className="w-full rounded-xl border border-white/20 bg-charcoal/70 px-4 py-3 text-white placeholder:text-stone-400"
             required
           />

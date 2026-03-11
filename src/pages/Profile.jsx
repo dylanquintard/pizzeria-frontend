@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { updateMe } from "../api/user.api";
 import { AuthContext } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
+import { buildFullName, splitPersonName } from "../utils/personName";
 
 export default function Profile() {
   const { user, token, updateUserContext } = useContext(AuthContext);
@@ -10,7 +11,8 @@ export default function Profile() {
   const navigate = useNavigate();
 
   const [editingProfile, setEditingProfile] = useState(false);
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
 
@@ -29,7 +31,9 @@ export default function Profile() {
       navigate("/login");
       return;
     }
-    setName(user.name || "");
+    const parsedName = splitPersonName(user);
+    setFirstName(parsedName.firstName);
+    setLastName(parsedName.lastName);
     setPhone(user.phone || "");
     setEmail(user.email || "");
   }, [user, token, navigate]);
@@ -53,9 +57,21 @@ export default function Profile() {
     event.preventDefault();
     setProfileLoading(true);
     clearFeedback();
+    const fullName = buildFullName(firstName, lastName);
+
+    if (!firstName.trim() || !lastName.trim()) {
+      setError(tr("Le prenom et le nom sont obligatoires", "First and last names are required"));
+      setProfileLoading(false);
+      return;
+    }
 
     try {
-      const updatedUser = await updateMe(token, { name, phone });
+      const updatedUser = await updateMe(token, {
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        name: fullName,
+        phone,
+      });
       updateUserContext(updatedUser);
       setSuccess(tr("Profil mis a jour avec succes.", "Profile updated successfully."));
       setEditingProfile(false);
@@ -104,7 +120,11 @@ export default function Profile() {
   const primaryButtonClassName =
     "rounded-full bg-saffron px-5 py-2 text-xs font-bold uppercase tracking-wide text-charcoal transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-60";
   const roleLabel = user?.role === "ADMIN" ? tr("Administrateur", "Administrator") : tr("Client", "Client");
-  const displayName = (name || user?.name || tr("Utilisateur", "User")).trim();
+  const liveFullName = buildFullName(firstName, lastName);
+  const savedName = splitPersonName(user || {});
+  const displayName = (liveFullName || savedName.fullName || tr("Utilisateur", "User")).trim();
+  const displayFirstName = firstName || savedName.firstName || tr("Non renseigne", "Not provided");
+  const displayLastName = lastName || savedName.lastName || tr("Non renseigne", "Not provided");
   const displayEmail = email || tr("Non renseigne", "Not provided");
   const displayPhone = phone || tr("Non renseigne", "Not provided");
   const avatarLetter = (displayName[0] || displayEmail[0] || "U").toUpperCase();
@@ -171,8 +191,12 @@ export default function Profile() {
             {!editingProfile ? (
               <dl className="space-y-4 text-sm">
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                  <dt className="text-xs uppercase tracking-[0.18em] text-stone-400">{tr("Nom", "Name")}</dt>
-                  <dd className="mt-1 text-base font-semibold text-white">{displayName}</dd>
+                  <dt className="text-xs uppercase tracking-[0.18em] text-stone-400">{tr("Prenom", "First name")}</dt>
+                  <dd className="mt-1 text-base font-semibold text-white">{displayFirstName}</dd>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <dt className="text-xs uppercase tracking-[0.18em] text-stone-400">{tr("Nom", "Last name")}</dt>
+                  <dd className="mt-1 text-base font-semibold text-white">{displayLastName}</dd>
                 </div>
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                   <dt className="text-xs uppercase tracking-[0.18em] text-stone-400">Email</dt>
@@ -186,14 +210,28 @@ export default function Profile() {
             ) : (
               <form onSubmit={handleProfileUpdate} className="space-y-4">
                 <div>
-                  <label htmlFor="profile-name" className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.14em] text-stone-300">
-                    {tr("Nom", "Name")}
+                  <label htmlFor="profile-first-name" className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.14em] text-stone-300">
+                    {tr("Prenom", "First name")}
                   </label>
                   <input
-                    id="profile-name"
+                    id="profile-first-name"
                     type="text"
-                    value={name}
-                    onChange={(event) => setName(event.target.value)}
+                    value={firstName}
+                    onChange={(event) => setFirstName(event.target.value)}
+                    className={inputClassName}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="profile-last-name" className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.14em] text-stone-300">
+                    {tr("Nom", "Last name")}
+                  </label>
+                  <input
+                    id="profile-last-name"
+                    type="text"
+                    value={lastName}
+                    onChange={(event) => setLastName(event.target.value)}
                     className={inputClassName}
                     required
                   />
@@ -231,7 +269,9 @@ export default function Profile() {
                     type="button"
                     onClick={() => {
                       setEditingProfile(false);
-                      setName(user?.name || "");
+                      const parsedName = splitPersonName(user || {});
+                      setFirstName(parsedName.firstName);
+                      setLastName(parsedName.lastName);
                       setPhone(user?.phone || "");
                     }}
                     className={secondaryButtonClassName}

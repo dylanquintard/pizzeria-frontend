@@ -23,6 +23,7 @@ export default function OrderConfirmation() {
   const pickupLocationName = state.pickupLocationName || tr("Emplacement", "Location");
   const pickupAddress = state.pickupAddress || tr("Adresse de retrait non disponible", "Pickup address unavailable");
   const orderId = state.orderId ?? null;
+  const orderNote = typeof state.orderNote === "string" ? state.orderNote.trim() : "";
 
   return (
     <div className="section-shell py-12">
@@ -46,6 +47,12 @@ export default function OrderConfirmation() {
               {pickupAddress ? ` - ${pickupAddress}` : ""}
             </p>
           </div>
+          {orderNote && (
+            <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+              <p className="text-[11px] uppercase tracking-[0.2em] text-stone-400">{tr("Note", "Note")}</p>
+              <p className="mt-1 text-base font-semibold text-white">{orderNote}</p>
+            </div>
+          )}
         </div>
 
         {orderId && (

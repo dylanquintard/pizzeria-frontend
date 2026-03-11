@@ -3,6 +3,7 @@ import { getUserOrders } from "../api/user.api";
 import { AuthContext } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import { useRealtimeEvents } from "../hooks/useRealtimeEvents";
+import { getOrderNote } from "../utils/orderNote";
 
 function formatDateTime(value, locale) {
   if (!value) return "-";
@@ -153,6 +154,7 @@ export default function UserOrders() {
           const slotLabel = formatSlotLabel(order.timeSlot, locale, tr);
           const locationName = order.timeSlot?.location?.name || null;
           const pickupDateTime = order.timeSlot?.startTime || order.createdAt;
+          const orderNote = getOrderNote(order);
 
           return (
             <article key={order.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
@@ -205,6 +207,12 @@ export default function UserOrders() {
                       </span>
                     )}
                   </div>
+
+                  {orderNote && (
+                    <div className="mb-3 rounded-lg border border-white/10 bg-charcoal/50 px-3 py-2 text-xs text-stone-200">
+                      <strong className="text-stone-100">{tr("Note", "Note")}:</strong> {orderNote}
+                    </div>
+                  )}
 
                   <div className="space-y-2">
                     {(order.items || []).length === 0 && <p className="text-xs text-stone-400">{tr("Aucun article.", "No items.")}</p>}

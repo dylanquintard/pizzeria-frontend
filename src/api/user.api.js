@@ -1,7 +1,16 @@
 import api, { authConfig } from "./http";
 
-export const registerUser = async ({ name, email, phone, password }) => {
+export const registerUser = async ({
+  firstName,
+  lastName,
+  name,
+  email,
+  phone,
+  password,
+}) => {
   const response = await api.post("/users/register", {
+    firstName,
+    lastName,
     name,
     email,
     phone,

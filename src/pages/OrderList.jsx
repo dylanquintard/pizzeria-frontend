@@ -9,6 +9,8 @@ import {
 } from "../api/admin.api";
 import { useRealtimeEvents } from "../hooks/useRealtimeEvents";
 import { ActionIconButton, DeleteIcon } from "../components/ui/AdminActions";
+import { getOrderNote } from "../utils/orderNote";
+import { splitPersonName } from "../utils/personName";
 
 function toLocalIsoDate(dateValue) {
   const date = new Date(dateValue);
@@ -45,6 +47,28 @@ function getClientPhone(order) {
     order?.phone ||
     null
   );
+}
+
+function getClientIdentity(order, tr) {
+  const parsed = splitPersonName({
+    firstName:
+      order?.user?.firstName ??
+      order?.firstName ??
+      order?.customerFirstName ??
+      order?.clientFirstName,
+    lastName:
+      order?.user?.lastName ??
+      order?.lastName ??
+      order?.customerLastName ??
+      order?.clientLastName,
+    name: order?.user?.name ?? order?.customerName ?? order?.clientName ?? "",
+  });
+
+  return {
+    firstName: parsed.firstName,
+    lastName: parsed.lastName,
+    fullName: parsed.fullName || tr("Client inconnu", "Unknown client"),
+  };
 }
 
 function formatPrice(value) {
@@ -186,10 +210,16 @@ export default function OrderList() {
             byEmail[String(entry.email).toLowerCase()] = String(phone);
           }
           if (entry?.name) {
-            const nameKey = String(entry.name).trim().toLowerCase();
-            if (nameKey && !byName[nameKey]) {
-              byName[nameKey] = String(phone);
-            }
+            const parsed = splitPersonName(entry);
+            const nameKeys = [String(entry.name).trim(), parsed.fullName]
+              .map((value) => String(value || "").trim().toLowerCase())
+              .filter(Boolean);
+
+            nameKeys.forEach((key) => {
+              if (!byName[key]) {
+                byName[key] = String(phone);
+              }
+            });
           }
         });
 
@@ -265,9 +295,18 @@ export default function OrderList() {
       if (byEmailPhone) return String(byEmailPhone);
     }
 
-    const name = order?.user?.name || order?.customerName || order?.clientName || null;
-    if (name) {
-      const byNamePhone = usersByName[String(name).trim().toLowerCase()];
+    const clientIdentity = getClientIdentity(order, tr);
+    const nameCandidates = [
+      order?.user?.name,
+      order?.customerName,
+      order?.clientName,
+      clientIdentity.fullName,
+    ]
+      .map((value) => String(value || "").trim().toLowerCase())
+      .filter(Boolean);
+
+    for (const key of nameCandidates) {
+      const byNamePhone = usersByName[key];
       if (byNamePhone) return String(byNamePhone);
     }
 
@@ -420,8 +459,10 @@ export default function OrderList() {
                   const orderTotal = formatPrice(order.total ?? order.totalPrice);
                   const statusLabel = order.status === "FINALIZED" ? tr("Terminee", "Finished") : tr("En cours", "In progress");
                   const clientPhone = resolveClientPhone(order);
+                  const clientIdentity = getClientIdentity(order, tr);
                   const hasPhone = Boolean(clientPhone);
                   const phoneDisplay = clientPhone || (usersLookupReady ? tr("Numero non renseigne", "No phone provided") : tr("Chargement...", "Loading..."));
+                  const orderNote = getOrderNote(order);
 
                   return (
                     <article key={order.id} className="rounded-xl border border-white/10 bg-charcoal/45 p-3">
@@ -476,7 +517,7 @@ export default function OrderList() {
 
                         <div className="min-w-0 text-right">
                           <p className="truncate text-sm font-semibold uppercase tracking-wide text-white">
-                            {order.user?.name || tr("Client inconnu", "Unknown client")}
+                            {clientIdentity.fullName}
                           </p>
                           <p className={`theme-light-keep-dark mt-0.5 text-[11px] font-medium ${hasPhone ? "text-sky-200" : "text-stone-400"}`}>
                             {phoneDisplay}
@@ -499,6 +540,22 @@ export default function OrderList() {
 
                       {isExpanded && (
                         <div className="mt-3 rounded-lg border border-white/10 bg-black/20 p-2">
+                          <div className="mb-3 grid gap-1 rounded-md border border-white/10 bg-charcoal/40 px-2.5 py-2 text-xs text-stone-300 sm:grid-cols-2">
+                            <p>
+                              <strong className="text-stone-100">{tr("Prenom", "First name")}:</strong>{" "}
+                              {clientIdentity.firstName || "-"}
+                            </p>
+                            <p>
+                              <strong className="text-stone-100">{tr("Nom", "Last name")}:</strong>{" "}
+                              {clientIdentity.lastName || "-"}
+                            </p>
+                            {orderNote && (
+                              <p className="sm:col-span-2">
+                                <strong className="text-stone-100">{tr("Note", "Note")}:</strong> {orderNote}
+                              </p>
+                            )}
+                          </div>
+
                           <div className="space-y-2">
                             {order.items?.length > 0 ? (
                               order.items.map((item, index) => {
