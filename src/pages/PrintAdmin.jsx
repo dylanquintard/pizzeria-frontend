@@ -178,6 +178,35 @@ function dedupeTicketsByOrder(jobs) {
   return deduped;
 }
 
+function getTicketPickupTimestamp(job) {
+  const pickupRaw =
+    job?.payload?.order?.pickup_time ||
+    job?.order?.timeSlot?.startTime ||
+    job?.scheduledAt ||
+    null;
+  const parsed = new Date(pickupRaw || 0);
+  if (Number.isNaN(parsed.getTime())) return Number.POSITIVE_INFINITY;
+  return parsed.getTime();
+}
+
+function isSameLocalDay(leftDate, rightDate) {
+  return (
+    leftDate.getFullYear() === rightDate.getFullYear() &&
+    leftDate.getMonth() === rightDate.getMonth() &&
+    leftDate.getDate() === rightDate.getDate()
+  );
+}
+
+function compareTicketsByPickupAsc(left, right) {
+  const leftTs = getTicketPickupTimestamp(left);
+  const rightTs = getTicketPickupTimestamp(right);
+  if (leftTs !== rightTs) return leftTs - rightTs;
+
+  const leftCreated = toTimestamp(left?.createdAt);
+  const rightCreated = toTimestamp(right?.createdAt);
+  return leftCreated - rightCreated;
+}
+
 export default function PrintAdmin() {
   const { user, token, loading: authLoading } = useContext(AuthContext);
   const { tr, locale } = useLanguage();
@@ -195,7 +224,7 @@ export default function PrintAdmin() {
   const [message, setMessage] = useState("");
   const [agentTokenInfo, setAgentTokenInfo] = useState(null);
   const [previewJob, setPreviewJob] = useState(null);
-  const [ticketTab, setTicketTab] = useState("non_printed");
+  const [ticketTab, setTicketTab] = useState("today");
 
   const [printerForm, setPrinterForm] = useState(initialPrinterForm);
 
@@ -241,15 +270,23 @@ export default function PrintAdmin() {
     return agentAlerts + metadataPrinterAlerts + inactivePrinterAlerts + readyStaleAlerts;
   }, [overview]);
 
-  const nonPrintedTickets = useMemo(
-    () => jobs.filter((job) => String(job?.status || "").toUpperCase() !== "PRINTED"),
+  const todayTickets = useMemo(() => {
+    const now = new Date();
+    return jobs
+      .filter((job) => {
+        const pickupTs = getTicketPickupTimestamp(job);
+        if (!Number.isFinite(pickupTs)) return false;
+        return isSameLocalDay(new Date(pickupTs), now);
+      })
+      .sort(compareTicketsByPickupAsc);
+  }, [jobs]);
+
+  const allTickets = useMemo(
+    () => [...jobs].sort(compareTicketsByPickupAsc),
     [jobs]
   );
-  const printedTickets = useMemo(
-    () => jobs.filter((job) => String(job?.status || "").toUpperCase() === "PRINTED"),
-    [jobs]
-  );
-  const visibleTickets = ticketTab === "printed" ? printedTickets : nonPrintedTickets;
+
+  const visibleTickets = ticketTab === "all" ? allTickets : todayTickets;
 
   const handleRotateAgentToken = async (agentCode) => {
     const busyKey = `rotate-agent:${agentCode}`;
@@ -642,45 +679,43 @@ export default function PrintAdmin() {
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={() => setTicketTab("non_printed")}
+              onClick={() => setTicketTab("today")}
               className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${
-                ticketTab === "non_printed"
+                ticketTab === "today"
                   ? "border-saffron/40 bg-saffron/15 text-saffron"
                   : "border-white/20 bg-white/5 text-stone-200 hover:bg-white/10"
               }`}
             >
-              {tr("Tous sauf imprimes", "All except printed")} ({nonPrintedTickets.length})
+              {tr("Tickets du jour", "Today's tickets")} ({todayTickets.length})
             </button>
             <button
               type="button"
-              onClick={() => setTicketTab("printed")}
+              onClick={() => setTicketTab("all")}
               className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${
-                ticketTab === "printed"
+                ticketTab === "all"
                   ? "border-saffron/40 bg-saffron/15 text-saffron"
                   : "border-white/20 bg-white/5 text-stone-200 hover:bg-white/10"
               }`}
             >
-              {tr("Imprimes", "Printed")} ({printedTickets.length})
+              {tr("Tous les tickets", "All tickets")} ({allTickets.length})
             </button>
-            {ticketTab === "non_printed" && (
-              <button
-                type="button"
-                onClick={handleReprintAllFailed}
-                disabled={reprintingAllFailed}
-                className="rounded-lg border border-sky-300/40 bg-sky-500/10 px-3 py-1.5 text-xs font-semibold text-sky-200 transition hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {reprintingAllFailed
-                  ? tr("Reimpression en cours...", "Reprinting...")
-                  : tr("Reimprimer tous les FAILED", "Reprint all FAILED")}
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={handleReprintAllFailed}
+              disabled={reprintingAllFailed}
+              className="rounded-lg border border-sky-300/40 bg-sky-500/10 px-3 py-1.5 text-xs font-semibold text-sky-200 transition hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {reprintingAllFailed
+                ? tr("Reimpression en cours...", "Reprinting...")
+                : tr("Reimprimer tous les FAILED", "Reprint all FAILED")}
+            </button>
           </div>
         </div>
         {visibleTickets.length === 0 ? (
           <p className="text-xs text-stone-400">
-            {ticketTab === "printed"
-              ? tr("Aucun ticket imprime", "No printed ticket")
-              : tr("Aucun ticket non imprime", "No non-printed ticket")}
+            {ticketTab === "all"
+              ? tr("Aucun ticket", "No ticket")
+              : tr("Aucun ticket du jour", "No ticket for today")}
           </p>
         ) : (
           <div className="space-y-2">

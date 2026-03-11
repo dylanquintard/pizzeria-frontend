@@ -487,14 +487,6 @@ export default function OrderList() {
                       </div>
 
                       <div className="mt-3 rounded-lg border border-white/10 bg-black/20 p-2">
-                        <div className="mb-3 grid gap-1 rounded-md border border-white/10 bg-charcoal/40 px-2.5 py-2 text-xs text-stone-300 sm:grid-cols-2">
-                          {orderNote && (
-                            <p className="sm:col-span-2">
-                              <strong className="text-stone-100">{tr("Note", "Note")}:</strong> {orderNote}
-                            </p>
-                          )}
-                        </div>
-
                         <div className="space-y-2">
                           {order.items?.length > 0 ? (
                             order.items.map((item, index) => {
@@ -525,6 +517,14 @@ export default function OrderList() {
                             <p className="text-xs text-stone-400">{tr("Aucun detail de produit.", "No product detail.")}</p>
                           )}
                         </div>
+
+                        {orderNote && (
+                          <div className="mt-3 grid gap-1 rounded-md border border-white/10 bg-charcoal/40 px-2.5 py-2 text-xs text-stone-300 sm:grid-cols-2">
+                            <p className="sm:col-span-2">
+                              <strong className="text-stone-100">{tr("Note", "Note")}:</strong> {orderNote}
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </article>
                   );
