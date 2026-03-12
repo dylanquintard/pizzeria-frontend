@@ -205,7 +205,7 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
           </ul>
           <p className="mt-4 text-sm text-stone-300">
             {content?.nearbySection?.footer ||
-              "Consultez la page tournee pour connaitre les prochains passages du camion pizza."}
+              "Consultez la page horaires d'ouvertures pour connaitre les prochains passages du camion pizza."}
           </p>
         </section>
       )}
@@ -237,7 +237,7 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
             to="/planing"
             className="rounded-full border border-white/30 px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/10"
           >
-            Consulter la tournee du camion pizza
+            Consulter les horaires d'ouvertures du camion pizza
           </Link>
         </div>
       </section>

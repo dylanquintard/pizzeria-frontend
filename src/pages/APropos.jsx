@@ -57,7 +57,7 @@ export default function APropos() {
           <article>
             <h3 className="text-base font-semibold text-white">Ou trouver le camion pizza cette semaine ?</h3>
             <p className="mt-1 text-sm text-stone-300">
-              Consultez la tournee du camion pizza pour connaitre les prochains emplacements.
+              Consultez les horaires d'ouvertures du camion pizza pour connaitre les prochains emplacements.
             </p>
           </article>
           <article>

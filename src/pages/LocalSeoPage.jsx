@@ -66,7 +66,7 @@ export default function LocalSeoPage({ cityKey }) {
             to="/planing"
             className="rounded-full border border-white/30 px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/10"
           >
-            Consulter la tournee du camion pizza
+            Consulter les horaires d'ouvertures du camion pizza
           </Link>
         </div>
       </section>

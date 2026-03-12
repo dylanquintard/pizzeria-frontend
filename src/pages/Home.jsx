@@ -445,7 +445,6 @@ const truckTourSchedule = useMemo(
         </div>
         <div className="section-shell relative py-20 sm:py-28 lg:py-32">
           <div className="max-w-3xl">
-            <p className="chip mb-6">{tr("Camion pizza napolitaine", "Neapolitan pizza truck")}</p>
             <h1
               className={`font-display text-5xl uppercase leading-none tracking-wide sm:text-6xl lg:text-7xl ${
                 isLightTheme ? "text-[#3A261C]" : "theme-light-keep-white text-white"
@@ -481,7 +480,7 @@ const truckTourSchedule = useMemo(
                     : "theme-light-keep-white border border-white/30 text-white hover:bg-white/10"
                 }`}
               >
-                {tr("Voir la tournee", "See truck tour")}
+                {tr("Voir les horaires d'ouvertures", "See opening hours")}
               </Link>
               {token ? (
                 <Link
@@ -521,7 +520,7 @@ const truckTourSchedule = useMemo(
               Notre camion pizza propose des pizzas napolitaines artisanales dans le nord de la Moselle.
             </p>
             <p className="mt-2 text-sm leading-7 text-stone-300 sm:text-base">
-              La tournee du camion passe regulierement dans plusieurs villes autour de Thionville, Metz et des communes voisines.
+              Les horaires d'ouvertures du camion couvrent regulierement plusieurs villes autour de Thionville, Metz et des communes voisines.
             </p>
             <p className="mt-2 text-sm leading-7 text-stone-300 sm:text-base">
               Les pizzas sont preparees avec une pate napolitaine traditionnelle et des produits italiens selectionnes.
@@ -570,6 +569,9 @@ const truckTourSchedule = useMemo(
               <span className="rounded-full border border-saffron/40 bg-saffron/10 px-3 py-1 text-[11px] uppercase tracking-wide text-saffron">
                 pizza artisanale moselle
               </span>
+              <span className="rounded-full border border-saffron/40 bg-saffron/10 px-3 py-1 text-[11px] uppercase tracking-wide text-saffron">
+                camion pizza napolitaine
+              </span>
             </div>
           </article>
 
@@ -581,16 +583,16 @@ const truckTourSchedule = useMemo(
               Retrouvez notre camion pizza dans plusieurs villes autour de Thionville et Metz.
             </p>
             <p className="mt-2 text-sm leading-7 text-stone-300 sm:text-base">
-              Les emplacements changent selon la tournee hebdomadaire.
+              Les emplacements changent selon les horaires d'ouvertures hebdomadaires.
             </p>
             <p className="mt-2 text-sm leading-7 text-stone-300 sm:text-base">
-              Consultez la page tournee du camion pour connaitre les horaires et points de retrait.
+              Consultez la page horaires d'ouvertures du camion pour connaitre les horaires et points de retrait.
             </p>
             <Link
               to="/planing"
               className="mt-5 inline-flex rounded-full border border-saffron/60 px-5 py-2 text-xs font-semibold uppercase tracking-wide text-saffron transition hover:bg-saffron/10"
             >
-              Voir la tournee
+              Voir les horaires d'ouvertures
             </Link>
           </article>
         </div>
@@ -668,8 +670,8 @@ const truckTourSchedule = useMemo(
           <h2 className="font-display text-4xl uppercase tracking-wide text-white">{tr("Emplacements du camion pizza", "Pizza truck locations")}</h2>
           <p className="mt-2 text-sm text-stone-400">
             {tr(
-              "Retrouvez notre camion pizza napolitaine dans plusieurs villes autour de Thionville et Metz selon la tournee hebdomadaire.",
-              "Find our Neapolitan pizza truck in several cities around Thionville and Metz according to the weekly route."
+              "Retrouvez notre camion pizza napolitaine dans plusieurs villes autour de Thionville et Metz selon les horaires d'ouvertures hebdomadaires.",
+              "Find our Neapolitan pizza truck in several cities around Thionville and Metz according to weekly opening hours."
             )}
           </p>
         </div>

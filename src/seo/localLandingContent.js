@@ -55,7 +55,7 @@ export const LOCAL_PAGE_CONTENT = {
         heading: "Camion pizza dans la region",
         paragraphs: [
           "Le camion se deplace sur plusieurs points de passage autour de Thionville selon le planning de la semaine.",
-          "Les adresses et horaires evoluent selon la tournee, avec un fonctionnement simple: commande puis retrait direct au camion.",
+          "Les adresses et horaires evoluent selon la horaires d'ouvertures, avec un fonctionnement simple: commande puis retrait direct au camion.",
         ],
       },
       {
@@ -87,7 +87,7 @@ export const LOCAL_PAGE_CONTENT = {
         heading: "Camion pizza autour de Metz",
         paragraphs: [
           "Notre camion pizza se deplace dans differents secteurs proches de Metz et du nord mosellan.",
-          "Chaque semaine, la tournee precise les points de retrait et les horaires disponibles.",
+          "Chaque semaine, la horaires d'ouvertures precise les points de retrait et les horaires disponibles.",
         ],
       },
       {
@@ -109,9 +109,9 @@ export const LOCAL_PAGE_CONTENT = {
       "Notre camion pizza napolitaine couvre plusieurs communes de Moselle avec une offre artisanale, des ingredients italiens et un service de retrait efficace.",
     sections: [
       {
-        heading: "Une tournee locale dans le nord mosellan",
+        heading: "Une horaires d'ouvertures locale dans le nord mosellan",
         paragraphs: [
-          "La tournee passe par differents points autour de Thionville, Metz et des villes voisines selon la semaine.",
+          "La horaires d'ouvertures passe par differents points autour de Thionville, Metz et des villes voisines selon la semaine.",
           "Les emplacements et horaires sont mis a jour regulierement pour faciliter la commande a emporter.",
         ],
       },
@@ -159,7 +159,7 @@ const DYNAMIC_CITY_VARIANTS = [
       "Vous cherchez une pizza napolitaine a {city} ?",
       "Notre camion pizza propose des pizzas artisanales preparees selon la tradition napolitaine avec une pate maison et des produits italiens selectionnes.",
       "Chaque pizza est cuite dans un four a bois et gaz afin d'obtenir une cuisson rapide et une pate legere et moelleuse.",
-      "Le camion pizza passe regulierement a {city} selon la tournee et les emplacements disponibles.",
+      "Le camion pizza passe regulierement a {city} selon la horaires d'ouvertures et les emplacements disponibles.",
     ],
     sections: [
       {
@@ -178,7 +178,7 @@ const DYNAMIC_CITY_VARIANTS = [
         heading: "Camion pizza a {city}",
         paragraphs: [
           "Le camion pizza propose regulierement des pizzas napolitaines artisanales a {city}.",
-          "Les emplacements changent selon la tournee hebdomadaire et les points de retrait disponibles.",
+          "Les emplacements changent selon la horaires d'ouvertures hebdomadaire et les points de retrait disponibles.",
           "Chaque pizza est preparee sur place afin de garantir une qualite constante.",
         ],
       },
@@ -216,7 +216,7 @@ const DYNAMIC_CITY_VARIANTS = [
       {
         heading: "Le camion pizza a {city}",
         paragraphs: [
-          "Le camion pizza passe a {city} selon la tournee hebdomadaire.",
+          "Le camion pizza passe a {city} selon la horaires d'ouvertures hebdomadaire.",
           "Les points de retrait peuvent varier mais l'objectif reste le meme : proposer une pizza artisanale preparee sur place.",
         ],
       },
@@ -252,9 +252,9 @@ const DYNAMIC_CITY_VARIANTS = [
         ],
       },
       {
-        heading: "Camion pizza en tournee a {city}",
+        heading: "Camion pizza en horaires d'ouvertures a {city}",
         paragraphs: [
-          "Le camion pizza se deplace a {city} selon la tournee et les emplacements definis dans le planning.",
+          "Le camion pizza se deplace a {city} selon la horaires d'ouvertures et les emplacements definis dans le planning.",
           "Les pizzas sont preparees directement au camion afin de garantir leur fraicheur.",
         ],
       },
@@ -273,7 +273,7 @@ const DYNAMIC_CITY_VARIANTS = [
     description:
       "Camion pizza a {city}: pizzas napolitaines artisanales, ingredients italiens et cuisson bois-gaz.",
     intro: [
-      "Le camion pizza propose des pizzas napolitaines artisanales a {city} selon la tournee hebdomadaire.",
+      "Le camion pizza propose des pizzas napolitaines artisanales a {city} selon la horaires d'ouvertures hebdomadaire.",
       "Chaque pizza est preparee avec une pate maison et des ingredients italiens selectionnes.",
       "La cuisson se fait dans un four a bois et gaz.",
     ],
@@ -289,10 +289,10 @@ const DYNAMIC_CITY_VARIANTS = [
         ],
       },
       {
-        heading: "Tournee du camion pizza a {city}",
+        heading: "Horaires d'ouvertures du camion pizza a {city}",
         paragraphs: [
-          "Le camion pizza passe a {city} selon les emplacements prevus dans la tournee.",
-          "Les horaires et emplacements peuvent etre consultes sur la page tournee.",
+          "Le camion pizza passe a {city} selon les emplacements prevus dans la horaires d'ouvertures.",
+          "Les horaires et emplacements peuvent etre consultes sur la page horaires d'ouvertures.",
         ],
       },
       {
@@ -328,7 +328,7 @@ const DYNAMIC_CITY_VARIANTS = [
       {
         heading: "Le camion pizza a {city}",
         paragraphs: [
-          "Le camion pizza se deplace a {city} selon les emplacements de la tournee.",
+          "Le camion pizza se deplace a {city} selon les emplacements de la horaires d'ouvertures.",
           "Les pizzas sont preparees sur place afin de garantir leur fraicheur.",
         ],
       },
@@ -346,27 +346,27 @@ const DYNAMIC_NEARBY_VARIANTS = [
   {
     heading: "Villes proches et emplacements autour de {city}",
     lead: "Voici quelques points de retrait actifs a {city} et aux alentours.",
-    footer: "Consultez la page tournee pour verifier les prochains passages.",
+    footer: "Consultez la page horaires d'ouvertures pour verifier les prochains passages.",
   },
   {
     heading: "Prochains passages proches de {city}",
     lead: "Les emplacements suivants proviennent du planning admin actuellement publie.",
-    footer: "Les jours et horaires peuvent evoluer selon la tournee.",
+    footer: "Les jours et horaires peuvent evoluer selon la horaires d'ouvertures.",
   },
   {
     heading: "Points de retrait disponibles a {city}",
     lead: "Retrouvez ci-dessous des exemples d'emplacements ou le camion peut passer.",
-    footer: "Pour la version complete, consultez la page tournee du camion pizza.",
+    footer: "Pour la version complete, consultez la page horaires d'ouvertures du camion pizza.",
   },
   {
     heading: "Emplacements actuellement visibles pour {city}",
     lead: "Ces adresses sont mises a jour automatiquement depuis la configuration admin.",
-    footer: "Pensez a verifier la tournee avant de vous deplacer.",
+    footer: "Pensez a verifier la horaires d'ouvertures avant de vous deplacer.",
   },
   {
     heading: "Retrait pizza autour de {city}",
     lead: "Selection de points de retrait disponibles selon les derniers creneaux ouverts.",
-    footer: "Tous les details de passage restent centralises sur la page tournee.",
+    footer: "Tous les details de passage restent centralises sur la page horaires d'ouvertures.",
   },
 ];
 
@@ -375,7 +375,7 @@ const DYNAMIC_FAQ_VARIANTS = [
     {
       question: "Ou trouver le camion pizza a {city} ?",
       answer:
-        "Le camion pizza propose regulierement des emplacements a {city} selon la tournee hebdomadaire. Les prochains passages et horaires sont indiques sur la page tournee du site.",
+        "Le camion pizza propose regulierement des emplacements a {city} selon la horaires d'ouvertures hebdomadaire. Les prochains passages et horaires sont indiques sur la page horaires d'ouvertures du site.",
     },
     {
       question: "Les pizzas sont-elles disponibles sur place ?",
@@ -391,7 +391,7 @@ const DYNAMIC_FAQ_VARIANTS = [
     {
       question: "Le camion pizza passe-t-il a {city} chaque semaine ?",
       answer:
-        "Le passage du camion pizza a {city} depend de la tournee et des emplacements disponibles. Les horaires et jours de passage sont indiques dans la page tournee.",
+        "Le passage du camion pizza a {city} depend de la horaires d'ouvertures et des emplacements disponibles. Les horaires et jours de passage sont indiques dans la page horaires d'ouvertures.",
     },
     {
       question: "Peut-on commander une pizza a l'avance ?",
@@ -408,7 +408,7 @@ const DYNAMIC_FAQ_VARIANTS = [
     {
       question: "Ou acheter une pizza napolitaine a {city} ?",
       answer:
-        "Le camion pizza propose des pizzas napolitaines artisanales a {city} selon les emplacements de la tournee.",
+        "Le camion pizza propose des pizzas napolitaines artisanales a {city} selon les emplacements de la horaires d'ouvertures.",
     },
     {
       question: "Comment fonctionne le retrait des pizzas ?",
@@ -425,7 +425,7 @@ const DYNAMIC_FAQ_VARIANTS = [
     {
       question: "Quand trouver le camion pizza a {city} ?",
       answer:
-        "Le camion pizza passe regulierement a {city} selon la tournee hebdomadaire. Consultez la page tournee pour connaitre les prochains passages.",
+        "Le camion pizza passe regulierement a {city} selon la horaires d'ouvertures hebdomadaire. Consultez la page horaires d'ouvertures pour connaitre les prochains passages.",
     },
     {
       question: "Les pizzas sont-elles cuites au feu de bois ?",
@@ -502,3 +502,4 @@ export function buildDynamicCityContent(cityValue, options = {}) {
     locationHighlights,
   };
 }
+

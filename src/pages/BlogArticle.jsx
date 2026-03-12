@@ -120,7 +120,7 @@ export default function BlogArticle() {
           to="/planing"
           className="rounded-full border border-saffron/60 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-saffron transition hover:bg-saffron/10"
         >
-          Voir la tournee
+          Voir les horaires d'ouvertures
         </Link>
       </div>
 

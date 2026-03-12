@@ -104,7 +104,7 @@ export default function Header() {
   const seoPageLinks = [
     { to: "/", label: tr("Accueil", "Home") },
     { to: "/menu", label: tr("Menu", "Menu") },
-    { to: "/planing", label: tr("Tournee", "Tour") },
+    { to: "/planing", label: tr("Horaires d'ouvertures", "Opening hours") },
     { to: "/a-propos", label: tr("A propos", "About") },
     { to: "/contact", label: tr("Contact", "Contact") },
   ];

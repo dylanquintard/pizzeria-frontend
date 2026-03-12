@@ -169,7 +169,7 @@ export default function TourneeCamion() {
     return [...new Set([...fromSchedule, ...fromLocations])].sort((a, b) => a.localeCompare(b, "fr"));
   }, [scheduleByLocation, locations]);
 
-  const title = "Tournee camion pizza | Emplacements en Moselle";
+  const title = "Horaires d'ouvertures camion pizza | Emplacements en Moselle";
   const description =
     "Retrouvez les emplacements du camion pizza napolitaine autour de Thionville et Metz, avec horaires de passage hebdomadaires.";
 
@@ -187,9 +187,9 @@ export default function TourneeCamion() {
       />
 
       <header className="space-y-3">
-        <p className="text-xs uppercase tracking-[0.25em] text-saffron">Tournee du camion</p>
+        <p className="text-xs uppercase tracking-[0.25em] text-saffron">Horaires d'ouvertures du camion</p>
         <h1 className="font-display text-4xl uppercase tracking-wide text-white sm:text-5xl">
-          Tournee du camion pizza napolitaine
+          Horaires d'ouvertures du camion pizza napolitaine
         </h1>
         <p className="max-w-3xl text-sm text-stone-300 sm:text-base">
           Retrouvez les emplacements et horaires du camion pizza napolitaine autour de Thionville et Metz.

@@ -27,7 +27,7 @@ export default function ContactPage() {
           Nous contacter
         </h1>
         <p className="max-w-3xl text-sm text-stone-300 sm:text-base">
-          Pour toute question sur la commande, la tournee ou les horaires, contacte-nous directement.
+          Pour toute question sur la commande ou les horaires d'ouvertures, contacte-nous directement.
         </p>
       </header>
 
