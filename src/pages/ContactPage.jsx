@@ -1,7 +1,6 @@
-import { Link } from "react-router-dom";
+import ContactPanel from "../components/contact/ContactPanel";
 import SeoHead from "../components/seo/SeoHead";
 import SeoInternalLinks from "../components/seo/SeoInternalLinks";
-import { INSTAGRAM_URL } from "../config/env";
 import { buildBaseFoodEstablishmentJsonLd } from "../seo/jsonLd";
 
 export default function ContactPage() {
@@ -32,36 +31,9 @@ export default function ContactPage() {
         </p>
       </header>
 
-      <section className="grid gap-4 md:grid-cols-2">
-        <article className="glass-panel p-6">
-          <h2 className="text-lg font-bold text-white">Instagram</h2>
-          <p className="mt-2 text-sm text-stone-300">Suivez les actualites de la tournee et des services en cours.</p>
-          <a
-            href={INSTAGRAM_URL}
-            target="_blank"
-            rel="noreferrer"
-            className="mt-4 inline-flex rounded-full border border-saffron/60 px-4 py-2 text-xs font-semibold text-saffron transition hover:bg-saffron/10"
-          >
-            Ouvrir Instagram
-          </a>
-        </article>
-
-        <article className="glass-panel p-6">
-          <h2 className="text-lg font-bold text-white">Formulaire</h2>
-          <p className="mt-2 text-sm text-stone-300">
-            Le formulaire de contact est disponible sur la page d'accueil.
-          </p>
-          <Link
-            to="/#contact"
-            className="mt-4 inline-flex rounded-full border border-white/30 px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/10"
-          >
-            Aller au formulaire
-          </Link>
-        </article>
-      </section>
+      <ContactPanel />
 
       <SeoInternalLinks />
     </div>
   );
 }
-

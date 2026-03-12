@@ -4,6 +4,7 @@ const SEO_LINKS = [
   { to: "/", label: "Accueil" },
   { to: "/menu", label: "Menu" },
   { to: "/tournee-camion", label: "Tournee camion" },
+  { to: "/blog", label: "Blog" },
   { to: "/a-propos", label: "A propos" },
   { to: "/contact", label: "Contact" },
   { to: "/pizza-napolitaine-thionville", label: "Pizza napolitaine Thionville" },

@@ -101,15 +101,8 @@ export default function Header() {
   const totalItems = Number(itemCount || 0);
   const isAdminRoute = location.pathname.startsWith("/admin");
   const isAdminUser = user?.role === "ADMIN";
-  const onePageLinks = [
-    { id: "menu", label: tr("Le Menu", "Menu") },
-    { id: "galerie", label: tr("Galerie", "Gallery") },
-    { id: "emplacements", label: tr("Emplacements & horaires d'ouverture", "Locations & opening hours") },
-    { id: "paiements", label: tr("Moyens de paiement acceptes", "Accepted payment methods") },
-    { id: "services", label: tr("Nos services", "Our services") },
-    { id: "contact", label: tr("Nous contacter", "Contact us") },
-  ];
   const seoPageLinks = [
+    { to: "/", label: tr("Accueil", "Home") },
     { to: "/menu", label: tr("Menu", "Menu") },
     { to: "/tournee-camion", label: tr("Tournee", "Tour") },
     { to: "/a-propos", label: tr("A propos", "About") },
@@ -131,7 +124,6 @@ export default function Header() {
     (item) => item && typeof item.to === "string" && item.to
   );
 
-  const navHref = (id) => (location.pathname === "/" ? `#${id}` : `/#${id}`);
   const closeMobileMenus = () => {
     setMobileOpen(false);
     setMobileAdminOpen(false);
@@ -187,16 +179,6 @@ export default function Header() {
                 {item.label}
               </Link>
             ))}
-            {location.pathname === "/" &&
-              onePageLinks.map((item) => (
-                <a
-                  key={item.id}
-                  href={navHref(item.id)}
-                  className="whitespace-nowrap rounded-full px-3 py-1.5 transition hover:bg-saffron/10 hover:text-saffron"
-                >
-                  {item.label}
-                </a>
-              ))}
           </nav>
 
           <div className="flex items-center gap-2">
@@ -407,23 +389,6 @@ export default function Header() {
                     {item.label}
                   </Link>
                 ))}
-
-                {!isAdminRoute && onePageLinks.map((item) => (
-                  <a
-                    key={item.id}
-                    href={navHref(item.id)}
-                    onClick={closeMobileMenus}
-                    className="rounded-md px-3 py-2 transition hover:bg-white/10"
-                  >
-                    {item.label}
-                  </a>
-                ))}
-
-                {isAdminRoute && (
-                  <Link to="/" onClick={closeMobileMenus} className="rounded-md px-3 py-2 transition hover:bg-white/10">
-                    {tr("Accueil", "Home")}
-                  </Link>
-                )}
 
                 {token ? (
                   <Link

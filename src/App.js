@@ -19,6 +19,8 @@ const APropos = lazy(() => import("./pages/APropos"));
 const ContactPage = lazy(() => import("./pages/ContactPage"));
 const LocalSeoPage = lazy(() => import("./pages/LocalSeoPage"));
 const CitySeoPage = lazy(() => import("./pages/CitySeoPage"));
+const Blog = lazy(() => import("./pages/Blog"));
+const BlogArticle = lazy(() => import("./pages/BlogArticle"));
 const Ingredients = lazy(() => import("./pages/Ingredients"));
 const Locations = lazy(() => import("./pages/Locations"));
 const Login = lazy(() => import("./pages/Login"));
@@ -78,8 +80,11 @@ function AppRoutes() {
           <Route path="/" element={<Home />} />
           <Route path="/menu" element={<Menu />} />
           <Route path="/tournee-camion" element={<TourneeCamion />} />
+          <Route path="/tournee" element={<Navigate to="/tournee-camion" replace />} />
           <Route path="/a-propos" element={<APropos />} />
           <Route path="/contact" element={<ContactPage />} />
+          <Route path="/blog" element={<Blog />} />
+          <Route path="/blog/:slug" element={<BlogArticle />} />
           <Route path="/pizza-napolitaine-thionville" element={<LocalSeoPage cityKey="thionville" />} />
           <Route path="/pizza-napolitaine-metz" element={<LocalSeoPage cityKey="metz" />} />
           <Route path="/food-truck-pizza-moselle" element={<LocalSeoPage cityKey="moselle" />} />
