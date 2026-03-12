@@ -1,16 +1,9 @@
-export const DEFAULT_TOUR_CITIES = [
-  "Thionville",
-  "Yutz",
-  "Terville",
-  "Florange",
-  "Hayange",
-  "Amneville",
-  "Metz",
-];
+export const DEFAULT_TOUR_CITIES = ["Thionville", "Metz"];
 
 const SPECIAL_CITY_PATHS = {
   thionville: "/pizza-napolitaine-thionville",
   metz: "/pizza-napolitaine-metz",
+  moselle: "/food-truck-pizza-moselle",
 };
 
 export function slugifyCity(city) {
@@ -133,39 +126,242 @@ export const LOCAL_PAGE_CONTENT = {
   },
 };
 
-export function buildDynamicCityContent(cityValue) {
-  const city = String(cityValue || "").trim() || "Moselle";
-  const slug = slugifyCity(city) || "moselle";
+function hashText(value) {
+  let hash = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    hash = (hash << 5) - hash + value.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
 
-  return {
-    pathname: `/pizza-${slug}`,
-    title: `Pizza napolitaine a ${city} | Camion pizza artisanal`,
-    description: `Camion pizza napolitaine a ${city}, produits italiens, cuisson au feu de bois et gaz, pizza a emporter.`,
-    h1: `Pizza napolitaine a ${city}`,
-    intro: `Retrouvez notre camion pizza napolitaine a ${city} selon la tournee hebdomadaire. Pizzas artisanales, cuisson feu de bois et retrait rapide.`,
+function withCity(text, city) {
+  return String(text || "").replaceAll("{city}", city);
+}
+
+const DYNAMIC_PAGE_VARIANTS = [
+  {
+    title: "Pizza napolitaine a {city} | Camion pizza artisanal",
+    description:
+      "Camion pizza napolitaine a {city}, produits italiens selectionnes, cuisson au feu de bois et retrait rapide.",
+    h1: "Pizza napolitaine artisanale a {city}",
+    intro:
+      "Notre pizza-location a {city} propose une pizza napolitaine artisanale, avec pate tradition italienne et cuisson maitrisee.",
     sections: [
       {
-        heading: `Camion pizza a ${city}`,
+        heading: "Une base napolitaine pour {city}",
         paragraphs: [
-          `Notre camion pizza napolitaine se deplace autour de ${city} avec des points de retrait mis a jour regulierement.`,
-          "Le planning de tournee permet de savoir quand commander et ou retirer votre pizza a emporter.",
+          "La pate est travaillee avec une fermentation lente pour obtenir une texture legere et un gout equilibre.",
+          "Les recettes sont pensees pour un service mobile rapide, sans compromis sur la qualite.",
         ],
       },
       {
-        heading: "Pizza italienne traditionnelle",
+        heading: "Ingredients italiens authentiques",
         paragraphs: [
-          "Nos pizzas sont preparees avec des produits italiens selectionnes: farine Nuvola Super, tomates San Marzano, mozzarella fior di latte et parmigiano reggiano.",
-          "La cuisson au four a bois et gaz garantit une pizza napolitaine legere, alveolee et croustillante.",
+          "Farine Nuvola Super, tomates San Marzano, mozzarella fior di latte et parmigiano reggiano composent notre base.",
+          "Chaque pizza est preparee a la commande puis cuite minute au camion.",
         ],
       },
       {
-        heading: "Retrait rapide au camion",
+        heading: "Retrait au camion a {city}",
         paragraphs: [
-          "Les pizzas sont preparees a la commande pour conserver une qualite constante.",
-          "Service uniquement a emporter, avec un retrait fluide directement au camion pizza.",
+          "Le retrait se fait directement au point de passage du camion pizza.",
+          "Commande simple, creneau clair et tres peu d'attente au moment du retrait.",
         ],
       },
     ],
+    keywordLine:
+      "pizza napolitaine artisanale | camion pizza napolitaine | pizza a emporter",
+  },
+  {
+    title: "Pizza feu de bois a {city} | Pizza-location",
+    description:
+      "Pizza feu de bois a {city} en camion pizza: recettes artisanales, ingredients italiens et retrait rapide.",
+    h1: "Pizza feu de bois a {city}",
+    intro:
+      "A {city}, notre pizza-location mise sur une cuisson vive au four a bois et gaz pour une pizza napolitaine croustillante et aerienne.",
+    sections: [
+      {
+        heading: "Cuisson bois et gaz",
+        paragraphs: [
+          "La cuisson combine intensite et regularite pour sortir chaque pizza au bon moment.",
+          "Le resultat: une corniche alveolee, une base souple et des saveurs nettes.",
+        ],
+      },
+      {
+        heading: "Carte courte et lisible",
+        paragraphs: [
+          "Nous privilegions une carte concise, facile a choisir et executee avec constance.",
+          "Le format camion pizza permet d'etre efficace sur les creneaux de retrait.",
+        ],
+      },
+      {
+        heading: "Commander a {city}",
+        paragraphs: [
+          "Les commandes se font en ligne ou directement au camion selon les disponibilites.",
+          "Le service reste 100% a emporter pour garantir fluidite et rapidite.",
+        ],
+      },
+    ],
+    keywordLine: "pizza napolitaine feu de bois | pizza feu de bois thionville | pizza artisanale moselle",
+  },
+  {
+    title: "Camion pizza a {city} | Pizza napolitaine italienne",
+    description:
+      "Camion pizza a {city}: pizza napolitaine italienne, produits d'Italie et retrait au point de passage.",
+    h1: "Camion pizza napolitaine a {city}",
+    intro:
+      "Notre camion pizza se deplace autour de {city} avec une offre napolitaine artisanale et un parcours de commande rapide.",
+    sections: [
+      {
+        heading: "Recettes italiennes a emporter",
+        paragraphs: [
+          "Nos recettes s'appuient sur des produits italiens reputes pour leur regularite et leur saveur.",
+          "Le service a emporter permet de conserver une experience simple et fiable.",
+        ],
+      },
+      {
+        heading: "Organisation par tournee",
+        paragraphs: [
+          "Les emplacements evoluent selon la semaine et les jours d'ouverture du camion.",
+          "Chaque point de retrait est affiche avec adresse et horaire pour faciliter la commande.",
+        ],
+      },
+      {
+        heading: "Qualite constante a {city}",
+        paragraphs: [
+          "Preparation minute, cuisson rapide et process stable: l'objectif est une pizza chaude, prete a deguster.",
+          "Le camion pizza reste concentre sur la regularite du service.",
+        ],
+      },
+    ],
+    keywordLine: "camion pizza napolitaine | pizza italienne traditionnelle | pizza produits italiens",
+  },
+  {
+    title: "Pizza italienne a {city} | Food truck pizza",
+    description:
+      "Pizza italienne a {city} par food truck: pate napolitaine, cuisson minute et retrait rapide.",
+    h1: "Pizza italienne traditionnelle a {city}",
+    intro:
+      "Notre food truck pizza intervient a {city} avec une approche artisanale inspiree de la tradition napolitaine.",
+    sections: [
+      {
+        heading: "Savoir-faire napolitain",
+        paragraphs: [
+          "La pate est preparee pour conserver une bonne digestibilite et un gout net.",
+          "La cuisson au four permet d'obtenir une texture reguliere sur l'ensemble de la carte.",
+        ],
+      },
+      {
+        heading: "Produits d'Italie selectionnes",
+        paragraphs: [
+          "Tomates San Marzano, mozzarella fior di latte, parmigiano reggiano et charcuteries italiennes.",
+          "Chaque ingredient est choisi pour renforcer l'identite pizza napolitaine.",
+        ],
+      },
+      {
+        heading: "Retrait sans friction a {city}",
+        paragraphs: [
+          "Le retrait au camion limite l'attente et simplifie l'experience client.",
+          "Les creneaux sont adaptes pour garder un flux de commandes stable.",
+        ],
+      },
+    ],
+    keywordLine: "pizza italienne traditionnelle | pizza napolitaine metz | pizza a emporter",
+  },
+  {
+    title: "Pizza artisanale a {city} | Retrait rapide camion",
+    description:
+      "Pizza artisanale a {city}: camion pizza, cuisson feu de bois et retrait rapide sur les points de tournee.",
+    h1: "Pizza artisanale en camion a {city}",
+    intro:
+      "La pizza-location a {city} combine artisanat, ingredients italiens et organisation efficace pour la commande a emporter.",
+    sections: [
+      {
+        heading: "Carte artisanale et execution rapide",
+        paragraphs: [
+          "Notre carte est construite pour aller a l'essentiel: qualite, lisibilite, regularite.",
+          "Les pizzas sont preparees a la commande afin de garder une qualite constante.",
+        ],
+      },
+      {
+        heading: "Tournee hebdomadaire",
+        paragraphs: [
+          "Le camion pizza couvre differents points autour de {city} selon le planning.",
+          "Les horaires et adresses sont mis a jour pour aider les clients a planifier leur retrait.",
+        ],
+      },
+      {
+        heading: "Experience client",
+        paragraphs: [
+          "Objectif: une commande simple et un retrait rapide au camion.",
+          "Le service reste 100% a emporter pour maintenir une cadence fluide.",
+        ],
+      },
+    ],
+    keywordLine: "pizza artisanale moselle | camion pizza thionville | pizza napolitaine artisanale",
+  },
+  {
+    title: "Pizza-location {city} | Pizza napolitaine en Moselle",
+    description:
+      "Page pizza-location {city}: pizza napolitaine en Moselle, ingredients italiens et cuisson bois-gaz.",
+    h1: "Pizza-location a {city}",
+    intro:
+      "Cette page locale presente notre service pizza-location a {city}, avec un contenu SEO adapte et des informations de tournee.",
+    sections: [
+      {
+        heading: "Pourquoi choisir notre pizza-location",
+        paragraphs: [
+          "Une methode napolitaine claire, des produits italiens et une cuisson maitrisee.",
+          "Le format camion pizza permet de servir vite et bien sur les zones de passage.",
+        ],
+      },
+      {
+        heading: "Disponibilite locale a {city}",
+        paragraphs: [
+          "Les points de retrait sont relies au planning de tournee et peuvent evoluer selon la semaine.",
+          "Vous retrouvez facilement le camion via la page tournee.",
+        ],
+      },
+      {
+        heading: "Commande et retrait",
+        paragraphs: [
+          "Commande en ligne puis retrait au camion dans le creneau choisi.",
+          "Service concu pour minimiser l'attente et garantir une pizza chaude.",
+        ],
+      },
+    ],
+    keywordLine: "pizza-location | pizza napolitaine artisanale | camion pizza napolitaine",
+  },
+];
+
+export function buildDynamicCityContent(cityValue, options = {}) {
+  const city = String(cityValue || "").trim() || "Moselle";
+  const slug = slugifyCity(city) || "moselle";
+  const variant = DYNAMIC_PAGE_VARIANTS[hashText(slug) % DYNAMIC_PAGE_VARIANTS.length];
+  const locationHighlights = Array.isArray(options.locationHighlights)
+    ? options.locationHighlights.filter(Boolean).slice(0, 3)
+    : [];
+
+  const sections = variant.sections.map((section, index) => {
+    const paragraphs = section.paragraphs.map((paragraph) => withCity(paragraph, city));
+    if (index === 0 && locationHighlights.length > 0) {
+      paragraphs.push(`Exemples d'emplacements actifs: ${locationHighlights.join(", ")}.`);
+    }
+    return {
+      heading: withCity(section.heading, city),
+      paragraphs,
+    };
+  });
+
+  return {
+    pathname: `/pizza-${slug}`,
+    title: withCity(variant.title, city),
+    description: withCity(variant.description, city),
+    h1: withCity(variant.h1, city),
+    intro: withCity(variant.intro, city),
+    sections,
+    keywordLine: variant.keywordLine,
   };
 }
 

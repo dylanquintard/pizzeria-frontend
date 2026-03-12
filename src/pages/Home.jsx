@@ -69,15 +69,6 @@ const DAY_LABELS = {
   SATURDAY: { fr: "Samedi", en: "Saturday" },
   SUNDAY: { fr: "Dimanche", en: "Sunday" },
 };
-const SCHEMA_DAY = {
-  MONDAY: "https://schema.org/Monday",
-  TUESDAY: "https://schema.org/Tuesday",
-  WEDNESDAY: "https://schema.org/Wednesday",
-  THURSDAY: "https://schema.org/Thursday",
-  FRIDAY: "https://schema.org/Friday",
-  SATURDAY: "https://schema.org/Saturday",
-  SUNDAY: "https://schema.org/Sunday",
-};
 const DEFAULT_HOME_BACKGROUND = "/pizza-background-1920.webp";
 const FOCUSABLE_SELECTOR =
   "button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])";
@@ -86,6 +77,10 @@ function formatLocationAddress(location, tr) {
   if (!location) return tr("Adresse non renseignee", "Address not available");
   const cityLine = `${location.postalCode || ""} ${location.city || ""}`.trim();
   return [location.addressLine1, cityLine].filter(Boolean).join(", ");
+}
+
+function getSeoLocationLabel(location) {
+  return String(location?.name || location?.city || "").trim();
 }
 
 function formatHourValue(timeValue) {
@@ -98,12 +93,6 @@ function formatHourValue(timeValue) {
 
 function formatHourRange(startTime, endTime) {
   return `${formatHourValue(startTime)}-${formatHourValue(endTime)}`;
-}
-
-function toSchemaTime(value) {
-  const match = /^([01]\d|2[0-3]):([0-5]\d)/.exec(String(value || "").trim());
-  if (!match) return null;
-  return `${match[1]}:${match[2]}`;
 }
 
 export default function Home() {
@@ -227,87 +216,23 @@ const truckTourSchedule = useMemo(
   [weeklySettings, tr]
 );
 
-  const locationStructuredEntries = useMemo(() => {
-    const grouped = new Map();
+  const truckTourCities = useMemo(() => {
     const source = Array.isArray(weeklySettings) ? weeklySettings : [];
-
-    for (const dayEntry of source) {
-      const dayOfWeek = String(dayEntry?.dayOfWeek || "").toUpperCase();
+    const dynamicLocations = source.flatMap((entry) => {
       const services =
-        Array.isArray(dayEntry?.services) && dayEntry.services.length > 0
-          ? dayEntry.services
-          : dayEntry?.isOpen && dayEntry?.location
-            ? [
-                {
-                  startTime: dayEntry.startTime,
-                  endTime: dayEntry.endTime,
-                  locationId: dayEntry.locationId,
-                  location: dayEntry.location,
-                },
-              ]
+        Array.isArray(entry?.services) && entry.services.length > 0
+          ? entry.services
+          : entry?.isOpen && entry?.location
+            ? [{ location: entry.location }]
             : [];
 
-      for (const service of services) {
-        const location = service?.location;
-        if (!location) continue;
+      return services
+        .map((service) => getSeoLocationLabel(service?.location))
+        .filter(Boolean);
+    });
 
-        const key =
-          service.locationId ||
-          `${location.name || ""}-${location.addressLine1 || ""}-${location.postalCode || ""}-${location.city || ""}`;
-        if (!grouped.has(key)) {
-          grouped.set(key, {
-            name: location.name || "Pizza Truck",
-            addressLine1: location.addressLine1 || "",
-            postalCode: location.postalCode || "",
-            city: location.city || "",
-            openingHoursSpecification: [],
-          });
-        }
-
-        const opens = toSchemaTime(service?.startTime);
-        const closes = toSchemaTime(service?.endTime);
-        const schemaDay = SCHEMA_DAY[dayOfWeek];
-        if (!opens || !closes || !schemaDay) continue;
-
-        const current = grouped.get(key);
-        const openingKey = `${schemaDay}-${opens}-${closes}`;
-        const exists = current.openingHoursSpecification.some(
-          (entry) =>
-            `${entry.dayOfWeek}-${entry.opens}-${entry.closes}` === openingKey
-        );
-
-        if (!exists) {
-          current.openingHoursSpecification.push({
-            "@type": "OpeningHoursSpecification",
-            dayOfWeek: schemaDay,
-            opens,
-            closes,
-          });
-        }
-      }
-    }
-
-    return [...grouped.values()].map((entry) => ({
-      "@type": "Place",
-      name: entry.name,
-      address: {
-        "@type": "PostalAddress",
-        streetAddress: entry.addressLine1,
-        postalCode: entry.postalCode,
-        addressLocality: entry.city,
-        addressCountry: "FR",
-      },
-      openingHoursSpecification: entry.openingHoursSpecification,
-    }));
+    return [...new Set([...DEFAULT_TOUR_CITIES, ...dynamicLocations])];
   }, [weeklySettings]);
-
-  const truckTourCities = useMemo(() => {
-    const dynamicCities = locationStructuredEntries
-      .map((entry) => entry?.address?.addressLocality)
-      .filter(Boolean);
-
-    return [...new Set([...DEFAULT_TOUR_CITIES, ...dynamicCities])];
-  }, [locationStructuredEntries]);
 
   const homeJsonLd = useMemo(() => {
     const base = buildBaseFoodEstablishmentJsonLd({

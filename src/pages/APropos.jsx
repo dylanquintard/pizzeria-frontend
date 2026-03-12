@@ -46,9 +46,27 @@ export default function APropos() {
         <article className="glass-panel p-6">
           <h2 className="text-lg font-bold text-white">Service efficace</h2>
           <p className="mt-2 text-sm text-stone-300">
-            Commande en ligne, creneaux de retrait, et organisation par tournee.
+            Commande en ligne, creneaux de retrait, et peu d'attente.
           </p>
         </article>
+      </section>
+
+      <section className="glass-panel p-6">
+        <h2 className="font-display text-3xl uppercase tracking-wide text-white">Questions frequentes</h2>
+        <div className="mt-4 space-y-4">
+          <article>
+            <h3 className="text-base font-semibold text-white">Ou trouver le camion pizza cette semaine ?</h3>
+            <p className="mt-1 text-sm text-stone-300">
+              Consultez la tournee du camion pizza pour connaitre les prochains emplacements.
+            </p>
+          </article>
+          <article>
+            <h3 className="text-base font-semibold text-white">Le service est-il sur place ou a emporter ?</h3>
+            <p className="mt-1 text-sm text-stone-300">
+              Les pizzas sont disponibles uniquement a emporter directement au camion.
+            </p>
+          </article>
+        </div>
       </section>
 
       <SeoInternalLinks />

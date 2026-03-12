@@ -10,8 +10,6 @@ const SEO_LINKS = [
   { to: "/pizza-napolitaine-thionville", label: "Pizza napolitaine Thionville" },
   { to: "/pizza-napolitaine-metz", label: "Pizza napolitaine Metz" },
   { to: "/food-truck-pizza-moselle", label: "Food truck pizza Moselle" },
-  { to: "/pizza-yutz", label: "Pizza Yutz" },
-  { to: "/pizza-florange", label: "Pizza Florange" },
 ];
 
 export default function SeoInternalLinks() {

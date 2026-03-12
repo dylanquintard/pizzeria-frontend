@@ -97,7 +97,7 @@ export default function TourneeCamion() {
 
   const visibleCities = useMemo(() => {
     const dynamicCities = schedule
-      .map((entry) => String(entry.city || "").trim())
+      .map((entry) => String(entry.locationName || entry.city || "").trim())
       .filter(Boolean);
 
     return [...new Set([...DEFAULT_TOUR_CITIES, ...dynamicCities])];
@@ -134,9 +134,9 @@ export default function TourneeCamion() {
       </header>
 
       <section className="glass-panel p-6">
-        <h2 className="font-display text-3xl uppercase tracking-wide text-white">Villes desservies par le camion pizza</h2>
+        <h2 className="font-display text-3xl uppercase tracking-wide text-white">Emplacements desservis par le camion pizza</h2>
         <p className="mt-3 text-sm text-stone-300">
-          Liste statique actuelle, qui sera alimentee automatiquement par les donnees admin de la rubrique tournee du camion.
+          Liste alimentee automatiquement depuis les emplacements configures dans le panel admin.
         </p>
         <ul className="mt-4 flex flex-wrap gap-2">
           {visibleCities.map((city) => (
@@ -179,24 +179,6 @@ export default function TourneeCamion() {
               </article>
             ))
           )}
-        </div>
-      </section>
-
-      <section className="glass-panel p-6">
-        <h2 className="font-display text-3xl uppercase tracking-wide text-white">Questions frequentes</h2>
-        <div className="mt-4 space-y-4">
-          <article>
-            <h3 className="text-base font-semibold text-white">Ou trouver le camion pizza cette semaine ?</h3>
-            <p className="mt-1 text-sm text-stone-300">
-              Consultez la tournee du camion pizza pour connaitre les prochains emplacements.
-            </p>
-          </article>
-          <article>
-            <h3 className="text-base font-semibold text-white">Le service est-il sur place ou a emporter ?</h3>
-            <p className="mt-1 text-sm text-stone-300">
-              Les pizzas sont disponibles uniquement a emporter directement au camion.
-            </p>
-          </article>
         </div>
       </section>
 
