@@ -194,9 +194,6 @@ export default function TourneeCamion() {
         <p className="max-w-3xl text-sm text-stone-300 sm:text-base">
           Retrouvez les emplacements et horaires du camion pizza napolitaine autour de Thionville et Metz.
         </p>
-        <p className="max-w-3xl text-sm text-stone-300 sm:text-base">
-          La tournee change chaque semaine avec differents points de retrait dans le nord de la Moselle.
-        </p>
       </header>
 
       <section className="glass-panel p-6">
