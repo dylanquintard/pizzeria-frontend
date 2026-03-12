@@ -585,96 +585,90 @@ const truckTourSchedule = useMemo(
           </div>
         </div>
       </section>
+      <section className="section-shell space-y-6">
+        <div className="grid gap-5 xl:grid-cols-12">
+          <article className="glass-panel p-6 sm:p-8 xl:col-span-7">
+            <p className="text-xs uppercase tracking-[0.2em] text-saffron">Pizza truck Moselle</p>
+            <h2 className="mt-2 font-display text-3xl uppercase tracking-wide text-white">
+              Camion pizza napolitaine autour de Thionville et Metz
+            </h2>
+            <p className="mt-4 text-sm leading-7 text-stone-300 sm:text-base">
+              Notre camion pizza propose des pizzas napolitaines artisanales dans le nord de la Moselle.
+            </p>
+            <p className="mt-2 text-sm leading-7 text-stone-300 sm:text-base">
+              La tournee du camion passe regulierement dans plusieurs villes autour de Thionville, Metz et des communes voisines.
+            </p>
+            <p className="mt-2 text-sm leading-7 text-stone-300 sm:text-base">
+              Les pizzas sont preparees avec une pate napolitaine traditionnelle et des produits italiens selectionnes.
+            </p>
+          </article>
 
-      <section className="section-shell space-y-5">
-        <article className="glass-panel p-6 sm:p-8">
-          <h2 className="font-display text-3xl uppercase tracking-wide text-white">
-            Camion pizza napolitaine autour de Thionville et Metz
-          </h2>
-          <p className="mt-3 text-sm leading-7 text-stone-300 sm:text-base">
-            Notre camion pizza propose des pizzas napolitaines artisanales dans le nord de la Moselle.
-          </p>
-          <p className="mt-2 text-sm leading-7 text-stone-300 sm:text-base">
-            La tournee du camion passe regulierement dans plusieurs villes autour de Thionville, Metz et des communes voisines.
-          </p>
-          <p className="mt-2 text-sm leading-7 text-stone-300 sm:text-base">
-            Les pizzas sont preparees avec une pate napolitaine traditionnelle et des produits italiens selectionnes.
-          </p>
-        </article>
+          <article className="glass-panel p-6 sm:p-8 xl:col-span-5">
+            <h2 className="font-display text-3xl uppercase tracking-wide text-white">
+              Pizza napolitaine artisanale avec produits italiens
+            </h2>
+            <p className="mt-3 text-sm leading-7 text-stone-300 sm:text-base">
+              Chaque pizza est preparee avec des ingredients italiens reconnus pour leur qualite:
+            </p>
+            <ul className="mt-4 grid gap-2 text-sm text-stone-200 sm:grid-cols-2">
+              <li className="rounded-lg border border-white/10 bg-charcoal/50 px-3 py-2">farine Nuvola Super</li>
+              <li className="rounded-lg border border-white/10 bg-charcoal/50 px-3 py-2">tomates San Marzano</li>
+              <li className="rounded-lg border border-white/10 bg-charcoal/50 px-3 py-2">mozzarella fior di latte</li>
+              <li className="rounded-lg border border-white/10 bg-charcoal/50 px-3 py-2">parmigiano reggiano</li>
+              <li className="rounded-lg border border-white/10 bg-charcoal/50 px-3 py-2">jambon de Parme</li>
+              <li className="rounded-lg border border-white/10 bg-charcoal/50 px-3 py-2">prosciutto italien</li>
+            </ul>
+            <p className="mt-4 text-xs uppercase tracking-[0.22em] text-saffron">
+              pizza napolitaine artisanale | pizza produits italiens | pizza italienne traditionnelle
+            </p>
+          </article>
+        </div>
 
-        <article className="glass-panel p-6 sm:p-8">
-          <h2 className="font-display text-3xl uppercase tracking-wide text-white">
-            Pizza napolitaine artisanale avec produits italiens
-          </h2>
-          <p className="mt-3 text-sm leading-7 text-stone-300 sm:text-base">
-            Chaque pizza est preparee avec des ingredients italiens reconnus pour leur qualite:
-          </p>
-          <ul className="mt-3 grid gap-2 text-sm text-stone-200 sm:grid-cols-2">
-            <li>• farine Nuvola Super</li>
-            <li>• tomates San Marzano</li>
-            <li>• mozzarella fior di latte</li>
-            <li>• parmigiano reggiano</li>
-            <li>• jambon de Parme</li>
-            <li>• prosciutto italien</li>
-          </ul>
-          <p className="mt-4 text-xs uppercase tracking-[0.22em] text-saffron">
-            pizza napolitaine artisanale | pizza produits italiens | pizza italienne traditionnelle
-          </p>
-        </article>
+        <div className="grid gap-5 lg:grid-cols-2">
+          <article className="glass-panel p-6 sm:p-8">
+            <h2 className="font-display text-3xl uppercase tracking-wide text-white">
+              Cuisson au four a bois et gaz
+            </h2>
+            <p className="mt-3 text-sm leading-7 text-stone-300 sm:text-base">
+              La cuisson se fait dans un four a bois et gaz permettant d'obtenir une pizza legere, alveolee et croustillante.
+            </p>
+            <p className="mt-2 text-sm leading-7 text-stone-300 sm:text-base">
+              Chaque pizza est preparee a la commande afin de garantir une qualite constante.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <span className="rounded-full border border-saffron/40 bg-saffron/10 px-3 py-1 text-[11px] uppercase tracking-wide text-saffron">
+                pizza napolitaine feu de bois
+              </span>
+              <span className="rounded-full border border-saffron/40 bg-saffron/10 px-3 py-1 text-[11px] uppercase tracking-wide text-saffron">
+                pizza feu de bois thionville
+              </span>
+              <span className="rounded-full border border-saffron/40 bg-saffron/10 px-3 py-1 text-[11px] uppercase tracking-wide text-saffron">
+                pizza artisanale moselle
+              </span>
+            </div>
+          </article>
 
-        <article className="glass-panel p-6 sm:p-8">
-          <h2 className="font-display text-3xl uppercase tracking-wide text-white">
-            Cuisson au four a bois et gaz
-          </h2>
-          <p className="mt-3 text-sm leading-7 text-stone-300 sm:text-base">
-            La cuisson se fait dans un four a bois et gaz permettant d'obtenir une pizza legere, alveolee et croustillante.
-          </p>
-          <p className="mt-2 text-sm leading-7 text-stone-300 sm:text-base">
-            Chaque pizza est preparee a la commande afin de garantir une qualite constante.
-          </p>
-          <p className="mt-4 text-xs uppercase tracking-[0.22em] text-saffron">
-            pizza napolitaine feu de bois | pizza feu de bois thionville | pizza artisanale moselle
-          </p>
-        </article>
-
-        <article className="glass-panel p-6 sm:p-8">
-          <h2 className="font-display text-3xl uppercase tracking-wide text-white">
-            Ou trouver notre camion pizza
-          </h2>
-          <p className="mt-3 text-sm leading-7 text-stone-300 sm:text-base">
-            Retrouvez notre camion pizza dans plusieurs villes autour de Thionville et Metz.
-          </p>
-          <p className="mt-2 text-sm leading-7 text-stone-300 sm:text-base">
-            Les emplacements changent selon la tournee hebdomadaire.
-          </p>
-          <p className="mt-2 text-sm leading-7 text-stone-300 sm:text-base">
-            Consultez la page tournee du camion pour connaitre les horaires et points de retrait.
-          </p>
-          <Link
-            to="/tournee-camion"
-            className="mt-4 inline-flex rounded-full border border-saffron/60 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-saffron transition hover:bg-saffron/10"
-          >
-            Voir la tournee
-          </Link>
-        </article>
-
-        <article className="glass-panel p-6 sm:p-8">
-          <h2 className="font-display text-3xl uppercase tracking-wide text-white">
-            Camion pizza dans le nord de la Moselle
-          </h2>
-          <ul className="mt-3 grid gap-2 text-sm text-stone-200 sm:grid-cols-2 lg:grid-cols-3">
-            {truckTourCities.map((city) => (
-              <li key={city}>
-                <Link to={getCityPath(city)} className="hover:text-saffron">
-                  {city}
-                </Link>
-              </li>
-            ))}
-          </ul>
-          <p className="mt-4 text-xs uppercase tracking-[0.22em] text-saffron">
-            camion pizza napolitaine | camion pizza thionville | pizza napolitaine metz | pizza a emporter
-          </p>
-        </article>
+          <article className="glass-panel p-6 sm:p-8">
+            <h2 className="font-display text-3xl uppercase tracking-wide text-white">
+              Ou trouver notre camion pizza
+            </h2>
+            <p className="mt-3 text-sm leading-7 text-stone-300 sm:text-base">
+              Retrouvez notre camion pizza dans plusieurs villes autour de Thionville et Metz.
+            </p>
+            <p className="mt-2 text-sm leading-7 text-stone-300 sm:text-base">
+              Les emplacements changent selon la tournee hebdomadaire.
+            </p>
+            <p className="mt-2 text-sm leading-7 text-stone-300 sm:text-base">
+              Consultez la page tournee du camion pour connaitre les horaires et points de retrait.
+            </p>
+            <Link
+              to="/tournee-camion"
+              className="mt-5 inline-flex rounded-full border border-saffron/60 px-5 py-2 text-xs font-semibold uppercase tracking-wide text-saffron transition hover:bg-saffron/10"
+            >
+              Voir la tournee
+            </Link>
+          </article>
+        </div>
       </section>
 
       <section id="menu" className="section-shell space-y-8">
@@ -836,6 +830,32 @@ const truckTourSchedule = useMemo(
       <ContactPanel sectionId="contact" sectionClassName="section-shell" />
 
       <section className="section-shell">
+        <div className="rounded-3xl border border-saffron/30 bg-charcoal/55 p-6 sm:p-8">
+          <h2 className="font-display text-3xl uppercase tracking-wide text-white">
+            Camion pizza dans le nord de la Moselle
+          </h2>
+          <p className="mt-2 text-sm text-stone-300 sm:text-base">
+            Villes couvertes actuellement par notre zone de service.
+          </p>
+          <ul className="mt-5 flex flex-wrap gap-2">
+            {truckTourCities.map((city) => (
+              <li key={city}>
+                <Link
+                  to={getCityPath(city)}
+                  className="inline-flex rounded-full border border-white/20 bg-charcoal/60 px-3 py-1.5 text-sm text-stone-100 transition hover:border-saffron/60 hover:text-saffron"
+                >
+                  {city}
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-5 text-xs uppercase tracking-[0.22em] text-saffron">
+            camion pizza napolitaine | camion pizza thionville | pizza napolitaine metz | pizza a emporter
+          </p>
+        </div>
+      </section>
+
+      <section className="section-shell">
         <SeoInternalLinks />
       </section>
 
@@ -927,3 +947,4 @@ const truckTourSchedule = useMemo(
     </div>
   );
 }
+
