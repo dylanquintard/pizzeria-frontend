@@ -94,6 +94,7 @@ export default function TimeslotsAdmin() {
   const [weeklySettings, setWeeklySettings] = useState([]);
   const [activeDay, setActiveDay] = useState("MONDAY");
   const [form, setForm] = useState({ ...DEFAULT_FORM });
+  const [editingService, setEditingService] = useState(null);
   const [closureForm, setClosureForm] = useState({ ...DEFAULT_CLOSURE_FORM });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -153,6 +154,10 @@ export default function TimeslotsAdmin() {
     }));
   }, [activeDaySetting]);
 
+  useEffect(() => {
+    setEditingService(null);
+  }, [activeDay]);
+
   const upsertWeeklySettingInState = (dayKey, setting) => {
     setWeeklySettings((prev) => {
       const byDay = new Map(prev.map((entry) => [entry.dayOfWeek, entry]));
@@ -171,7 +176,7 @@ export default function TimeslotsAdmin() {
 
     setSaving(true);
     try {
-      const savedSetting = await upsertWeeklySetting(token, activeDay, {
+      const nextPayload = {
         isOpen: true,
         startTime: form.startTime,
         endTime: form.endTime,
@@ -179,16 +184,84 @@ export default function TimeslotsAdmin() {
         maxPizzas: Number(form.maxPizzas),
         locationId: Number(form.locationId),
         agentId: form.agentId ? Number(form.agentId) : null,
-      });
+      };
+
+      let savedSetting;
+
+      if (editingService) {
+        await deleteWeeklyService(token, activeDay, {
+          startTime: editingService.startTime,
+          endTime: editingService.endTime,
+          locationId: Number(editingService.locationId),
+        });
+
+        try {
+          savedSetting = await upsertWeeklySetting(token, activeDay, nextPayload);
+        } catch (err) {
+          // Best-effort rollback to avoid losing the original service on save failure.
+          try {
+            await upsertWeeklySetting(token, activeDay, {
+              isOpen: true,
+              startTime: editingService.startTime,
+              endTime: editingService.endTime,
+              slotDuration: Number(editingService.slotDuration),
+              maxPizzas: Number(editingService.maxPizzas),
+              locationId: Number(editingService.locationId),
+              agentId: editingService.agentId ? Number(editingService.agentId) : null,
+            });
+          } catch (_rollbackErr) {
+            // Ignore rollback errors here, primary error will be shown to user.
+          }
+          throw err;
+        }
+      } else {
+        savedSetting = await upsertWeeklySetting(token, activeDay, nextPayload);
+      }
 
       upsertWeeklySettingInState(activeDay, savedSetting);
-      alert(tr("Service ajoute", "Service added"));
+      setEditingService(null);
+      alert(
+        editingService
+          ? tr("Service mis a jour", "Service updated")
+          : tr("Service ajoute", "Service added")
+      );
     } catch (err) {
       console.error(err);
       alert(err.response?.data?.error || err.message);
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleEditService = (service) => {
+    if (!service) return;
+
+    setEditingService({
+      startTime: service.startTime,
+      endTime: service.endTime,
+      slotDuration: Number(service.slotDuration || DEFAULT_FORM.slotDuration),
+      maxPizzas: Number(service.maxPizzas || DEFAULT_FORM.maxPizzas),
+      locationId: Number(service.locationId),
+      agentId: service.agentId ? Number(service.agentId) : null,
+    });
+
+    setForm({
+      startTime: service.startTime || DEFAULT_FORM.startTime,
+      endTime: service.endTime || DEFAULT_FORM.endTime,
+      slotDuration: Number(service.slotDuration || DEFAULT_FORM.slotDuration),
+      maxPizzas: Number(service.maxPizzas || DEFAULT_FORM.maxPizzas),
+      locationId: service.locationId ? String(service.locationId) : "",
+      agentId: service.agentId ? String(service.agentId) : "",
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingService(null);
+    setForm((prev) => ({
+      ...DEFAULT_FORM,
+      locationId: prev.locationId || "",
+      agentId: prev.agentId || "",
+    }));
   };
 
   const handleCloseDay = async () => {
@@ -464,10 +537,15 @@ export default function TimeslotsAdmin() {
             <div className="space-y-6">
               <div className="rounded-2xl border border-white/10 bg-black/20 p-4 sm:p-5">
                 <h3 className="text-lg font-bold text-white">
-                  {tr(
-                    `Ajouter un service - ${WEEK_DAYS.find((day) => day.key === activeDay)?.labelFr || ""}`,
-                    `Add service - ${WEEK_DAYS.find((day) => day.key === activeDay)?.labelEn || ""}`
-                  )}
+                  {editingService
+                    ? tr(
+                        `Modifier un service - ${WEEK_DAYS.find((day) => day.key === activeDay)?.labelFr || ""}`,
+                        `Edit service - ${WEEK_DAYS.find((day) => day.key === activeDay)?.labelEn || ""}`
+                      )
+                    : tr(
+                        `Ajouter un service - ${WEEK_DAYS.find((day) => day.key === activeDay)?.labelFr || ""}`,
+                        `Add service - ${WEEK_DAYS.find((day) => day.key === activeDay)?.labelEn || ""}`
+                      )}
                 </h3>
 
                 <form onSubmit={handleAddService} className="mt-4 space-y-4">
@@ -579,16 +657,28 @@ export default function TimeslotsAdmin() {
                     >
                       {saving
                         ? tr("Enregistrement...", "Saving...")
-                        : tr("Ajouter ce service", "Add this service")}
+                        : editingService
+                          ? tr("Enregistrer", "Save")
+                          : tr("Ajouter ce service", "Add this service")}
                     </button>
+                    {editingService ? (
+                      <button
+                        type="button"
+                        onClick={handleCancelEdit}
+                        disabled={saving}
+                        className="rounded-full border border-white/25 px-5 py-2 text-sm font-semibold text-stone-100 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {tr("Annuler", "Cancel")}
+                      </button>
+                    ) : null}
 
                     <button
                       type="button"
                       disabled={saving}
                       onClick={handleCloseDay}
-                      className="rounded-full border border-white/25 px-5 py-2 text-sm font-semibold text-stone-100 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="rounded-full border border-red-400/50 bg-red-500/10 px-5 py-2 text-sm font-semibold text-red-200 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      {tr("Fermer ce jour", "Close this day")}
+                      {tr("FERMER JOUR", "CLOSE DAY")}
                     </button>
                   </div>
                 </form>
@@ -621,13 +711,22 @@ export default function TimeslotsAdmin() {
                         <p className="text-xs text-stone-300">
                           {tr("Camion", "Truck")}: {service.agent?.name || tr("Non lie", "Not linked")}
                         </p>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteService(service)}
-                          className="mt-2 rounded-lg border border-red-400/40 bg-red-500/10 px-3 py-1 text-xs font-semibold text-red-200 transition hover:bg-red-500/20"
-                        >
-                          {tr("Supprimer ce service", "Delete this service")}
-                        </button>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleEditService(service)}
+                            className="rounded-lg border border-saffron/50 bg-saffron/10 px-3 py-1 text-xs font-semibold text-saffron transition hover:bg-saffron/20"
+                          >
+                            {tr("Modifier", "Edit")}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteService(service)}
+                            className="rounded-lg border border-red-400/40 bg-red-500/10 px-3 py-1 text-xs font-semibold text-red-200 transition hover:bg-red-500/20"
+                          >
+                            {tr("Supprimer ce service", "Delete this service")}
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
