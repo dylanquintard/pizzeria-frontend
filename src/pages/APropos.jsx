@@ -34,13 +34,13 @@ export default function APropos() {
         <article className="glass-panel p-6">
           <h2 className="text-lg font-bold text-white">Pate maison</h2>
           <p className="mt-2 text-sm text-stone-300">
-            Une fermentation adaptee au service mobile pour garder texture et gout.
+            Une fermentation traditionnelle en 2 phases, pour une texture et un gout 100% italien.
           </p>
         </article>
         <article className="glass-panel p-6">
           <h2 className="text-lg font-bold text-white">Produits italiens</h2>
           <p className="mt-2 text-sm text-stone-300">
-            Selection des ingredients pour une carte courte, lisible et qualitative.
+            Une selection de produits d'Italie pour une carte pleine de saveurs mediterraneennes.
           </p>
         </article>
         <article className="glass-panel p-6">
@@ -55,4 +55,3 @@ export default function APropos() {
     </div>
   );
 }
-
