@@ -17,7 +17,10 @@ export default function BlogArticle() {
     "@type": "Article",
     headline: article.title,
     description: article.description,
-    mainEntityOfPage: pathname,
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": pathname,
+    },
     author: {
       "@type": "Organization",
       name: "Pizza Truck",
@@ -45,15 +48,60 @@ export default function BlogArticle() {
         <p className="max-w-3xl text-sm text-stone-300 sm:text-base">{article.description}</p>
       </header>
 
-      <section className="glass-panel p-6">
-        <h2 className="text-xl font-bold text-white">Contenu en preparation</h2>
-        <p className="mt-3 text-sm leading-7 text-stone-300">
-          Cette page article est volontairement concise pour le moment.
-        </p>
-        <p className="mt-2 text-sm leading-7 text-stone-300">
-          Tu pourras fournir un contenu editorial propre ensuite, puis on l'integrera ici sans changer la structure SEO.
-        </p>
-      </section>
+      {Array.isArray(article.intro) && article.intro.length > 0 && (
+        <section className="glass-panel p-6">
+          {article.intro.map((paragraph, index) => (
+            <p key={`intro-${index}`} className="text-sm leading-7 text-stone-300">
+              {paragraph}
+            </p>
+          ))}
+        </section>
+      )}
+
+      {Array.isArray(article.sections) &&
+        article.sections.map((section, sectionIndex) => (
+          <section key={`${section.heading}-${sectionIndex}`} className="glass-panel p-6">
+            <h2 className="text-2xl font-bold text-white">{section.heading}</h2>
+
+            {Array.isArray(section.blocks) &&
+              section.blocks.map((block, blockIndex) => (
+                <div key={`${section.heading}-block-${blockIndex}`} className="mt-5">
+                  {block.subheading ? (
+                    <h3 className="text-lg font-semibold text-white">{block.subheading}</h3>
+                  ) : null}
+
+                  {Array.isArray(block.paragraphs) &&
+                    block.paragraphs.map((paragraph, paragraphIndex) => (
+                      <p
+                        key={`${section.heading}-paragraph-${blockIndex}-${paragraphIndex}`}
+                        className="mt-3 text-sm leading-7 text-stone-300"
+                      >
+                        {paragraph}
+                      </p>
+                    ))}
+
+                  {Array.isArray(block.list) && block.list.length > 0 ? (
+                    <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-stone-300">
+                      {block.list.map((item) => (
+                        <li key={`${section.heading}-${blockIndex}-${item}`}>{item}</li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </div>
+              ))}
+          </section>
+        ))}
+
+      {Array.isArray(article.conclusion) && article.conclusion.length > 0 && (
+        <section className="glass-panel p-6">
+          <h2 className="text-2xl font-bold text-white">Conclusion</h2>
+          {article.conclusion.map((paragraph, index) => (
+            <p key={`conclusion-${index}`} className="mt-3 text-sm leading-7 text-stone-300">
+              {paragraph}
+            </p>
+          ))}
+        </section>
+      )}
 
       <div className="flex flex-wrap gap-2">
         <Link
@@ -68,10 +116,15 @@ export default function BlogArticle() {
         >
           Voir le menu
         </Link>
+        <Link
+          to="/planing"
+          className="rounded-full border border-saffron/60 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-saffron transition hover:bg-saffron/10"
+        >
+          Voir la tournee
+        </Link>
       </div>
 
       <SeoInternalLinks />
     </div>
   );
 }
-

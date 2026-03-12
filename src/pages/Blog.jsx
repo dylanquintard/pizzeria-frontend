@@ -6,7 +6,7 @@ import { BLOG_ARTICLES } from "../seo/blogContent";
 export default function Blog() {
   const title = "Blog pizza napolitaine | Pizza Truck";
   const description =
-    "Blog Pizza Truck: articles courts sur la pizza napolitaine, la cuisson, les ingredients italiens et la tournee camion.";
+    "Blog Pizza Truck: guides complets sur la pizza napolitaine, la cuisson, les ingredients italiens et le savoir faire artisanal.";
 
   return (
     <div className="section-shell space-y-8 pb-20 pt-10">
@@ -18,7 +18,8 @@ export default function Blog() {
           Blog pizza napolitaine
         </h1>
         <p className="max-w-3xl text-sm text-stone-300 sm:text-base">
-          Cette section est en cours de redaction. Les pages sont pretes et le contenu detaille sera ajoute ensuite.
+          Retrouvez nos articles sur la pizza napolitaine artisanale, la cuisson au feu de bois, les produits italiens
+          et les choix techniques qui font la qualite d une pizza.
         </p>
       </header>
 
@@ -26,7 +27,7 @@ export default function Blog() {
         {BLOG_ARTICLES.map((article) => (
           <article key={article.slug} className="glass-panel p-6">
             <h2 className="text-xl font-bold text-white">{article.title}</h2>
-            <p className="mt-2 text-sm text-stone-300">{article.description}</p>
+            <p className="mt-2 text-sm text-stone-300">{article.excerpt || article.description}</p>
             <Link
               to={`/blog/${article.slug}`}
               className="mt-4 inline-flex rounded-full border border-saffron/60 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-saffron transition hover:bg-saffron/10"
@@ -41,4 +42,3 @@ export default function Blog() {
     </div>
   );
 }
-
