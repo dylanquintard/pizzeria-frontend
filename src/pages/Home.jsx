@@ -11,7 +11,7 @@ import { AuthContext } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import { useTheme } from "../context/ThemeContext";
 import { buildBaseFoodEstablishmentJsonLd } from "../seo/jsonLd";
-import { DEFAULT_TOUR_CITIES, getCityPath } from "../seo/localLandingContent";
+import { DEFAULT_TOUR_CITIES } from "../seo/localLandingContent";
 
 const paymentLogos = [
   {
@@ -753,32 +753,6 @@ const truckTourSchedule = useMemo(
       </section>
 
       <ContactPanel sectionId="contact" sectionClassName="section-shell" />
-
-      <section className="section-shell">
-        <div className="rounded-3xl border border-saffron/35 bg-stone-200/15 p-6 sm:p-8">
-          <h2 className="font-display text-3xl uppercase tracking-wide text-white">
-            Camion pizza dans le nord de la Moselle
-          </h2>
-          <p className="mt-2 text-sm text-stone-300 sm:text-base">
-            Villes couvertes actuellement par notre zone de service.
-          </p>
-          <ul className="mt-5 flex flex-wrap gap-2">
-            {truckTourCities.map((city) => (
-              <li key={city}>
-                <Link
-                  to={getCityPath(city)}
-                  className="inline-flex rounded-full border border-white/25 bg-stone-200/15 px-3 py-1.5 text-sm text-stone-100 transition hover:border-saffron/60 hover:text-saffron"
-                >
-                  {city}
-                </Link>
-              </li>
-            ))}
-          </ul>
-          <p className="mt-5 text-xs uppercase tracking-[0.22em] text-saffron">
-            camion pizza napolitaine | camion pizza thionville | pizza napolitaine metz | pizza a emporter
-          </p>
-        </div>
-      </section>
 
       <section className="section-shell">
         <SeoInternalLinks />
