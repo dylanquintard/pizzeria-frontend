@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import SeoHead from "../components/seo/SeoHead";
 import SeoInternalLinks from "../components/seo/SeoInternalLinks";
 import { getPublicWeeklySettings } from "../api/timeslot.api";
+import { getLocations } from "../api/location.api";
 import { buildBaseFoodEstablishmentJsonLd } from "../seo/jsonLd";
 import { getCityPath } from "../seo/localLandingContent";
 import { Link } from "react-router-dom";
@@ -36,21 +37,32 @@ function formatAddress(location) {
 
 export default function TourneeCamion() {
   const [weeklySettings, setWeeklySettings] = useState([]);
+  const [locations, setLocations] = useState([]);
 
   useEffect(() => {
     let cancelled = false;
 
-    getPublicWeeklySettings()
-      .then((data) => {
-        if (!cancelled) {
-          setWeeklySettings(Array.isArray(data) ? data : []);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setWeeklySettings([]);
-        }
-      });
+    Promise.allSettled([getPublicWeeklySettings(), getLocations({ active: true })]).then((results) => {
+      if (cancelled) return;
+
+      const [weeklyResult, locationsResult] = results;
+
+      setWeeklySettings(
+        weeklyResult.status === "fulfilled" && Array.isArray(weeklyResult.value)
+          ? weeklyResult.value
+          : []
+      );
+
+      setLocations(
+        locationsResult.status === "fulfilled" && Array.isArray(locationsResult.value)
+          ? locationsResult.value
+          : []
+      );
+    }).catch(() => {
+      if (cancelled) return;
+      setWeeklySettings([]);
+      setLocations([]);
+    });
 
     return () => {
       cancelled = true;
@@ -96,14 +108,16 @@ export default function TourneeCamion() {
   }, [weeklySettings]);
 
   const visibleCities = useMemo(() => {
-    return [
-      ...new Set(
-        schedule
-          .map((entry) => String(entry.locationName || entry.city || "").trim())
-          .filter(Boolean)
-      ),
-    ];
-  }, [schedule]);
+    const fromSchedule = schedule
+      .map((entry) => String(entry.locationName || entry.city || "").trim())
+      .filter(Boolean);
+
+    const fromLocations = (Array.isArray(locations) ? locations : [])
+      .map((location) => String(location?.name || location?.city || "").trim())
+      .filter(Boolean);
+
+    return [...new Set([...fromSchedule, ...fromLocations])].sort((a, b) => a.localeCompare(b, "fr"));
+  }, [schedule, locations]);
 
   const title = "Tournee camion pizza | Emplacements en Moselle";
   const description =
