@@ -34,3 +34,18 @@ export const getPickupAvailability = async (token, filters = {}) => {
   });
   return response.data;
 };
+
+export const getTruckClosures = async (token) => {
+  const response = await api.get("/timeslots/closures", authConfig(token));
+  return response.data;
+};
+
+export const createTruckClosure = async (token, data) => {
+  const response = await api.post("/timeslots/closures", data, authConfig(token));
+  return response.data;
+};
+
+export const deleteTruckClosure = async (token, closureId) => {
+  const response = await api.delete(`/timeslots/closures/${closureId}`, authConfig(token));
+  return response.data;
+};

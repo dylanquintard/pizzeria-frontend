@@ -1,7 +1,11 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { getLocations } from "../api/location.api";
+import { getPrintAgentsAdmin } from "../api/admin.api";
 import {
+  createTruckClosure,
+  deleteTruckClosure,
   deleteWeeklyService,
+  getTruckClosures,
   getWeeklySettings,
   upsertWeeklySetting,
 } from "../api/timeslot.api";
@@ -24,6 +28,14 @@ const DEFAULT_FORM = {
   slotDuration: 15,
   maxPizzas: 10,
   locationId: "",
+  agentId: "",
+};
+
+const DEFAULT_CLOSURE_FORM = {
+  agentId: "",
+  startDate: "",
+  endDate: "",
+  reason: "",
 };
 
 function formatLocation(location, tr) {
@@ -63,14 +75,26 @@ function normalizeServices(setting = {}) {
   return [];
 }
 
+function formatDateValue(value) {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "--";
+  const year = parsed.getFullYear();
+  const month = String(parsed.getMonth() + 1).padStart(2, "0");
+  const day = String(parsed.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 export default function TimeslotsAdmin() {
   const { token } = useContext(AuthContext);
   const { tr } = useLanguage();
 
   const [locations, setLocations] = useState([]);
+  const [agents, setAgents] = useState([]);
+  const [closures, setClosures] = useState([]);
   const [weeklySettings, setWeeklySettings] = useState([]);
   const [activeDay, setActiveDay] = useState("MONDAY");
   const [form, setForm] = useState({ ...DEFAULT_FORM });
+  const [closureForm, setClosureForm] = useState({ ...DEFAULT_CLOSURE_FORM });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -88,12 +112,16 @@ export default function TimeslotsAdmin() {
   const refreshData = useCallback(async () => {
     setLoading(true);
     try {
-      const [locationData, settingsData] = await Promise.all([
+      const [locationData, settingsData, agentsData, closuresData] = await Promise.all([
         getLocations({ active: true }),
         getWeeklySettings(token),
+        getPrintAgentsAdmin(token),
+        getTruckClosures(token),
       ]);
       setLocations(Array.isArray(locationData) ? locationData : []);
       setWeeklySettings(Array.isArray(settingsData) ? settingsData : []);
+      setAgents(Array.isArray(agentsData) ? agentsData : []);
+      setClosures(Array.isArray(closuresData) ? closuresData : []);
     } catch (err) {
       console.error(err);
       alert(
@@ -119,6 +147,9 @@ export default function TimeslotsAdmin() {
       locationId:
         prev.locationId ||
         (firstService?.locationId ? String(firstService.locationId) : ""),
+      agentId:
+        prev.agentId ||
+        (firstService?.agentId ? String(firstService.agentId) : ""),
     }));
   }, [activeDaySetting]);
 
@@ -147,6 +178,7 @@ export default function TimeslotsAdmin() {
         slotDuration: Number(form.slotDuration),
         maxPizzas: Number(form.maxPizzas),
         locationId: Number(form.locationId),
+        agentId: form.agentId ? Number(form.agentId) : null,
       });
 
       upsertWeeklySettingInState(activeDay, savedSetting);
@@ -210,6 +242,64 @@ export default function TimeslotsAdmin() {
       setSaving(false);
     }
   };
+
+  const handleAddClosure = async (event) => {
+    event.preventDefault();
+
+    if (!closureForm.agentId) {
+      alert(tr("Selectionnez un camion", "Select a truck"));
+      return;
+    }
+
+    if (!closureForm.startDate || !closureForm.endDate) {
+      alert(tr("Selectionnez une plage de dates", "Select a date range"));
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const created = await createTruckClosure(token, {
+        agentId: Number(closureForm.agentId),
+        startDate: closureForm.startDate,
+        endDate: closureForm.endDate,
+        reason: closureForm.reason || null,
+      });
+      setClosures((prev) => [...prev, created]);
+      setClosureForm({ ...DEFAULT_CLOSURE_FORM, agentId: closureForm.agentId });
+      alert(tr("Fermeture enregistree", "Closure saved"));
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.error || err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteClosure = async (closureId) => {
+    if (!window.confirm(tr("Supprimer cette fermeture ?", "Delete this closure?"))) {
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await deleteTruckClosure(token, closureId);
+      setClosures((prev) => prev.filter((entry) => Number(entry.id) !== Number(closureId)));
+      alert(tr("Fermeture supprimee", "Closure deleted"));
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.error || err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const sortedClosures = useMemo(
+    () =>
+      [...closures].sort((left, right) =>
+        String(left?.startDate || "").localeCompare(String(right?.startDate || ""))
+      ),
+    [closures]
+  );
 
   return (
     <div className="space-y-6">
@@ -353,6 +443,24 @@ export default function TimeslotsAdmin() {
                       ))}
                     </select>
                   </label>
+
+                  <label className="text-sm text-stone-300 sm:col-span-2">
+                    {tr("Camion lie", "Linked truck")}
+                    <select
+                      value={form.agentId}
+                      onChange={(event) =>
+                        setForm((prev) => ({ ...prev, agentId: event.target.value }))
+                      }
+                      className="mt-1 w-full rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-white"
+                    >
+                      <option value="">{tr("Aucun camion", "No truck")}</option>
+                      {agents.map((agent) => (
+                        <option key={agent.id} value={agent.id}>
+                          {agent.name} ({agent.code})
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                 </div>
 
                 <div className="flex flex-wrap gap-2">
@@ -401,6 +509,9 @@ export default function TimeslotsAdmin() {
                         <p className="text-xs text-stone-300">
                           {tr("Adresse", "Address")}: {formatLocation(service.location, tr)}
                         </p>
+                        <p className="text-xs text-stone-300">
+                          {tr("Camion", "Truck")}: {service.agent?.name || tr("Non lie", "Not linked")}
+                        </p>
                         <button
                           type="button"
                           onClick={() => handleDeleteService(service)}
@@ -412,6 +523,111 @@ export default function TimeslotsAdmin() {
                     ))}
                   </div>
                 )}
+              </div>
+
+              <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                <h4 className="text-sm font-semibold uppercase tracking-wide text-saffron">
+                  {tr("Dates de fermeture camion", "Truck closure dates")}
+                </h4>
+
+                <form onSubmit={handleAddClosure} className="mt-3 grid gap-3 sm:grid-cols-2">
+                  <label className="text-sm text-stone-300 sm:col-span-2">
+                    {tr("Camion", "Truck")}
+                    <select
+                      value={closureForm.agentId}
+                      onChange={(event) =>
+                        setClosureForm((prev) => ({ ...prev, agentId: event.target.value }))
+                      }
+                      required
+                      className="mt-1 w-full rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-white"
+                    >
+                      <option value="">{tr("Choisir un camion", "Choose a truck")}</option>
+                      {agents.map((agent) => (
+                        <option key={agent.id} value={agent.id}>
+                          {agent.name} ({agent.code})
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="text-sm text-stone-300">
+                    {tr("Du", "From")}
+                    <input
+                      type="date"
+                      value={closureForm.startDate}
+                      onChange={(event) =>
+                        setClosureForm((prev) => ({ ...prev, startDate: event.target.value }))
+                      }
+                      required
+                      className="mt-1 w-full rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-white"
+                    />
+                  </label>
+
+                  <label className="text-sm text-stone-300">
+                    {tr("Au", "To")}
+                    <input
+                      type="date"
+                      value={closureForm.endDate}
+                      onChange={(event) =>
+                        setClosureForm((prev) => ({ ...prev, endDate: event.target.value }))
+                      }
+                      required
+                      className="mt-1 w-full rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-white"
+                    />
+                  </label>
+
+                  <label className="text-sm text-stone-300 sm:col-span-2">
+                    {tr("Motif (optionnel)", "Reason (optional)")}
+                    <input
+                      type="text"
+                      value={closureForm.reason}
+                      onChange={(event) =>
+                        setClosureForm((prev) => ({ ...prev, reason: event.target.value }))
+                      }
+                      maxLength={500}
+                      className="mt-1 w-full rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-white"
+                    />
+                  </label>
+
+                  <div className="sm:col-span-2">
+                    <button
+                      type="submit"
+                      disabled={saving}
+                      className="rounded-full bg-saffron px-5 py-2 text-sm font-bold uppercase tracking-wide text-charcoal transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {tr("Ajouter fermeture", "Add closure")}
+                    </button>
+                  </div>
+                </form>
+
+                <div className="mt-4 space-y-2">
+                  {sortedClosures.length === 0 ? (
+                    <p className="text-sm text-stone-400">{tr("Aucune fermeture", "No closure")}</p>
+                  ) : (
+                    sortedClosures.map((closure) => (
+                      <div
+                        key={closure.id}
+                        className="rounded-xl border border-white/10 bg-charcoal/45 px-3 py-2 text-sm text-stone-200"
+                      >
+                        <p className="font-semibold text-white">
+                          {closure.agent?.name || tr("Camion", "Truck")} ({closure.agent?.code || "?"})
+                        </p>
+                        <p className="text-xs text-stone-300">
+                          {tr("Du", "From")} {formatDateValue(closure.startDate)} {tr("au", "to")}{" "}
+                          {formatDateValue(closure.endDate)}
+                        </p>
+                        {closure.reason ? <p className="text-xs text-stone-300">{closure.reason}</p> : null}
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteClosure(closure.id)}
+                          className="mt-2 rounded-lg border border-red-400/40 bg-red-500/10 px-3 py-1 text-xs font-semibold text-red-200 transition hover:bg-red-500/20"
+                        >
+                          {tr("Supprimer fermeture", "Delete closure")}
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
             </div>
           )}
