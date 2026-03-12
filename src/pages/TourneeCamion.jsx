@@ -3,7 +3,7 @@ import SeoHead from "../components/seo/SeoHead";
 import SeoInternalLinks from "../components/seo/SeoInternalLinks";
 import { getPublicWeeklySettings } from "../api/timeslot.api";
 import { buildBaseFoodEstablishmentJsonLd } from "../seo/jsonLd";
-import { DEFAULT_TOUR_CITIES, getCityPath } from "../seo/localLandingContent";
+import { getCityPath } from "../seo/localLandingContent";
 import { Link } from "react-router-dom";
 
 const DAY_LABELS = {
@@ -96,11 +96,13 @@ export default function TourneeCamion() {
   }, [weeklySettings]);
 
   const visibleCities = useMemo(() => {
-    const dynamicCities = schedule
-      .map((entry) => String(entry.locationName || entry.city || "").trim())
-      .filter(Boolean);
-
-    return [...new Set([...DEFAULT_TOUR_CITIES, ...dynamicCities])];
+    return [
+      ...new Set(
+        schedule
+          .map((entry) => String(entry.locationName || entry.city || "").trim())
+          .filter(Boolean)
+      ),
+    ];
   }, [schedule]);
 
   const title = "Tournee camion pizza | Emplacements en Moselle";
@@ -134,30 +136,22 @@ export default function TourneeCamion() {
       </header>
 
       <section className="glass-panel p-6">
-        <h2 className="font-display text-3xl uppercase tracking-wide text-white">Emplacements desservis par le camion pizza</h2>
-        <p className="mt-3 text-sm text-stone-300">
-          Liste alimentee automatiquement depuis les emplacements configures dans le panel admin.
-        </p>
-        <ul className="mt-4 flex flex-wrap gap-2">
-          {visibleCities.map((city) => (
-            <li key={city}>
-              <Link
-                to={getCityPath(city)}
-                className="inline-flex rounded-full border border-white/20 px-3 py-1 text-xs text-stone-200 transition hover:border-saffron/70 hover:text-saffron"
-              >
-                {city}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="glass-panel p-6">
         <h2 className="font-display text-3xl uppercase tracking-wide text-white">Emplacements du camion pizza</h2>
-        <p className="mt-3 text-sm text-stone-300">
-          Le planning est mis a jour regulierement afin d'indiquer les prochains points de retrait du camion pizza.
-        </p>
-        <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {visibleCities.length > 0 && (
+          <ul className="mt-4 flex flex-wrap gap-2">
+            {visibleCities.map((city) => (
+              <li key={city}>
+                <Link
+                  to={getCityPath(city)}
+                  className="inline-flex rounded-full border border-white/20 px-3 py-1 text-xs text-stone-200 transition hover:border-saffron/70 hover:text-saffron"
+                >
+                  {city}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {schedule.length === 0 ? (
             <div className="glass-panel p-5 text-sm text-stone-300">
               Aucun horaire disponible pour le moment.

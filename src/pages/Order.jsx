@@ -942,7 +942,7 @@ export default function Order() {
                     </svg>
                   </button>
 
-                  <span className="min-w-0 flex-1 rounded-xl border border-white/20 bg-charcoal/50 px-3 py-2 text-center text-sm font-semibold text-stone-100">
+                  <span className="min-w-0 flex-1 rounded-xl border border-white/20 bg-white/5 px-3 py-2 text-center text-sm font-semibold text-stone-100">
                     {formatNavigatorDate(selectedDate, locale)}
                   </span>
 
