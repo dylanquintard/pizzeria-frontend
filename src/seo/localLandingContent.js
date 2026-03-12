@@ -37,89 +37,96 @@ export const SEO_KEYWORDS_SENTENCES = [
 export const LOCAL_PAGE_CONTENT = {
   thionville: {
     pathname: "/pizza-napolitaine-thionville",
-    title: "Pizza napolitaine autour de Thionville | Camion pizza artisanal",
+    title: "Pizza napolitaine proche de Thionville | Camion pizza artisanal",
     description:
-      "Pizza napolitaine artisanale autour de Thionville: camion pizza artisanal, cuisson au feu de bois et gaz, retrait rapide.",
+      "Pizza napolitaine artisanale proche de Thionville: cuisson bois-gaz, produits italiens selectionnes et retrait rapide au camion.",
     h1: "Pizza napolitaine artisanale autour de Thionville",
     intro:
-      "Vous cherchez une pizza napolitaine proche de Thionville ? Notre camion pizza propose des pizzas artisanales preparees selon la tradition italienne avec des produits authentiques et une pate travaillee dans l'esprit napolitain.",
+      "Vous cherchez une pizza napolitaine proche de Thionville ? Notre camion pizza propose une carte artisanale, avec une pate travaillee dans l'esprit napolitain et des ingredients italiens reconnus.",
     sections: [
       {
-        heading: "Une pizza napolitaine authentique",
+        heading: "Une pizza inspiree de Naples",
         paragraphs: [
-          "Nos pizzas sont realisees avec des ingredients italiens selectionnes : farine Nuvola Super, tomates San Marzano, mozzarella fior di latte, parmigiano reggiano, jambon de Parme et prosciutto italien.",
-          "Chaque pizza est cuite au four a bois et gaz pour obtenir une cuisson rapide et une pate legere et savoureuse.",
+          "La base repose sur une fermentation en deux temps et une execution minute au camion pour garder texture, legerete et regularite.",
+          "Nous utilisons notamment farine Nuvola Super, tomates San Marzano, mozzarella fior di latte, parmigiano reggiano et charcuteries italiennes.",
         ],
       },
       {
-        heading: "Camion pizza autour de Thionville",
+        heading: "Camion pizza dans la region",
         paragraphs: [
-          "Notre camion pizza se deplace dans differents endroit de la region.",
-          "Les points de retrait changent selon la tournee hebdomadaire du camion pizza. Le retrait se fait directement au camion avec tres peu d'attente.",
+          "Le camion se deplace sur plusieurs points de passage autour de Thionville selon le planning de la semaine.",
+          "Les adresses et horaires evoluent selon la tournee, avec un fonctionnement simple: commande puis retrait direct au camion.",
         ],
       },
       {
-        heading: "Une pizza artisanale a emporter",
+        heading: "Commande simple, retrait rapide",
         paragraphs: [
-          "Le service est uniquement a emporter.",
-          "Vous pouvez commander votre pizza directement sur place ou en ligne selon les creneaux disponibles. L'objectif est de proposer un service rapide et une pizza chaude prete a etre degustee.",
+          "Le service est 100% a emporter pour garder une organisation fluide sur les creneaux.",
+          "Vous pouvez commander en ligne ou sur place selon disponibilite, puis recuperer une pizza chaude prete a deguster.",
         ],
       },
     ],
   },
   metz: {
     pathname: "/pizza-napolitaine-metz",
-    title: "Pizza napolitaine a Metz | Camion pizza artisanal",
+    title: "Pizza napolitaine proche de Metz | Camion pizza artisanal",
     description:
-      "Pizza napolitaine artisanale autour de Metz, camion pizza artisanal, cuisson au feu de bois et retrait au camion.",
+      "Pizza napolitaine artisanale proche de Metz: camion pizza, produits italiens, cuisson bois-gaz et retrait rapide.",
     h1: "Pizza napolitaine artisanale autour de Metz",
     intro:
-      "Notre camion pizza propose des pizzas napolitaines artisanales autour de Metz. Chaque pizza est preparee avec des ingredients italiens authentiques et cuite dans un four a bois et gaz pour garantir une qualite constante.",
+      "Autour de Metz, notre camion pizza propose des recettes napolitaines travaillees avec des produits italiens et une cuisson maitrisee au four bois-gaz.",
     sections: [
       {
         heading: "Une pizza inspiree de la tradition napolitaine",
         paragraphs: [
-          "La pate est travaillee selon la methode napolitaine classique.",
-          "Les ingredients sont selectionnes pour leur qualite : farine Nuvola Super, tomates San Marzano, mozzarella fior di latte, parmigiano reggiano et charcuteries italiennes.",
+          "La pate est preparee pour offrir une base souple, une corniche aerienne et un bon equilibre en bouche.",
+          "Les ingredients sont choisis pour leur regularite: farine Nuvola Super, tomates San Marzano, mozzarella fior di latte, parmigiano reggiano et charcuteries italiennes.",
         ],
       },
       {
         heading: "Camion pizza autour de Metz",
         paragraphs: [
-          "Notre camion pizza se deplace dans plusieurs zones autour de Metz et dans le nord de la Moselle.",
-          "Les emplacements changent selon la tournee hebdomadaire.",
+          "Notre camion pizza se deplace dans differents secteurs proches de Metz et du nord mosellan.",
+          "Chaque semaine, la tournee precise les points de retrait et les horaires disponibles.",
         ],
       },
       {
         heading: "Retrait rapide et pizzas fraiches",
         paragraphs: [
-          "Les pizzas sont preparees a la commande et cuites au four a bois et gaz.",
-          "Le retrait se fait directement au camion avec tres peu d'attente.",
+          "Les pizzas sont preparees a la commande pour conserver qualite et temperature au moment du service.",
+          "Le retrait se fait directement au camion avec peu d'attente, sur creneau clair.",
         ],
       },
     ],
   },
   moselle: {
     pathname: "/food-truck-pizza-moselle",
-    title: "Food truck pizza Moselle | Pizza napolitaine artisanale",
+    title: "Food truck pizza en Moselle | Pizza napolitaine artisanale",
     description:
-      "Food truck pizza en Moselle: pizza napolitaine artisanale, cuisson au feu de bois, produits italiens et retrait rapide.",
+      "Food truck pizza en Moselle: pizzas napolitaines artisanales, produits italiens, cuisson bois-gaz et retrait rapide.",
     h1: "Food truck pizza en Moselle",
     intro:
-      "Notre camion pizza napolitaine dessert le nord de la Moselle avec des pizzas artisanales, une cuisson au feu de bois et un retrait rapide.",
+      "Notre camion pizza napolitaine couvre plusieurs communes de Moselle avec une offre artisanale, des ingredients italiens et un service de retrait efficace.",
     sections: [
       {
-        heading: "Une offre locale pour la Moselle",
+        heading: "Une tournee locale dans le nord mosellan",
         paragraphs: [
-          "Nous couvrons plusieurs communes autour de Thionville, Metz et des villes voisines selon la tournee.",
-          "La carte est pensee pour la qualite, la regularite et la rapidite du service.",
+          "La tournee passe par differents points autour de Thionville, Metz et des villes voisines selon la semaine.",
+          "Les emplacements et horaires sont mis a jour regulierement pour faciliter la commande a emporter.",
         ],
       },
       {
-        heading: "Pizza italienne traditionnelle a emporter",
+        heading: "Une carte claire, orientee qualite",
         paragraphs: [
-          "Chaque pizza est preparee a la commande avec des ingredients italiens reconnus.",
-          "Le service est organise autour du retrait au camion pour limiter l'attente.",
+          "Chaque pizza est preparee a la commande avec une base d'ingredients italiens selectionnes.",
+          "Le format camion permet de garder un service fluide, une cuisson reguliere et un retrait rapide.",
+        ],
+      },
+      {
+        heading: "Un service simple pour commander",
+        paragraphs: [
+          "Commande en ligne ou sur place selon disponibilite, puis retrait dans le creneau choisi.",
+          "L'objectif reste le meme: une pizza chaude, bien executee, et peu d'attente.",
         ],
       },
     ],
@@ -141,197 +148,190 @@ function withCity(text, city) {
 
 const DYNAMIC_PAGE_VARIANTS = [
   {
-    title: "Pizza napolitaine a {city} | Camion pizza artisanal",
+    title: "Camion pizza autour de {city} | Pizza napolitaine artisanale",
     description:
-      "Camion pizza napolitaine a {city}, produits italiens selectionnes, cuisson au feu de bois et retrait rapide.",
-    h1: "Pizza napolitaine artisanale a {city}",
+      "Pizza napolitaine artisanale autour de {city}, ingredients italiens et cuisson bois-gaz avec retrait rapide.",
+    h1: "Pizza napolitaine artisanale autour de {city}",
     intro:
-      "Notre pizza-location a {city} propose une pizza napolitaine artisanale, avec pate tradition italienne et cuisson maitrisee.",
+      "Autour de {city}, notre camion pizza propose une offre napolitaine artisanale avec une execution rapide et reguliere.",
     sections: [
       {
-        heading: "Une base napolitaine pour {city}",
+        heading: "Une base napolitaine maitrisee",
         paragraphs: [
-          "La pate est travaillee avec une fermentation lente pour obtenir une texture legere et un gout equilibre.",
-          "Les recettes sont pensees pour un service mobile rapide, sans compromis sur la qualite.",
+          "La pate est preparee avec une fermentation en deux temps pour garder legerete, souplesse et gout.",
+          "La cuisson minute au camion permet de servir chaud tout en conservant une qualite constante.",
         ],
       },
       {
         heading: "Ingredients italiens authentiques",
         paragraphs: [
-          "Farine Nuvola Super, tomates San Marzano, mozzarella fior di latte et parmigiano reggiano composent notre base.",
-          "Chaque pizza est preparee a la commande puis cuite minute au camion.",
+          "Farine Nuvola Super, tomates San Marzano, mozzarella fior di latte et parmigiano reggiano structurent notre base produit.",
+          "Nous completions la carte avec des charcuteries italiennes selectionnees selon les recettes.",
         ],
       },
       {
-        heading: "Retrait au camion a {city}",
+        heading: "Commander proche de {city}",
         paragraphs: [
-          "Le retrait se fait directement au point de passage du camion pizza.",
-          "Commande simple, creneau clair et tres peu d'attente au moment du retrait.",
+          "Le retrait se fait sur les points de passage annonces dans la tournee hebdomadaire.",
+          "Commande en ligne ou sur place, puis retrait dans le creneau choisi avec peu d'attente.",
         ],
       },
     ],
-    keywordLine:
-      "pizza napolitaine artisanale | camion pizza napolitaine | pizza a emporter",
   },
   {
-    title: "Pizza feu de bois a {city} | Pizza-location",
+    title: "Pizza feu de bois proche de {city} | Camion pizza",
     description:
-      "Pizza feu de bois a {city} en camion pizza: recettes artisanales, ingredients italiens et retrait rapide.",
-    h1: "Pizza feu de bois a {city}",
+      "Pizza feu de bois proche de {city}: recettes napolitaines artisanales, service camion et retrait rapide.",
+    h1: "Pizza feu de bois autour de {city}",
     intro:
-      "A {city}, notre pizza-location mise sur une cuisson vive au four a bois et gaz pour une pizza napolitaine croustillante et aerienne.",
+      "Autour de {city}, nous misons sur une cuisson vive au four bois-gaz pour une pizza napolitaine equilibree.",
     sections: [
       {
         heading: "Cuisson bois et gaz",
         paragraphs: [
-          "La cuisson combine intensite et regularite pour sortir chaque pizza au bon moment.",
-          "Le resultat: une corniche alveolee, une base souple et des saveurs nettes.",
+          "La cuisson combine intensite et precision pour sortir chaque pizza au bon moment.",
+          "Le resultat vise une corniche alveolee, une base souple et des saveurs nettes.",
         ],
       },
       {
-        heading: "Carte courte et lisible",
+        heading: "Carte concise, execution stable",
         paragraphs: [
-          "Nous privilegions une carte concise, facile a choisir et executee avec constance.",
-          "Le format camion pizza permet d'etre efficace sur les creneaux de retrait.",
+          "Nous privilegions une carte courte, facile a choisir et executee avec constance sur le service mobile.",
+          "Le format camion permet de rester efficace sur les creneaux de retrait.",
         ],
       },
       {
-        heading: "Commander a {city}",
+        heading: "Retrait autour de {city}",
         paragraphs: [
-          "Les commandes se font en ligne ou directement au camion selon les disponibilites.",
-          "Le service reste 100% a emporter pour garantir fluidite et rapidite.",
-        ],
-      },
-    ],
-    keywordLine: "pizza napolitaine feu de bois | pizza feu de bois thionville | pizza artisanale moselle",
-  },
-  {
-    title: "Camion pizza a {city} | Pizza napolitaine italienne",
-    description:
-      "Camion pizza a {city}: pizza napolitaine italienne, produits d'Italie et retrait au point de passage.",
-    h1: "Camion pizza napolitaine a {city}",
-    intro:
-      "Notre camion pizza se deplace autour de {city} avec une offre napolitaine artisanale et un parcours de commande rapide.",
-    sections: [
-      {
-        heading: "Recettes italiennes a emporter",
-        paragraphs: [
-          "Nos recettes s'appuient sur des produits italiens reputes pour leur regularite et leur saveur.",
-          "Le service a emporter permet de conserver une experience simple et fiable.",
-        ],
-      },
-      {
-        heading: "Organisation par tournee",
-        paragraphs: [
-          "Les emplacements evoluent selon la semaine et les jours d'ouverture du camion.",
-          "Chaque point de retrait est affiche avec adresse et horaire pour faciliter la commande.",
-        ],
-      },
-      {
-        heading: "Qualite constante a {city}",
-        paragraphs: [
-          "Preparation minute, cuisson rapide et process stable: l'objectif est une pizza chaude, prete a deguster.",
-          "Le camion pizza reste concentre sur la regularite du service.",
+          "Les commandes se font en ligne ou directement au camion selon disponibilite.",
+          "Le service est organise en 100% a emporter pour garantir fluidite et rapidite.",
         ],
       },
     ],
-    keywordLine: "camion pizza napolitaine | pizza italienne traditionnelle | pizza produits italiens",
   },
   {
-    title: "Pizza italienne a {city} | Food truck pizza",
+    title: "Retrait pizza autour de {city} | Camion napolitain",
     description:
-      "Pizza italienne a {city} par food truck: pate napolitaine, cuisson minute et retrait rapide.",
-    h1: "Pizza italienne traditionnelle a {city}",
+      "Retrait pizza autour de {city}: camion napolitain, produits italiens et cuisson rapide.",
+    h1: "Retrait pizza autour de {city}",
     intro:
-      "Notre food truck pizza intervient a {city} avec une approche artisanale inspiree de la tradition napolitaine.",
+      "Notre camion pizza circule autour de {city} avec un parcours de commande simple et des pizzas preparees minute.",
     sections: [
       {
-        heading: "Savoir-faire napolitain",
+        heading: "Recettes italiennes bien executees",
         paragraphs: [
-          "La pate est preparee pour conserver une bonne digestibilite et un gout net.",
-          "La cuisson au four permet d'obtenir une texture reguliere sur l'ensemble de la carte.",
+          "Nos recettes s'appuient sur des ingredients italiens connus pour leur regularite et leur saveur.",
+          "La preparation minute permet de garder une pizza chaude au moment du retrait.",
+        ],
+      },
+      {
+        heading: "Organisation par planning hebdomadaire",
+        paragraphs: [
+          "Les emplacements evoluent selon les jours d'ouverture et la tournee de la semaine.",
+          "Chaque point de retrait est affiche avec adresse et horaire pour faciliter l'organisation.",
+        ],
+      },
+      {
+        heading: "Un service clair autour de {city}",
+        paragraphs: [
+          "Objectif: commande simple, retrait clair, et qualite stable a chaque passage du camion.",
+          "Le service reste concentre sur l'essentiel: bonne pizza, bon creneau, peu d'attente.",
+        ],
+      },
+    ],
+  },
+  {
+    title: "Pizza italienne proche de {city} | Food truck pizza",
+    description:
+      "Pizza italienne proche de {city} par food truck: pate napolitaine, cuisson minute et retrait rapide.",
+    h1: "Pizza italienne traditionnelle autour de {city}",
+    intro:
+      "Notre food truck pizza intervient autour de {city} avec une approche artisanale inspiree de la tradition napolitaine.",
+    sections: [
+      {
+        heading: "Savoir-faire napolitain applique au service mobile",
+        paragraphs: [
+          "La pate est preparee pour conserver digestibilite, gout et regularite de texture.",
+          "La cuisson au four bois-gaz permet une execution stable sur l'ensemble de la carte.",
         ],
       },
       {
         heading: "Produits d'Italie selectionnes",
         paragraphs: [
           "Tomates San Marzano, mozzarella fior di latte, parmigiano reggiano et charcuteries italiennes.",
-          "Chaque ingredient est choisi pour renforcer l'identite pizza napolitaine.",
+          "Chaque ingredient est choisi pour renforcer le profil napolitain sans alourdir les recettes.",
         ],
       },
       {
-        heading: "Retrait sans friction a {city}",
+        heading: "Retrait sans friction autour de {city}",
         paragraphs: [
           "Le retrait au camion limite l'attente et simplifie l'experience client.",
-          "Les creneaux sont adaptes pour garder un flux de commandes stable.",
+          "Les creneaux sont adaptes pour garder un flux de commandes regulier.",
         ],
       },
     ],
-    keywordLine: "pizza italienne traditionnelle | pizza napolitaine metz | pizza a emporter",
   },
   {
-    title: "Pizza artisanale a {city} | Retrait rapide camion",
+    title: "Camion pizza en tournee vers {city} | Pizza artisanale",
     description:
-      "Pizza artisanale a {city}: camion pizza, cuisson feu de bois et retrait rapide sur les points de tournee.",
-    h1: "Pizza artisanale en camion a {city}",
+      "Camion pizza en tournee vers {city}: pizzas artisanales, cuisson feu de bois-gaz et retrait rapide.",
+    h1: "Camion pizza en tournee autour de {city}",
     intro:
-      "La pizza-location a {city} combine artisanat, ingredients italiens et organisation efficace pour la commande a emporter.",
+      "Autour de {city}, la tournee du camion pizza combine artisanat, ingredients italiens et organisation efficace.",
     sections: [
       {
-        heading: "Carte artisanale et execution rapide",
+        heading: "Carte artisanale et execution precise",
         paragraphs: [
-          "Notre carte est construite pour aller a l'essentiel: qualite, lisibilite, regularite.",
-          "Les pizzas sont preparees a la commande afin de garder une qualite constante.",
+          "Notre carte est construite pour aller a l'essentiel: qualite, lisibilite et regularite.",
+          "Les pizzas sont preparees a la commande pour conserver une qualite constante.",
         ],
       },
       {
         heading: "Tournee hebdomadaire",
         paragraphs: [
-          "Le camion pizza couvre differents points autour de {city} selon le planning.",
-          "Les horaires et adresses sont mis a jour pour aider les clients a planifier leur retrait.",
+          "Le camion couvre differents points autour de {city} selon le planning de la semaine.",
+          "Les horaires et adresses sont mis a jour pour aider a planifier le retrait.",
         ],
       },
       {
-        heading: "Experience client",
+        heading: "Experience client au retrait",
         paragraphs: [
-          "Objectif: une commande simple et un retrait rapide au camion.",
+          "Objectif: commande simple, retrait rapide, pizza chaude.",
           "Le service reste 100% a emporter pour maintenir une cadence fluide.",
         ],
       },
     ],
-    keywordLine: "pizza artisanale moselle | camion pizza thionville | pizza napolitaine artisanale",
   },
   {
-    title: "Pizza-location {city} | Pizza napolitaine en Moselle",
+    title: "Pizza a emporter autour de {city} | Camion pizza mosellan",
     description:
-      "Page pizza-location {city}: pizza napolitaine en Moselle, ingredients italiens et cuisson bois-gaz.",
-    h1: "Pizza-location a {city}",
+      "Pizza a emporter autour de {city}: camion pizza mosellan, ingredients italiens et cuisson bois-gaz.",
+    h1: "Pizza a emporter autour de {city}",
     intro:
-      "Cette page locale presente notre service pizza-location a {city}, avec un contenu SEO adapte et des informations de tournee.",
+      "Cette page locale presente notre service de camion pizza autour de {city}, avec infos utiles pour la commande et la tournee.",
     sections: [
       {
-        heading: "Pourquoi choisir notre pizza-location",
+        heading: "Pourquoi choisir notre camion pizza",
         paragraphs: [
           "Une methode napolitaine claire, des produits italiens et une cuisson maitrisee.",
-          "Le format camion pizza permet de servir vite et bien sur les zones de passage.",
+          "Le format camion permet de servir vite et bien sur les zones de passage.",
         ],
       },
       {
-        heading: "Disponibilite locale a {city}",
+        heading: "Disponibilite locale autour de {city}",
         paragraphs: [
           "Les points de retrait sont relies au planning de tournee et peuvent evoluer selon la semaine.",
-          "Vous retrouvez facilement le camion via la page tournee.",
+          "Vous retrouvez le camion facilement via la page tournee du site.",
         ],
       },
       {
         heading: "Commande et retrait",
         paragraphs: [
           "Commande en ligne puis retrait au camion dans le creneau choisi.",
-          "Service concu pour minimiser l'attente et garantir une pizza chaude.",
+          "Service concu pour minimiser l'attente et garantir une pizza chaude a la remise.",
         ],
       },
     ],
-    keywordLine: "pizza-location | pizza napolitaine artisanale | camion pizza napolitaine",
   },
 ];
 
@@ -361,6 +361,5 @@ export function buildDynamicCityContent(cityValue, options = {}) {
     h1: withCity(variant.h1, city),
     intro: withCity(variant.intro, city),
     sections,
-    keywordLine: variant.keywordLine,
   };
 }

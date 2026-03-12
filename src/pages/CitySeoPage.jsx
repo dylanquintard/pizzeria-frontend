@@ -5,9 +5,7 @@ import SeoHead from "../components/seo/SeoHead";
 import SeoInternalLinks from "../components/seo/SeoInternalLinks";
 import { buildBaseFoodEstablishmentJsonLd } from "../seo/jsonLd";
 import {
-  DEFAULT_TOUR_CITIES,
   buildDynamicCityContent,
-  getCityPath,
   slugifyCity,
 } from "../seo/localLandingContent";
 
@@ -149,24 +147,6 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
     [cityDisplay, currentBucket]
   );
 
-  const generatedLocationLinks = useMemo(() => {
-    const staticLabels = ["Thionville", "Metz", "Moselle"];
-    const dynamicLabels = locationBuckets.map((bucket) => bucket.label);
-    const merged = [...staticLabels, ...DEFAULT_TOUR_CITIES, ...dynamicLabels];
-    const dedupe = new Map();
-
-    for (const label of merged) {
-      const key = slugifyCity(label);
-      if (!key || dedupe.has(key)) continue;
-      dedupe.set(key, {
-        label,
-        to: getCityPath(label),
-      });
-    }
-
-    return [...dedupe.values()].slice(0, 6);
-  }, [locationBuckets]);
-
   return (
     <div className="section-shell space-y-8 pb-20 pt-10">
       <SeoHead
@@ -181,7 +161,7 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
       />
 
       <header className="space-y-3">
-        <p className="text-xs uppercase tracking-[0.25em] text-saffron">Page pizza-location dynamique</p>
+        <p className="text-xs uppercase tracking-[0.25em] text-saffron">Page locale dynamique</p>
         <h1 className="font-display text-4xl uppercase tracking-wide text-white sm:text-5xl">{content.h1}</h1>
         <p className="max-w-3xl text-sm text-stone-300 sm:text-base">{content.intro}</p>
       </header>
@@ -213,29 +193,6 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
           </div>
         </section>
       )}
-
-      <section className="glass-panel p-6">
-        <h2 className="text-lg font-bold text-white">6 pages pizza-location generees</h2>
-        <p className="mt-2 text-sm text-stone-300">
-          Ces pages locales sont basees sur les emplacements de la tournee du camion et adaptees au SEO local.
-        </p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {generatedLocationLinks.map((item) => (
-            <Link
-              key={item.to}
-              to={item.to}
-              className="rounded-full border border-white/25 px-3 py-1 text-xs text-stone-200 transition hover:border-saffron/70 hover:text-saffron"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section className="glass-panel p-6">
-        <h2 className="text-lg font-bold text-white">Mots-cles SEO locaux</h2>
-        <p className="mt-2 text-xs uppercase tracking-[0.2em] text-saffron">{content.keywordLine}</p>
-      </section>
 
       <section className="glass-panel p-6">
         <h2 className="text-lg font-bold text-white">Commander</h2>
