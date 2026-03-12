@@ -536,12 +536,12 @@ const truckTourSchedule = useMemo(
               Chaque pizza est preparee avec des ingredients italiens reconnus pour leur qualite:
             </p>
             <ul className="mt-4 grid gap-2 text-sm text-stone-200 sm:grid-cols-2">
-              <li className="rounded-lg border border-white/10 bg-charcoal/50 px-3 py-2">farine Nuvola Super</li>
-              <li className="rounded-lg border border-white/10 bg-charcoal/50 px-3 py-2">tomates San Marzano</li>
-              <li className="rounded-lg border border-white/10 bg-charcoal/50 px-3 py-2">mozzarella fior di latte</li>
-              <li className="rounded-lg border border-white/10 bg-charcoal/50 px-3 py-2">parmigiano reggiano</li>
-              <li className="rounded-lg border border-white/10 bg-charcoal/50 px-3 py-2">jambon de Parme</li>
-              <li className="rounded-lg border border-white/10 bg-charcoal/50 px-3 py-2">prosciutto italien</li>
+              <li className="rounded-lg border border-white/20 bg-stone-200/20 px-3 py-2">farine Nuvola Super</li>
+              <li className="rounded-lg border border-white/20 bg-stone-200/20 px-3 py-2">tomates San Marzano</li>
+              <li className="rounded-lg border border-white/20 bg-stone-200/20 px-3 py-2">mozzarella fior di latte</li>
+              <li className="rounded-lg border border-white/20 bg-stone-200/20 px-3 py-2">parmigiano reggiano</li>
+              <li className="rounded-lg border border-white/20 bg-stone-200/20 px-3 py-2">jambon de Parme</li>
+              <li className="rounded-lg border border-white/20 bg-stone-200/20 px-3 py-2">prosciutto italien</li>
             </ul>
             <p className="mt-4 text-xs uppercase tracking-[0.22em] text-saffron">
               pizza napolitaine artisanale | pizza produits italiens | pizza italienne traditionnelle
@@ -755,7 +755,7 @@ const truckTourSchedule = useMemo(
       <ContactPanel sectionId="contact" sectionClassName="section-shell" />
 
       <section className="section-shell">
-        <div className="rounded-3xl border border-saffron/30 bg-charcoal/55 p-6 sm:p-8">
+        <div className="rounded-3xl border border-saffron/35 bg-stone-200/15 p-6 sm:p-8">
           <h2 className="font-display text-3xl uppercase tracking-wide text-white">
             Camion pizza dans le nord de la Moselle
           </h2>
@@ -767,7 +767,7 @@ const truckTourSchedule = useMemo(
               <li key={city}>
                 <Link
                   to={getCityPath(city)}
-                  className="inline-flex rounded-full border border-white/20 bg-charcoal/60 px-3 py-1.5 text-sm text-stone-100 transition hover:border-saffron/60 hover:text-saffron"
+                  className="inline-flex rounded-full border border-white/25 bg-stone-200/15 px-3 py-1.5 text-sm text-stone-100 transition hover:border-saffron/60 hover:text-saffron"
                 >
                   {city}
                 </Link>
