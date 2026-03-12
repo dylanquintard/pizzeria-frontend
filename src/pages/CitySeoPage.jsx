@@ -57,7 +57,8 @@ function getSeoLocationLabel(location) {
 
 export default function CitySeoPage() {
   const params = useParams();
-  const citySlug = slugifyCity(params.city);
+  const rawCity = params.city || params["*"] || "";
+  const citySlug = slugifyCity(rawCity);
   const [weeklySettings, setWeeklySettings] = useState([]);
 
   useEffect(() => {
@@ -258,4 +259,3 @@ export default function CitySeoPage() {
     </div>
   );
 }
-

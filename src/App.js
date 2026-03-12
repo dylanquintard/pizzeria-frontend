@@ -88,7 +88,7 @@ function AppRoutes() {
           <Route path="/pizza-napolitaine-thionville" element={<LocalSeoPage cityKey="thionville" />} />
           <Route path="/pizza-napolitaine-metz" element={<LocalSeoPage cityKey="metz" />} />
           <Route path="/food-truck-pizza-moselle" element={<LocalSeoPage cityKey="moselle" />} />
-          <Route path="/pizza-:city" element={<CitySeoPage />} />
+          <Route path="/pizza-*" element={<CitySeoPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
