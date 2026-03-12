@@ -162,14 +162,22 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
 
       <header className="space-y-3">
         <h1 className="font-display text-4xl uppercase tracking-wide text-white sm:text-5xl">{content.h1}</h1>
-        <p className="max-w-3xl text-sm text-stone-300 sm:text-base">{content.intro}</p>
+        {Array.isArray(content.introParagraphs) && content.introParagraphs.length > 0 ? (
+          content.introParagraphs.map((paragraph, index) => (
+            <p key={`intro-${index}`} className="max-w-3xl text-sm text-stone-300 sm:text-base">
+              {paragraph}
+            </p>
+          ))
+        ) : (
+          <p className="max-w-3xl text-sm text-stone-300 sm:text-base">{content.intro}</p>
+        )}
       </header>
 
       {content.sections.map((section) => (
         <section key={section.heading} className="glass-panel p-6">
           <h2 className="text-xl font-bold text-white">{section.heading}</h2>
-          {section.paragraphs.map((paragraph) => (
-            <p key={paragraph} className="mt-3 text-sm leading-7 text-stone-300">
+          {section.paragraphs.map((paragraph, index) => (
+            <p key={`${section.heading}-${index}`} className="mt-3 text-sm leading-7 text-stone-300">
               {paragraph}
             </p>
           ))}
@@ -178,35 +186,39 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
 
       {currentBucket?.entries?.length > 0 && (
         <section className="glass-panel p-6">
-          <h2 className="text-lg font-bold text-white">Emplacements actifs pour {cityDisplay}</h2>
-          <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <h2 className="text-lg font-bold text-white">Prochains emplacements autour de {cityDisplay}</h2>
+          <p className="mt-3 text-sm text-stone-300">Exemples d'emplacements actifs :</p>
+          <ul className="mt-3 grid gap-2 md:grid-cols-2">
             {currentBucket.entries.slice(0, 6).map((entry) => (
-              <article key={entry.key} className="rounded-xl border border-white/15 bg-white/5 p-4">
-                <p className="text-sm font-semibold text-white">{entry.locationName}</p>
+              <li key={entry.key} className="rounded-xl border border-white/15 bg-white/5 p-4 text-sm text-stone-200">
+                <p className="font-semibold text-white">{entry.locationName}</p>
                 <p className="mt-1 text-xs text-stone-300">{entry.address || "Adresse a venir"}</p>
-                <p className="mt-2 text-xs text-stone-300">
+                <p className="mt-1 text-xs text-stone-300">
                   {entry.dayLabel} - {entry.hours}
                 </p>
-              </article>
+              </li>
             ))}
-          </div>
+          </ul>
+          <p className="mt-4 text-sm text-stone-300">
+            Consultez la page tournee pour connaitre les prochains passages du camion pizza.
+          </p>
         </section>
       )}
 
       <section className="glass-panel p-6">
-        <h2 className="text-lg font-bold text-white">Commander</h2>
+        <h2 className="text-lg font-bold text-white">Commander votre pizza</h2>
         <div className="mt-3 flex flex-wrap gap-2">
           <Link
             to="/menu"
             className="rounded-full bg-saffron px-4 py-2 text-xs font-bold uppercase tracking-wide text-charcoal transition hover:bg-yellow-300"
           >
-            Voir le menu
+            Voir le menu des pizzas
           </Link>
           <Link
             to="/tournee-camion"
             className="rounded-full border border-white/30 px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/10"
           >
-            Voir la tournee
+            Consulter la tournee du camion pizza
           </Link>
         </div>
       </section>
