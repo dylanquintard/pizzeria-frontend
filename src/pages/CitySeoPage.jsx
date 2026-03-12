@@ -55,9 +55,9 @@ function getSeoLocationLabel(location) {
   return String(location?.name || location?.city || "").trim();
 }
 
-export default function CitySeoPage() {
+export default function CitySeoPage({ forcedCitySlug = "" }) {
   const params = useParams();
-  const rawCity = params.city || params["*"] || "";
+  const rawCity = forcedCitySlug || params.city || params["*"] || "";
   const citySlug = slugifyCity(rawCity);
   const [weeklySettings, setWeeklySettings] = useState([]);
 
