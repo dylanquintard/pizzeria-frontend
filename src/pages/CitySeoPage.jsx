@@ -205,6 +205,20 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
         </section>
       )}
 
+      {Array.isArray(content.faq) && content.faq.length > 0 && (
+        <section className="glass-panel p-6">
+          <h2 className="text-lg font-bold text-white">Questions frequentes</h2>
+          <div className="mt-4 space-y-4">
+            {content.faq.map((item, index) => (
+              <article key={`faq-${index}`} className="rounded-xl border border-white/15 bg-white/5 p-4">
+                <h3 className="text-sm font-semibold text-white">{item.question}</h3>
+                <p className="mt-2 text-sm text-stone-300">{item.answer}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+
       <section className="glass-panel p-6">
         <h2 className="text-lg font-bold text-white">Commander votre pizza</h2>
         <div className="mt-3 flex flex-wrap gap-2">

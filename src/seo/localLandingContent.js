@@ -133,60 +133,22 @@ export const LOCAL_PAGE_CONTENT = {
   },
 };
 
-function hashText(value) {
-  let hash = 0;
-  for (let i = 0; i < value.length; i += 1) {
-    hash = (hash << 5) - hash + value.charCodeAt(i);
-    hash |= 0;
-  }
-  return Math.abs(hash);
-}
-
 function withCity(text, city) {
   return String(text || "").replaceAll("{city}", city);
-}
-
-const PIZZA_VARIANTS = [
-  "pizza napolitaine artisanale",
-  "pizza italienne traditionnelle",
-  "pizza feu de bois artisanale",
-  "pizza napolitaine au feu de bois",
-];
-
-const TRUCK_VARIANTS = [
-  "camion pizza",
-  "food truck pizza",
-  "camion pizza napolitain",
-  "camion pizza artisanal",
-];
-
-const PLANNING_VARIANTS = [
-  "tournee",
-  "emplacements",
-  "points de retrait",
-  "planning",
-];
-
-function pickVariant(variants, seed, offset = 0) {
-  return variants[(seed + offset) % variants.length];
 }
 
 export function buildDynamicCityContent(cityValue, options = {}) {
   const city = String(cityValue || "").trim() || "Moselle";
   const slug = slugifyCity(city) || "moselle";
-  const seed = hashText(slug);
-  const pizzaLabel = pickVariant(PIZZA_VARIANTS, seed, 0);
-  const truckLabel = pickVariant(TRUCK_VARIANTS, seed, 1);
-  const planningLabel = pickVariant(PLANNING_VARIANTS, seed, 2);
   const locationHighlights = Array.isArray(options.locationHighlights)
     ? options.locationHighlights.filter(Boolean).slice(0, 3)
     : [];
 
   const introParagraphs = [
     `Vous cherchez une pizza napolitaine a ${city} ?`,
-    `Notre ${truckLabel} propose des pizzas artisanales preparees selon la tradition napolitaine avec une pate maison et des produits italiens selectionnes.`,
+    "Notre camion pizza propose des pizzas artisanales preparees selon la tradition napolitaine avec une pate maison et des produits italiens selectionnes.",
     `La cuisson est realisee dans un four a bois et gaz afin d'obtenir une pizza a la fois moelleuse, legere et croustillante.`,
-    `La ${planningLabel} du camion pizza passe regulierement a ${city} selon les emplacements disponibles.`,
+    `Le camion pizza se deplace a ${city} selon la tournee et les emplacements disponibles.`,
   ];
 
   const sections = [
@@ -194,36 +156,63 @@ export function buildDynamicCityContent(cityValue, options = {}) {
       heading: "Une pizza napolitaine preparee avec des produits italiens",
       paragraphs: [
         "Chaque pizza est preparee avec des ingredients selectionnes pour leur qualite.",
-        `Nous utilisons notamment farine Nuvola Super, tomates San Marzano, mozzarella fior di latte, parmigiano reggiano et charcuteries italiennes pour construire une ${pizzaLabel} reguliere.`,
+        "Nous utilisons notamment :",
+        "farine Nuvola Super",
+        "tomates San Marzano",
+        "mozzarella fior di latte",
+        "parmigiano reggiano",
+        "charcuteries italiennes",
         "La pate est travaillee selon la methode napolitaine traditionnelle afin d'obtenir une pizza legere et digeste.",
       ],
     },
     {
       heading: withCity("Camion pizza a {city}", city),
       paragraphs: [
-        `Notre ${truckLabel} se deplace dans plusieurs villes du nord de la Moselle.`,
-        `La ${planningLabel} passe regulierement a ${city} avec differents points de retrait selon le planning hebdomadaire.`,
-        "Les emplacements peuvent varier mais le principe reste le meme: des pizzas artisanales preparees sur place avec tres peu d'attente.",
+        `Notre camion pizza propose regulierement ses pizzas napolitaines artisanales a ${city}.`,
+        `La tournee du camion pizza passe a ${city} selon le planning hebdomadaire et les points de retrait disponibles.`,
+        "Chaque pizza est preparee sur place afin de garantir une qualite constante et un service rapide.",
       ],
     },
     {
-      heading: "Retrait rapide et pizza a emporter",
+      heading: `Pizza a emporter a ${city}`,
       paragraphs: [
         "Les pizzas sont disponibles uniquement a emporter.",
         "Chaque pizza est preparee a la commande et cuite dans le four afin de garantir une qualite constante.",
-        `Le retrait se fait directement au camion lors de la ${planningLabel} a ${city}.`,
+        `Le retrait se fait directement au camion lors du passage a ${city}.`,
       ],
+    },
+  ];
+
+  const faq = [
+    {
+      question: withCity("Ou trouver le camion pizza a {city} ?", city),
+      answer:
+        withCity(
+          "Le camion pizza propose regulierement des emplacements a {city} selon la tournee. Les prochains passages et horaires sont disponibles sur la page tournee.",
+          city
+        ),
+    },
+    {
+      question: "Les pizzas sont-elles disponibles sur place ?",
+      answer:
+        "Le service est uniquement a emporter directement au camion pizza.",
+    },
+    {
+      question: "Quel type de pizza proposez-vous ?",
+      answer:
+        "Nous proposons des pizzas napolitaines artisanales preparees avec des ingredients italiens et une cuisson au four a bois et gaz.",
     },
   ];
 
   return {
     pathname: `/pizza-${slug}`,
     title: `Pizza napolitaine a ${city} | Camion pizza artisanal`,
-    description: `${pizzaLabel} a ${city}, ${truckLabel}, cuisson au four a bois et gaz, retrait rapide sur les points de passage.`,
+    description: `Pizza napolitaine artisanale a ${city}, cuisson au four a bois et gaz, produits italiens selectionnes et retrait rapide.`,
     h1: `Pizza napolitaine artisanale a ${city}`,
     intro: introParagraphs.join(" "),
     introParagraphs,
     sections,
+    faq,
     locationHighlights,
   };
 }
