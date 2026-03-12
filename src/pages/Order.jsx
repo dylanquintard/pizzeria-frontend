@@ -716,7 +716,7 @@ export default function Order() {
   };
 
   return (
-    <div className="section-shell pb-16">
+    <div className="order-page section-shell pb-16">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-sm uppercase tracking-[0.25em] text-saffron">{tr("Commande en ligne", "Online ordering")}</p>

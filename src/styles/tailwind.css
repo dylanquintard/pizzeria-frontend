@@ -228,25 +228,41 @@
     color: var(--brand-heading) !important;
   }
 
-  html[data-theme="light"] .order-cart-shell {
-    background-color: rgba(17, 24, 39, 0.92) !important;
-    border-color: rgba(255, 255, 255, 0.14) !important;
-    color: #f3f4f6 !important;
+  html[data-theme="light"] .order-page .order-cart-shell {
+    background-color: var(--surface-elevated) !important;
+    border-color: var(--surface-border) !important;
+    color: var(--brand-body) !important;
+    box-shadow: 0 12px 30px rgba(26, 24, 23, 0.08);
   }
 
-  html[data-theme="light"] .order-cart-item {
-    background-color: rgba(3, 7, 18, 0.72) !important;
-    border-color: rgba(255, 255, 255, 0.2) !important;
-    color: #f3f4f6 !important;
+  html[data-theme="light"] .order-page .order-cart-item {
+    background-color: rgba(250, 246, 239, 0.94) !important;
+    border-color: rgba(26, 24, 23, 0.1) !important;
+    color: var(--brand-body) !important;
   }
 
-  html[data-theme="light"] .order-cart-shell p,
-  html[data-theme="light"] .order-cart-shell span,
-  html[data-theme="light"] .order-cart-shell h2,
-  html[data-theme="light"] .order-cart-shell h3,
-  html[data-theme="light"] .order-cart-shell strong,
-  html[data-theme="light"] .order-cart-shell button {
-    color: #f3f4f6 !important;
+  html[data-theme="light"] .order-page .order-cart-shell p,
+  html[data-theme="light"] .order-page .order-cart-shell span,
+  html[data-theme="light"] .order-page .order-cart-shell h2,
+  html[data-theme="light"] .order-page .order-cart-shell h3,
+  html[data-theme="light"] .order-page .order-cart-shell strong,
+  html[data-theme="light"] .order-page .order-cart-shell button {
+    color: var(--brand-body) !important;
+  }
+
+  html[data-theme="light"] .order-page .text-emerald-200,
+  html[data-theme="light"] .order-page .text-emerald-300 {
+    color: #166534 !important;
+  }
+
+  html[data-theme="light"] .order-page .text-red-200,
+  html[data-theme="light"] .order-page .text-red-300 {
+    color: #b91c1c !important;
+  }
+
+  html[data-theme="light"] .order-page .text-amber-200,
+  html[data-theme="light"] .order-page .text-amber-300 {
+    color: #92400e !important;
   }
 
   html[data-theme="light"] input,
