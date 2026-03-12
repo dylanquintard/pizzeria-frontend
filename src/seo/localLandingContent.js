@@ -37,12 +37,12 @@ export const SEO_KEYWORDS_SENTENCES = [
 export const LOCAL_PAGE_CONTENT = {
   thionville: {
     pathname: "/pizza-napolitaine-thionville",
-    title: "Pizza napolitaine a Thionville | Camion pizza artisanal",
+    title: "Pizza napolitaine autour de Thionville | Camion pizza artisanal",
     description:
-      "Pizza napolitaine artisanale a Thionville: camion pizza artisanal, cuisson au feu de bois et gaz, retrait rapide.",
-    h1: "Pizza napolitaine artisanale a Thionville",
+      "Pizza napolitaine artisanale autour de Thionville: camion pizza artisanal, cuisson au feu de bois et gaz, retrait rapide.",
+    h1: "Pizza napolitaine artisanale autour de Thionville",
     intro:
-      "Vous cherchez une pizza napolitaine a Thionville ? Notre camion pizza propose des pizzas artisanales preparees selon la tradition italienne avec des produits authentiques et une pate travaillee dans l'esprit napolitain.",
+      "Vous cherchez une pizza napolitaine proche de Thionville ? Notre camion pizza propose des pizzas artisanales preparees selon la tradition italienne avec des produits authentiques et une pate travaillee dans l'esprit napolitain.",
     sections: [
       {
         heading: "Une pizza napolitaine authentique",
@@ -54,7 +54,7 @@ export const LOCAL_PAGE_CONTENT = {
       {
         heading: "Camion pizza autour de Thionville",
         paragraphs: [
-          "Notre camion pizza se deplace dans differents quartiers et villes autour de Thionville.",
+          "Notre camion pizza se deplace dans differents endroit de la region.",
           "Les points de retrait changent selon la tournee hebdomadaire du camion pizza. Le retrait se fait directement au camion avec tres peu d'attente.",
         ],
       },
@@ -364,4 +364,3 @@ export function buildDynamicCityContent(cityValue, options = {}) {
     keywordLine: variant.keywordLine,
   };
 }
-
