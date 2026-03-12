@@ -161,7 +161,6 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
       />
 
       <header className="space-y-3">
-        <p className="text-xs uppercase tracking-[0.25em] text-saffron">Page locale dynamique</p>
         <h1 className="font-display text-4xl uppercase tracking-wide text-white sm:text-5xl">{content.h1}</h1>
         <p className="max-w-3xl text-sm text-stone-300 sm:text-base">{content.intro}</p>
       </header>

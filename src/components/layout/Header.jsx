@@ -87,7 +87,7 @@ export default function Header() {
   const { token, user, logout } = useContext(AuthContext);
   const { cartItems, cartTotal, itemCount, removeItem, clearCart, loading } = useContext(CartContext);
   const { language, setLanguage, tr } = useLanguage();
-  const { theme, toggleTheme } = useTheme();
+  const { theme, toggleTheme, setTheme } = useTheme();
   const isLightTheme = theme === "light";
   const iconColorClass = isLightTheme ? "text-stone-900" : "text-white";
 
@@ -150,6 +150,12 @@ export default function Header() {
     setProfileOpen(false);
   }, [location.pathname, location.hash]);
 
+  useEffect(() => {
+    if (isAdminRoute && theme !== "dark") {
+      setTheme("dark");
+    }
+  }, [isAdminRoute, setTheme, theme]);
+
   return (
     <header className="app-header fixed inset-x-0 top-0 z-50 border-b border-saffron/20 bg-charcoal/90 backdrop-blur-xl">
       <div className="section-shell">
@@ -183,7 +189,9 @@ export default function Header() {
 
           <div className="flex items-center gap-2">
             <LanguageSelect language={language} setLanguage={setLanguage} tr={tr} isLight={isLightTheme} className="hidden sm:inline-flex" />
-            <ThemeToggle isLight={isLightTheme} onToggle={toggleTheme} tr={tr} className="hidden sm:inline-flex" />
+            {!isAdminRoute && (
+              <ThemeToggle isLight={isLightTheme} onToggle={toggleTheme} tr={tr} className="hidden sm:inline-flex" />
+            )}
 
             {token && user?.role === "ADMIN" && (
               <Link
@@ -376,7 +384,7 @@ export default function Header() {
               <div className="grid gap-1.5 text-sm text-stone-100">
                 <div className="mb-1 flex items-center gap-2">
                   <LanguageSelect language={language} setLanguage={setLanguage} tr={tr} isLight={isLightTheme} />
-                  <ThemeToggle isLight={isLightTheme} onToggle={toggleTheme} tr={tr} />
+                  {!isAdminRoute && <ThemeToggle isLight={isLightTheme} onToggle={toggleTheme} tr={tr} />}
                 </div>
 
                 {seoPageLinks.map((item) => (

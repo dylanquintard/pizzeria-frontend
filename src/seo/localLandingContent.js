@@ -244,9 +244,9 @@ const DYNAMIC_PAGE_VARIANTS = [
     title: "Pizza italienne proche de {city} | Food truck pizza",
     description:
       "Pizza italienne proche de {city} par food truck: pate napolitaine, cuisson minute et retrait rapide.",
-    h1: "Pizza italienne traditionnelle autour de {city}",
+    h1: "Pizza italienne traditionnelle a {city}",
     intro:
-      "Notre food truck pizza intervient autour de {city} avec une approche artisanale inspiree de la tradition napolitaine.",
+      "Notre food truck {city} se deplace jusqu'a chez vous ! Goutez nos pizzas inspirees de la cuisine italienne.",
     sections: [
       {
         heading: "Savoir-faire napolitain applique au service mobile",
