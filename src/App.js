@@ -6,6 +6,7 @@ import { AuthContext, AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
 import { LanguageProvider, useLanguage } from "./context/LanguageContext";
 import { ThemeProvider } from "./context/ThemeContext";
+import { slugifyCity } from "./seo/localLandingContent";
 
 const Categories = lazy(() => import("./pages/Categories"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -21,6 +22,7 @@ const LocalSeoPage = lazy(() => import("./pages/LocalSeoPage"));
 const CitySeoPage = lazy(() => import("./pages/CitySeoPage"));
 const Blog = lazy(() => import("./pages/Blog"));
 const BlogArticle = lazy(() => import("./pages/BlogArticle"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 const Ingredients = lazy(() => import("./pages/Ingredients"));
 const Locations = lazy(() => import("./pages/Locations"));
 const Login = lazy(() => import("./pages/Login"));
@@ -65,20 +67,13 @@ const AppLayout = () => (
   </>
 );
 
-const LegacyPizzaLocationRoute = () => {
-  const { legacyPizzaSlug } = useParams();
-  const slug = String(legacyPizzaSlug || "");
-
-  if (!slug.startsWith("pizza-")) {
-    return <Navigate to="/" replace />;
+const LegacyPizzaCityRoute = () => {
+  const { city } = useParams();
+  const slug = slugifyCity(city);
+  if (!slug) {
+    return <NotFound />;
   }
-
-  const citySlug = slug.replace(/^pizza-/, "").trim();
-  if (!citySlug) {
-    return <Navigate to="/" replace />;
-  }
-
-  return <CitySeoPage forcedCitySlug={citySlug} />;
+  return <Navigate to={`/pizza-${slug}`} replace />;
 };
 
 function AppRoutes() {
@@ -105,8 +100,8 @@ function AppRoutes() {
           <Route path="/pizza-napolitaine-thionville" element={<LocalSeoPage cityKey="thionville" />} />
           <Route path="/pizza-napolitaine-metz" element={<LocalSeoPage cityKey="metz" />} />
           <Route path="/food-truck-pizza-moselle" element={<LocalSeoPage cityKey="moselle" />} />
-          <Route path="/pizza/:city" element={<CitySeoPage />} />
-          <Route path="/:legacyPizzaSlug" element={<LegacyPizzaLocationRoute />} />
+          <Route path="/pizza/:city" element={<LegacyPizzaCityRoute />} />
+          <Route path="/pizza-:city" element={<CitySeoPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
@@ -272,7 +267,7 @@ function AppRoutes() {
           />
         </Route>
 
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Suspense>
   );

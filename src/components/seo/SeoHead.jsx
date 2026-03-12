@@ -14,6 +14,7 @@ export default function SeoHead({
   description,
   pathname = "/",
   image = "/pizza-background-1920.webp",
+  ogType = "website",
   robots = "index,follow",
   jsonLd = null,
 }) {
@@ -30,7 +31,7 @@ export default function SeoHead({
       <meta name="robots" content={robots} />
       <link rel="canonical" href={canonical} />
 
-      <meta property="og:type" content="website" />
+      <meta property="og:type" content={ogType} />
       <meta property="og:site_name" content="Pizza Truck" />
       <meta property="og:locale" content="fr_FR" />
       <meta property="og:title" content={title} />

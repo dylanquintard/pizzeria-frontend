@@ -4,10 +4,31 @@ import SeoInternalLinks from "../components/seo/SeoInternalLinks";
 import { buildBaseFoodEstablishmentJsonLd } from "../seo/jsonLd";
 import { buildDynamicCityFaq, LOCAL_PAGE_CONTENT } from "../seo/localLandingContent";
 
+function buildFixedLocalFaq(cityLabel) {
+  return [
+    {
+      question: `Le camion est-il present en permanence a ${cityLabel} ?`,
+      answer:
+        "Non. Le camion pizza n'est pas installe en permanence dans cette ville. Les passages dependent du planning actif.",
+    },
+    {
+      question: "Ou voir les prochains passages du camion ?",
+      answer:
+        "Consultez la page Horaires & deplacements du camion pour voir les emplacements, jours et horaires mis a jour.",
+    },
+    {
+      question: "Comment recuperer ma commande ?",
+      answer:
+        "Vous commandez en ligne puis vous recuperez votre pizza sur un point de passage actif du camion.",
+    },
+  ];
+}
+
 export default function LocalSeoPage({ cityKey }) {
   const content = LOCAL_PAGE_CONTENT[cityKey] || LOCAL_PAGE_CONTENT.moselle;
   const cityLabel = cityKey === "moselle" ? "Moselle" : cityKey === "metz" ? "Metz" : "Thionville";
-  const faq = buildDynamicCityFaq(cityLabel);
+  const isFixedLocalPage = ["thionville", "metz", "moselle"].includes(cityKey);
+  const faq = isFixedLocalPage ? buildFixedLocalFaq(cityLabel) : buildDynamicCityFaq(cityLabel);
 
   return (
     <div className="section-shell space-y-8 pb-20 pt-10">
@@ -42,6 +63,14 @@ export default function LocalSeoPage({ cityKey }) {
       {Array.isArray(faq) && faq.length > 0 && (
         <section className="glass-panel p-6">
           <h2 className="text-lg font-bold text-white">Questions frequentes</h2>
+          {isFixedLocalPage && (
+            <p className="mt-2 text-sm font-semibold text-saffron">
+              Le camion n&apos;est pas disponible en permanence dans cette ville.{" "}
+              <Link to="/planing" className="underline decoration-saffron underline-offset-2">
+                Horaires & deplacements du camion
+              </Link>
+            </p>
+          )}
           <div className="mt-4 space-y-4">
             {faq.map((item, index) => (
               <article key={`faq-${index}`} className="rounded-xl border border-white/15 bg-white/5 p-4">

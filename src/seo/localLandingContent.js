@@ -6,6 +6,8 @@ const SPECIAL_CITY_PATHS = {
   moselle: "/food-truck-pizza-moselle",
 };
 
+export const FIXED_LOCAL_CITY_SLUGS = Object.freeze(Object.keys(SPECIAL_CITY_PATHS));
+
 export function slugifyCity(city) {
   return String(city || "")
     .normalize("NFD")
@@ -13,6 +15,10 @@ export function slugifyCity(city) {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
+}
+
+export function getFixedCityPathBySlug(citySlug) {
+  return SPECIAL_CITY_PATHS[slugifyCity(citySlug)] || "";
 }
 
 export function getCityPath(city) {

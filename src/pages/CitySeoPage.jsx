@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, Navigate, useParams } from "react-router-dom";
+import { getLocations } from "../api/location.api";
 import { getPublicWeeklySettings } from "../api/timeslot.api";
 import SeoHead from "../components/seo/SeoHead";
 import SeoInternalLinks from "../components/seo/SeoInternalLinks";
 import { buildBaseFoodEstablishmentJsonLd } from "../seo/jsonLd";
 import {
   buildDynamicCityContent,
+  FIXED_LOCAL_CITY_SLUGS,
+  getFixedCityPathBySlug,
   slugifyCity,
 } from "../seo/localLandingContent";
 
@@ -53,11 +56,47 @@ function getSeoLocationLabel(location) {
   return String(location?.name || location?.city || "").trim();
 }
 
+function CityPageNotFound({ citySlug }) {
+  const pathname = citySlug ? `/pizza-${citySlug}` : "/404";
+  return (
+    <div className="section-shell space-y-6 pb-20 pt-12">
+      <SeoHead
+        title="Page locale non disponible | Pizza Truck"
+        description="Cette page locale n'est pas disponible."
+        pathname={pathname}
+        robots="noindex,nofollow"
+      />
+      <h1 className="font-display text-4xl uppercase tracking-wide text-white sm:text-5xl">
+        Page locale non disponible
+      </h1>
+      <p className="max-w-2xl text-sm text-stone-300 sm:text-base">
+        Cette ville n'est pas encore active dans les emplacements publies.
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <Link
+          to="/planing"
+          className="rounded-full bg-saffron px-4 py-2 text-xs font-bold uppercase tracking-wide text-charcoal transition hover:bg-yellow-300"
+        >
+          Voir les horaires d'ouvertures
+        </Link>
+        <Link
+          to="/"
+          className="rounded-full border border-white/30 px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/10"
+        >
+          Retour a l'accueil
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 export default function CitySeoPage({ forcedCitySlug = "" }) {
   const params = useParams();
   const rawCity = forcedCitySlug || params.city || params["*"] || "";
   const citySlug = slugifyCity(rawCity);
   const [weeklySettings, setWeeklySettings] = useState([]);
+  const [allowedCitySlugs, setAllowedCitySlugs] = useState(() => new Set(FIXED_LOCAL_CITY_SLUGS));
+  const [allowedLoaded, setAllowedLoaded] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -72,6 +111,34 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
         if (!cancelled) {
           setWeeklySettings([]);
         }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    getLocations({ active: true })
+      .then((data) => {
+        if (cancelled) return;
+        const nextAllowed = new Set(FIXED_LOCAL_CITY_SLUGS);
+        const entries = Array.isArray(data) ? data : [];
+        for (const location of entries) {
+          const locationNameSlug = slugifyCity(location?.name);
+          const locationCitySlug = slugifyCity(location?.city);
+          if (locationNameSlug) nextAllowed.add(locationNameSlug);
+          if (locationCitySlug) nextAllowed.add(locationCitySlug);
+        }
+        setAllowedCitySlugs(nextAllowed);
+        setAllowedLoaded(true);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setAllowedCitySlugs(new Set(FIXED_LOCAL_CITY_SLUGS));
+        setAllowedLoaded(true);
       });
 
     return () => {
@@ -137,7 +204,6 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
     () => locationBuckets.find((bucket) => bucket.slug === citySlug),
     [citySlug, locationBuckets]
   );
-
   const cityDisplay = currentBucket?.label || toDisplayCity(citySlug);
   const content = useMemo(
     () =>
@@ -146,6 +212,37 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
       }),
     [cityDisplay, currentBucket]
   );
+
+  const effectiveAllowedSlugs = useMemo(() => {
+    const combined = new Set(allowedCitySlugs);
+    for (const bucket of locationBuckets) {
+      if (bucket?.slug) {
+        combined.add(bucket.slug);
+      }
+    }
+    return combined;
+  }, [allowedCitySlugs, locationBuckets]);
+
+  if (!citySlug) {
+    return <CityPageNotFound citySlug="" />;
+  }
+
+  if (!allowedLoaded) {
+    return (
+      <div className="section-shell py-10">
+        <p className="text-sm text-stone-300">Chargement...</p>
+      </div>
+    );
+  }
+
+  if (!effectiveAllowedSlugs.has(citySlug)) {
+    return <CityPageNotFound citySlug={citySlug} />;
+  }
+
+  const fixedPath = getFixedCityPathBySlug(citySlug);
+  if (fixedPath) {
+    return <Navigate to={fixedPath} replace />;
+  }
 
   return (
     <div className="section-shell space-y-8 pb-20 pt-10">

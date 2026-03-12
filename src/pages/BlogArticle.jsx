@@ -1,6 +1,7 @@
 import { Link, Navigate, useParams } from "react-router-dom";
 import SeoHead from "../components/seo/SeoHead";
 import SeoInternalLinks from "../components/seo/SeoInternalLinks";
+import { SITE_URL } from "../config/env";
 import { getBlogArticleBySlug } from "../seo/blogContent";
 
 export default function BlogArticle() {
@@ -12,14 +13,22 @@ export default function BlogArticle() {
   }
 
   const pathname = `/blog/${article.slug}`;
+  const articleUrl = `${SITE_URL}${pathname}`;
+  const articleImage = article.image || "/pizza-background-1920.webp";
+  const publishedAt = article.publishedAt || "2026-03-01";
+  const updatedAt = article.updatedAt || publishedAt;
   const articleJsonLd = {
     "@context": "https://schema.org",
     "@type": "Article",
     headline: article.title,
     description: article.description,
+    url: articleUrl,
+    image: articleImage.startsWith("http") ? articleImage : `${SITE_URL}${articleImage}`,
+    datePublished: publishedAt,
+    dateModified: updatedAt,
     mainEntityOfPage: {
       "@type": "WebPage",
-      "@id": pathname,
+      "@id": articleUrl,
     },
     author: {
       "@type": "Organization",
@@ -28,6 +37,10 @@ export default function BlogArticle() {
     publisher: {
       "@type": "Organization",
       name: "Pizza Truck",
+      logo: {
+        "@type": "ImageObject",
+        url: `${SITE_URL}/logo.webp`,
+      },
     },
   };
 
@@ -37,6 +50,8 @@ export default function BlogArticle() {
         title={`${article.title} | Blog Pizza Truck`}
         description={article.description}
         pathname={pathname}
+        image={articleImage}
+        ogType="article"
         jsonLd={articleJsonLd}
       />
 
