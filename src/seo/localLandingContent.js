@@ -456,14 +456,24 @@ const DYNAMIC_FAQ_VARIANTS = [
   ],
 ];
 
+export function buildDynamicCityFaq(cityValue) {
+  const city = String(cityValue || "").trim() || "Moselle";
+  const slug = slugifyCity(city) || "moselle";
+  const faqVariantIndex = hashToIndex(`${slug}-faq`, DYNAMIC_FAQ_VARIANTS.length);
+  const faqVariant = DYNAMIC_FAQ_VARIANTS[faqVariantIndex];
+
+  return faqVariant.map((item) => ({
+    question: withCity(item.question, city),
+    answer: withCity(item.answer, city),
+  }));
+}
+
 export function buildDynamicCityContent(cityValue, options = {}) {
   const city = String(cityValue || "").trim() || "Moselle";
   const slug = slugifyCity(city) || "moselle";
   const variantIndex = hashToIndex(slug, DYNAMIC_CITY_VARIANTS.length);
-  const faqVariantIndex = hashToIndex(`${slug}-faq`, DYNAMIC_FAQ_VARIANTS.length);
   const nearbyVariantIndex = hashToIndex(`${slug}-nearby`, DYNAMIC_NEARBY_VARIANTS.length);
   const variant = DYNAMIC_CITY_VARIANTS[variantIndex];
-  const faqVariant = DYNAMIC_FAQ_VARIANTS[faqVariantIndex];
   const nearbyVariant = DYNAMIC_NEARBY_VARIANTS[nearbyVariantIndex];
   const locationHighlights = Array.isArray(options.locationHighlights)
     ? options.locationHighlights.filter(Boolean).slice(0, 3)
@@ -473,10 +483,7 @@ export function buildDynamicCityContent(cityValue, options = {}) {
     heading: withCity(section.heading, city),
     paragraphs: section.paragraphs.map((paragraph) => withCity(paragraph, city)),
   }));
-  const faq = faqVariant.map((item) => ({
-    question: withCity(item.question, city),
-    answer: withCity(item.answer, city),
-  }));
+  const faq = buildDynamicCityFaq(city);
 
   return {
     pathname: `/pizza-${slug}`,

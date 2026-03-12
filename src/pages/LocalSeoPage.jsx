@@ -2,10 +2,12 @@ import { Link } from "react-router-dom";
 import SeoHead from "../components/seo/SeoHead";
 import SeoInternalLinks from "../components/seo/SeoInternalLinks";
 import { buildBaseFoodEstablishmentJsonLd } from "../seo/jsonLd";
-import { LOCAL_PAGE_CONTENT } from "../seo/localLandingContent";
+import { buildDynamicCityFaq, LOCAL_PAGE_CONTENT } from "../seo/localLandingContent";
 
 export default function LocalSeoPage({ cityKey }) {
   const content = LOCAL_PAGE_CONTENT[cityKey] || LOCAL_PAGE_CONTENT.moselle;
+  const cityLabel = cityKey === "moselle" ? "Moselle" : cityKey === "metz" ? "Metz" : "Thionville";
+  const faq = buildDynamicCityFaq(cityLabel);
 
   return (
     <div className="section-shell space-y-8 pb-20 pt-10">
@@ -21,7 +23,6 @@ export default function LocalSeoPage({ cityKey }) {
       />
 
       <header className="space-y-3">
-        <p className="text-xs uppercase tracking-[0.25em] text-saffron">Page locale</p>
         <h1 className="font-display text-4xl uppercase tracking-wide text-white sm:text-5xl">{content.h1}</h1>
         <p className="max-w-3xl text-sm text-stone-300 sm:text-base">{content.intro}</p>
       </header>
@@ -38,23 +39,34 @@ export default function LocalSeoPage({ cityKey }) {
           </section>
         ))}
 
+      {Array.isArray(faq) && faq.length > 0 && (
+        <section className="glass-panel p-6">
+          <h2 className="text-lg font-bold text-white">Questions frequentes</h2>
+          <div className="mt-4 space-y-4">
+            {faq.map((item, index) => (
+              <article key={`faq-${index}`} className="rounded-xl border border-white/15 bg-white/5 p-4">
+                <h3 className="text-sm font-semibold text-white">{item.question}</h3>
+                <p className="mt-2 text-sm text-stone-300">{item.answer}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+
       <section className="glass-panel p-6">
-        <h2 className="text-lg font-bold text-white">Commander une pizza</h2>
-        <p className="mt-2 text-sm text-stone-300">
-          Consulte le menu complet et choisis ton creneau de retrait.
-        </p>
+        <h2 className="text-lg font-bold text-white">Commander votre pizza</h2>
         <div className="mt-4 flex flex-wrap gap-2">
           <Link
             to="/menu"
             className="rounded-full bg-saffron px-4 py-2 text-xs font-bold uppercase tracking-wide text-charcoal transition hover:bg-yellow-300"
           >
-            Voir le menu
+            Voir le menu des pizzas
           </Link>
           <Link
             to="/planing"
             className="rounded-full border border-white/30 px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/10"
           >
-            Voir la tournee
+            Consulter la tournee du camion pizza
           </Link>
         </div>
       </section>
