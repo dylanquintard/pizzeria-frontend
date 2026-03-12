@@ -14,7 +14,7 @@ const GalleryAdmin = lazy(() => import("./pages/GalleryAdmin"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const Home = lazy(() => import("./pages/Home"));
 const Menu = lazy(() => import("./pages/Menu"));
-const TourneeCamion = lazy(() => import("./pages/TourneeCamion"));
+const TourneeCamion = lazy(() => import("./pages/planing"));
 const APropos = lazy(() => import("./pages/APropos"));
 const ContactPage = lazy(() => import("./pages/ContactPage"));
 const LocalSeoPage = lazy(() => import("./pages/LocalSeoPage"));
