@@ -183,10 +183,10 @@ export function buildDynamicCityContent(cityValue, options = {}) {
     : [];
 
   const introParagraphs = [
-    `Vous cherchez une pizza napolitaine autour de ${city} ?`,
+    `Vous cherchez une pizza napolitaine a ${city} ?`,
     `Notre ${truckLabel} propose des pizzas artisanales preparees selon la tradition napolitaine avec une pate maison et des produits italiens selectionnes.`,
     `La cuisson est realisee dans un four a bois et gaz afin d'obtenir une pizza a la fois moelleuse, legere et croustillante.`,
-    `La ${planningLabel} du camion pizza passe regulierement autour de ${city} selon les emplacements disponibles.`,
+    `La ${planningLabel} du camion pizza passe regulierement a ${city} selon les emplacements disponibles.`,
   ];
 
   const sections = [
@@ -199,10 +199,10 @@ export function buildDynamicCityContent(cityValue, options = {}) {
       ],
     },
     {
-      heading: withCity("Camion pizza autour de {city}", city),
+      heading: withCity("Camion pizza a {city}", city),
       paragraphs: [
         `Notre ${truckLabel} se deplace dans plusieurs villes du nord de la Moselle.`,
-        `La ${planningLabel} passe regulierement autour de ${city} avec differents points de retrait selon le planning hebdomadaire.`,
+        `La ${planningLabel} passe regulierement a ${city} avec differents points de retrait selon le planning hebdomadaire.`,
         "Les emplacements peuvent varier mais le principe reste le meme: des pizzas artisanales preparees sur place avec tres peu d'attente.",
       ],
     },
@@ -211,7 +211,7 @@ export function buildDynamicCityContent(cityValue, options = {}) {
       paragraphs: [
         "Les pizzas sont disponibles uniquement a emporter.",
         "Chaque pizza est preparee a la commande et cuite dans le four afin de garantir une qualite constante.",
-        `Le retrait se fait directement au camion lors de la ${planningLabel} autour de ${city}.`,
+        `Le retrait se fait directement au camion lors de la ${planningLabel} a ${city}.`,
       ],
     },
   ];
@@ -219,8 +219,8 @@ export function buildDynamicCityContent(cityValue, options = {}) {
   return {
     pathname: `/pizza-${slug}`,
     title: `Pizza napolitaine a ${city} | Camion pizza artisanal`,
-    description: `${pizzaLabel} autour de ${city}, ${truckLabel}, cuisson au four a bois et gaz, retrait rapide sur les points de passage.`,
-    h1: `Pizza napolitaine artisanale autour de ${city}`,
+    description: `${pizzaLabel} a ${city}, ${truckLabel}, cuisson au four a bois et gaz, retrait rapide sur les points de passage.`,
+    h1: `Pizza napolitaine artisanale a ${city}`,
     intro: introParagraphs.join(" "),
     introParagraphs,
     sections,

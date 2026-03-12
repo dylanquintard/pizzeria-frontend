@@ -474,7 +474,7 @@ const truckTourSchedule = useMemo(
                 {tr("Voir le menu", "See menu")}
               </a>
               <Link
-                to="/tournee-camion"
+                to="/planing"
                 className={`rounded-full px-6 py-3 text-sm font-semibold uppercase tracking-wide transition ${
                   isLightTheme
                     ? "border border-[#3A261C]/15 bg-white/70 text-[#3A261C] hover:bg-white"
@@ -587,7 +587,7 @@ const truckTourSchedule = useMemo(
               Consultez la page tournee du camion pour connaitre les horaires et points de retrait.
             </p>
             <Link
-              to="/tournee-camion"
+              to="/planing"
               className="mt-5 inline-flex rounded-full border border-saffron/60 px-5 py-2 text-xs font-semibold uppercase tracking-wide text-saffron transition hover:bg-saffron/10"
             >
               Voir la tournee

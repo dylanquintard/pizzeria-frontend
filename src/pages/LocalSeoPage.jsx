@@ -51,7 +51,7 @@ export default function LocalSeoPage({ cityKey }) {
             Voir le menu
           </Link>
           <Link
-            to="/tournee-camion"
+            to="/planing"
             className="rounded-full border border-white/30 px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/10"
           >
             Voir la tournee
@@ -63,4 +63,3 @@ export default function LocalSeoPage({ cityKey }) {
     </div>
   );
 }
-

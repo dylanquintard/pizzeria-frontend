@@ -95,8 +95,9 @@ function AppRoutes() {
         <Route element={<AppLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/menu" element={<Menu />} />
-          <Route path="/tournee-camion" element={<TourneeCamion />} />
-          <Route path="/tournee" element={<Navigate to="/tournee-camion" replace />} />
+          <Route path="/planing" element={<TourneeCamion />} />
+          <Route path="/tournee-camion" element={<Navigate to="/planing" replace />} />
+          <Route path="/tournee" element={<Navigate to="/planing" replace />} />
           <Route path="/a-propos" element={<APropos />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/blog" element={<Blog />} />

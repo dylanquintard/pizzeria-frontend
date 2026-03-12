@@ -186,7 +186,7 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
 
       {currentBucket?.entries?.length > 0 && (
         <section className="glass-panel p-6">
-          <h2 className="text-lg font-bold text-white">Prochains emplacements autour de {cityDisplay}</h2>
+          <h2 className="text-lg font-bold text-white">Prochains emplacements a {cityDisplay}</h2>
           <p className="mt-3 text-sm text-stone-300">Exemples d'emplacements actifs :</p>
           <ul className="mt-3 grid gap-2 md:grid-cols-2">
             {currentBucket.entries.slice(0, 6).map((entry) => (
@@ -215,7 +215,7 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
             Voir le menu des pizzas
           </Link>
           <Link
-            to="/tournee-camion"
+            to="/planing"
             className="rounded-full border border-white/30 px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/10"
           >
             Consulter la tournee du camion pizza

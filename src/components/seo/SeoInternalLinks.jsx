@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 const SEO_LINKS = [
   { to: "/", label: "Accueil" },
   { to: "/menu", label: "Menu" },
-  { to: "/tournee-camion", label: "Tournee camion" },
+  { to: "/planing", label: "Tournee camion" },
   { to: "/blog", label: "Blog" },
   { to: "/a-propos", label: "A propos" },
   { to: "/contact", label: "Contact" },

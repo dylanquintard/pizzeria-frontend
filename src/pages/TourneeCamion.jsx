@@ -128,9 +128,9 @@ export default function TourneeCamion() {
       <SeoHead
         title={title}
         description={description}
-        pathname="/tournee-camion"
+        pathname="/planing"
         jsonLd={buildBaseFoodEstablishmentJsonLd({
-          pagePath: "/tournee-camion",
+          pagePath: "/planing",
           pageName: title,
           description,
         })}
@@ -151,21 +151,7 @@ export default function TourneeCamion() {
 
       <section className="glass-panel p-6">
         <h2 className="font-display text-3xl uppercase tracking-wide text-white">Emplacements du camion pizza</h2>
-        {visibleCities.length > 0 && (
-          <ul className="mt-4 flex flex-wrap gap-2">
-            {visibleCities.map((city) => (
-              <li key={city}>
-                <Link
-                  to={getCityPath(city)}
-                  className="inline-flex rounded-full border border-white/20 px-3 py-1 text-xs text-stone-200 transition hover:border-saffron/70 hover:text-saffron"
-                >
-                  {city}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {schedule.length === 0 ? (
             <div className="glass-panel p-5 text-sm text-stone-300">
               Aucun horaire disponible pour le moment.
@@ -188,6 +174,20 @@ export default function TourneeCamion() {
             ))
           )}
         </div>
+        {visibleCities.length > 0 && (
+          <ul className="mt-6 flex flex-wrap gap-2">
+            {visibleCities.map((city) => (
+              <li key={city}>
+                <Link
+                  to={getCityPath(city)}
+                  className="inline-flex rounded-full border border-white/20 px-3 py-1 text-xs text-stone-200 transition hover:border-saffron/70 hover:text-saffron"
+                >
+                  {city}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <SeoInternalLinks />
