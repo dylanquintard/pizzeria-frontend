@@ -186,8 +186,12 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
 
       {currentBucket?.entries?.length > 0 && (
         <section className="glass-panel p-6">
-          <h2 className="text-lg font-bold text-white">Prochains emplacements a {cityDisplay}</h2>
-          <p className="mt-3 text-sm text-stone-300">Exemples d'emplacements actifs :</p>
+          <h2 className="text-lg font-bold text-white">
+            {content?.nearbySection?.heading || `Prochains emplacements a ${cityDisplay}`}
+          </h2>
+          <p className="mt-3 text-sm text-stone-300">
+            {content?.nearbySection?.lead || "Exemples d'emplacements actifs :"}
+          </p>
           <ul className="mt-3 grid gap-2 md:grid-cols-2">
             {currentBucket.entries.slice(0, 6).map((entry) => (
               <li key={entry.key} className="rounded-xl border border-white/15 bg-white/5 p-4 text-sm text-stone-200">
@@ -200,7 +204,8 @@ export default function CitySeoPage({ forcedCitySlug = "" }) {
             ))}
           </ul>
           <p className="mt-4 text-sm text-stone-300">
-            Consultez la page tournee pour connaitre les prochains passages du camion pizza.
+            {content?.nearbySection?.footer ||
+              "Consultez la page tournee pour connaitre les prochains passages du camion pizza."}
           </p>
         </section>
       )}
