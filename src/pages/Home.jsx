@@ -509,6 +509,139 @@ const truckTourSchedule = useMemo(
           </div>
         </div>
       </section>
+      <section id="galerie" className="section-shell space-y-6">
+        <div>
+          <p className="theme-light-keep-dark text-sm uppercase tracking-[0.25em] text-white">
+            {tr("Le camion, le four dore, nos pizzas, etc...", "The truck, the golden oven, our pizzas, and more...")}
+          </p>
+        </div>
+        <div className="mx-auto grid w-[90%] gap-4">
+          {visibleGallery[0] && renderGalleryCard(visibleGallery[0], 0, "h-80 lg:h-[32rem]")}
+
+          {(visibleGallery[1] || visibleGallery[2]) && (
+            <div className={`grid gap-4 ${visibleGallery[2] ? "sm:grid-cols-2" : ""}`}>
+              {visibleGallery[1] && renderGalleryCard(visibleGallery[1], 1, "h-64 lg:h-[22rem]")}
+              {visibleGallery[2] && renderGalleryCard(visibleGallery[2], 2, "h-64 lg:h-[22rem]")}
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section id="menu" className="section-shell space-y-8">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="theme-light-keep-dark text-4xl uppercase tracking-[0.25em] text-saffron">{tr("Le Menu", "Menu")}</p>
+          </div>
+          <span className="rounded-full border border-saffron/50 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-saffron">
+            {tr("Carte artisanale", "Craft menu")}
+          </span>
+        </div>
+
+        {menuByCategory.length === 0 ? (
+          <div className="glass-panel p-6 text-stone-300">{tr("Le menu sera disponible ici.", "The menu will be available here.")}</div>
+        ) : (
+          <div className="space-y-8">
+            {menuByCategory.map((group) => (
+              <article key={group.id} className="rounded-3xl border border-white/10 bg-charcoal/35 p-5 sm:p-7">
+                <div className="mb-4 border-b border-white/10 pb-3">
+                  <h3 className="font-display text-3xl uppercase tracking-[0.08em] text-crust sm:text-4xl">{group.name}</h3>
+                  {group.description && <p className="mt-1 text-sm text-stone-400">{group.description}</p>}
+                </div>
+
+                <div>
+                  {group.items.map((product) => (
+                    <div key={product.id} className="border-b border-white/10 py-4 last:border-b-0">
+                      <div className="flex items-start gap-3">
+                        <h4 className="text-base font-semibold uppercase tracking-wide text-white sm:text-lg">{product.name}</h4>
+                        <div className="mt-3 hidden h-px flex-1 border-t border-dashed border-stone-500/70 sm:block" />
+                        <span className="whitespace-nowrap text-sm font-extrabold uppercase tracking-wide text-saffron sm:text-base">
+                          {formatPrice(product.basePrice)} EUR
+                        </span>
+                      </div>
+
+                      {product.description && <p className="mt-1 text-sm text-stone-300">{product.description}</p>}
+
+                      {product.ingredients?.length > 0 && (
+                        <p className="mt-2 text-xs uppercase tracking-[0.14em] text-stone-400">
+                          {product.ingredients.map((entry) => entry.ingredient.name).join(" - ")}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section id="emplacements" className="section-shell space-y-6">
+        <div>
+          <p className="theme-light-keep-dark text-sm uppercase tracking-[0.25em] text-saffron">{tr("Emplacements & horaires d'ouverture", "Locations & opening hours")}</p>
+          <h2 className="font-display text-4xl uppercase tracking-wide text-white">{tr("Emplacements du camion pizza", "Pizza truck locations")}</h2>
+          <p className="mt-2 text-sm text-stone-400">
+            {tr(
+              "Retrouvez notre camion pizza napolitaine dans plusieurs villes autour de Thionville et Metz selon les horaires d'ouvertures hebdomadaires.",
+              "Find our Neapolitan pizza truck in several cities around Thionville and Metz according to weekly opening hours."
+            )}
+          </p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+{truckTourSchedule.length === 0 ? (
+  <div className="glass-panel p-5 text-sm text-stone-300">
+    {tr("Aucun horaire disponible pour le moment.", "No opening hours available for now.")}
+  </div>
+) : (
+  truckTourSchedule.map((location) => (
+    <div key={location.key} className="glass-panel p-5">
+      <p className="text-[11px] uppercase tracking-wider text-saffron">{tr("Nom", "Name")}</p>
+      <p className="mt-1 text-lg font-bold text-white">{location.locationName}</p>
+
+      <p className="mt-3 text-[11px] uppercase tracking-wider text-saffron">{tr("Adresse", "Address")}</p>
+      <p className="mt-1 text-sm text-stone-200">{location.address}</p>
+
+      <p className="mt-3 text-[11px] uppercase tracking-wider text-saffron">{tr("Jour d'ouverture", "Opening day")}</p>
+      <p className="mt-1 text-sm text-stone-200">{location.dayLabel}</p>
+
+      <p className="mt-3 text-[11px] uppercase tracking-wider text-saffron">{tr("Horaires", "Hours")}</p>
+      <div className="mt-1 space-y-1 text-sm text-stone-200">
+        {(Array.isArray(location.hours) ? location.hours : []).map((hour) => (
+          <p key={hour}>{hour}</p>
+        ))}
+      </div>
+    </div>
+  ))
+)}
+        </div>
+      </section>
+
+      <section id="services" className="section-shell space-y-6">
+        <div>
+          <p className="text-sm uppercase tracking-[0.25em] text-saffron">{tr("Nos services", "Our services")}</p>
+          <h2 className="font-display text-4xl uppercase tracking-wide text-white">{tr("A emporter uniquement", "Takeaway only")}</h2>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="glass-panel p-6">
+            <p className="text-xl font-bold text-white">{tr("Commande rapide", "Fast ordering")}</p>
+            <p className="mt-2 text-sm text-stone-300">
+              {tr(
+                "Passez commande en ligne, choisissez votre creneau et recuperez votre pizza chaude directement au camion.",
+                "Order online, choose your timeslot and pick up your hot pizza directly at the truck."
+              )}
+            </p>
+          </div>
+          <div className="glass-panel p-6">
+            <p className="text-xl font-bold text-white">{tr("Qualite constante", "Consistent quality")}</p>
+            <p className="mt-2 text-sm text-stone-300">
+              {tr(
+                "Pates travaillees, produits selectionnes et cuisson minute. Service fluide, tres peu d'attente.",
+                "Prepared doughs, selected products and minute baking. Smooth service, very little waiting."
+              )}
+            </p>
+          </div>
+        </div>
+      </section>
+
       <section className="section-shell space-y-6">
         <div className="grid gap-5 xl:grid-cols-12">
           <article className="glass-panel p-6 sm:p-8 xl:col-span-7">
@@ -598,112 +731,6 @@ const truckTourSchedule = useMemo(
         </div>
       </section>
 
-      <section id="menu" className="section-shell space-y-8">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="theme-light-keep-dark text-4xl uppercase tracking-[0.25em] text-saffron">{tr("Le Menu", "Menu")}</p>
-          </div>
-          <span className="rounded-full border border-saffron/50 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-saffron">
-            {tr("Carte artisanale", "Craft menu")}
-          </span>
-        </div>
-
-        {menuByCategory.length === 0 ? (
-          <div className="glass-panel p-6 text-stone-300">{tr("Le menu sera disponible ici.", "The menu will be available here.")}</div>
-        ) : (
-          <div className="space-y-8">
-            {menuByCategory.map((group) => (
-              <article key={group.id} className="rounded-3xl border border-white/10 bg-charcoal/35 p-5 sm:p-7">
-                <div className="mb-4 border-b border-white/10 pb-3">
-                  <h3 className="font-display text-3xl uppercase tracking-[0.08em] text-crust sm:text-4xl">{group.name}</h3>
-                  {group.description && <p className="mt-1 text-sm text-stone-400">{group.description}</p>}
-                </div>
-
-                <div>
-                  {group.items.map((product) => (
-                    <div key={product.id} className="border-b border-white/10 py-4 last:border-b-0">
-                      <div className="flex items-start gap-3">
-                        <h4 className="text-base font-semibold uppercase tracking-wide text-white sm:text-lg">{product.name}</h4>
-                        <div className="mt-3 hidden h-px flex-1 border-t border-dashed border-stone-500/70 sm:block" />
-                        <span className="whitespace-nowrap text-sm font-extrabold uppercase tracking-wide text-saffron sm:text-base">
-                          {formatPrice(product.basePrice)} EUR
-                        </span>
-                      </div>
-
-                      {product.description && <p className="mt-1 text-sm text-stone-300">{product.description}</p>}
-
-                      {product.ingredients?.length > 0 && (
-                        <p className="mt-2 text-xs uppercase tracking-[0.14em] text-stone-400">
-                          {product.ingredients.map((entry) => entry.ingredient.name).join(" - ")}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
-      </section>
-
-      <section id="galerie" className="section-shell space-y-6">
-        <div>
-          <p className="theme-light-keep-dark text-sm uppercase tracking-[0.25em] text-white">
-            {tr("Le camion, le four dore, nos pizzas, etc...", "The truck, the golden oven, our pizzas, and more...")}
-          </p>
-        </div>
-        <div className="mx-auto grid w-[90%] gap-4">
-          {visibleGallery[0] && renderGalleryCard(visibleGallery[0], 0, "h-80 lg:h-[32rem]")}
-
-          {(visibleGallery[1] || visibleGallery[2]) && (
-            <div className={`grid gap-4 ${visibleGallery[2] ? "sm:grid-cols-2" : ""}`}>
-              {visibleGallery[1] && renderGalleryCard(visibleGallery[1], 1, "h-64 lg:h-[22rem]")}
-              {visibleGallery[2] && renderGalleryCard(visibleGallery[2], 2, "h-64 lg:h-[22rem]")}
-            </div>
-          )}
-        </div>
-      </section>
-
-      <section id="emplacements" className="section-shell space-y-6">
-        <div>
-          <p className="theme-light-keep-dark text-sm uppercase tracking-[0.25em] text-saffron">{tr("Emplacements & horaires d'ouverture", "Locations & opening hours")}</p>
-          <h2 className="font-display text-4xl uppercase tracking-wide text-white">{tr("Emplacements du camion pizza", "Pizza truck locations")}</h2>
-          <p className="mt-2 text-sm text-stone-400">
-            {tr(
-              "Retrouvez notre camion pizza napolitaine dans plusieurs villes autour de Thionville et Metz selon les horaires d'ouvertures hebdomadaires.",
-              "Find our Neapolitan pizza truck in several cities around Thionville and Metz according to weekly opening hours."
-            )}
-          </p>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-{truckTourSchedule.length === 0 ? (
-  <div className="glass-panel p-5 text-sm text-stone-300">
-    {tr("Aucun horaire disponible pour le moment.", "No opening hours available for now.")}
-  </div>
-) : (
-  truckTourSchedule.map((location) => (
-    <div key={location.key} className="glass-panel p-5">
-      <p className="text-[11px] uppercase tracking-wider text-saffron">{tr("Nom", "Name")}</p>
-      <p className="mt-1 text-lg font-bold text-white">{location.locationName}</p>
-
-      <p className="mt-3 text-[11px] uppercase tracking-wider text-saffron">{tr("Adresse", "Address")}</p>
-      <p className="mt-1 text-sm text-stone-200">{location.address}</p>
-
-      <p className="mt-3 text-[11px] uppercase tracking-wider text-saffron">{tr("Jour d'ouverture", "Opening day")}</p>
-      <p className="mt-1 text-sm text-stone-200">{location.dayLabel}</p>
-
-      <p className="mt-3 text-[11px] uppercase tracking-wider text-saffron">{tr("Horaires", "Hours")}</p>
-      <div className="mt-1 space-y-1 text-sm text-stone-200">
-        {(Array.isArray(location.hours) ? location.hours : []).map((hour) => (
-          <p key={hour}>{hour}</p>
-        ))}
-      </div>
-    </div>
-  ))
-)}
-        </div>
-      </section>
-
       <section id="paiements" className="section-shell space-y-6">
         <div>
           <p className="theme-light-keep-dark text-sm uppercase tracking-[0.25em] text-saffron">{tr("Moyens de paiement acceptes", "Accepted payment methods")}</p>
@@ -724,33 +751,6 @@ const truckTourSchedule = useMemo(
               />
             </picture>
           ))}
-        </div>
-      </section>
-
-      <section id="services" className="section-shell space-y-6">
-        <div>
-          <p className="text-sm uppercase tracking-[0.25em] text-saffron">{tr("Nos services", "Our services")}</p>
-          <h2 className="font-display text-4xl uppercase tracking-wide text-white">{tr("A emporter uniquement", "Takeaway only")}</h2>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="glass-panel p-6">
-            <p className="text-xl font-bold text-white">{tr("Commande rapide", "Fast ordering")}</p>
-            <p className="mt-2 text-sm text-stone-300">
-              {tr(
-                "Passez commande en ligne, choisissez votre creneau et recuperez votre pizza chaude directement au camion.",
-                "Order online, choose your timeslot and pick up your hot pizza directly at the truck."
-              )}
-            </p>
-          </div>
-          <div className="glass-panel p-6">
-            <p className="text-xl font-bold text-white">{tr("Qualite constante", "Consistent quality")}</p>
-            <p className="mt-2 text-sm text-stone-300">
-              {tr(
-                "Pates travaillees, produits selectionnes et cuisson minute. Service fluide, tres peu d'attente.",
-                "Prepared doughs, selected products and minute baking. Smooth service, very little waiting."
-              )}
-            </p>
-          </div>
         </div>
       </section>
 
