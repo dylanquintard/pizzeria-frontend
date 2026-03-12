@@ -315,38 +315,145 @@ export default function TimeslotsAdmin() {
         </p>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[260px_1fr]">
-        <aside className="rounded-2xl border border-white/10 bg-white/5 p-3">
-          <div className="space-y-2">
-            {WEEK_DAYS.map((day) => {
-              const setting = settingsByDay.get(day.key) || closedSetting(day.key);
-              const services = normalizeServices(setting);
-              const isActive = day.key === activeDay;
-              return (
-                <button
-                  key={day.key}
-                  type="button"
-                  onClick={() => setActiveDay(day.key)}
-                  className={`w-full rounded-xl border px-3 py-2 text-left transition ${
-                    isActive
-                      ? "border-saffron bg-saffron/15"
-                      : "border-white/15 bg-black/20 hover:bg-white/10"
-                  }`}
+      <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
+        <aside className="space-y-4">
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
+            <div className="space-y-2">
+              {WEEK_DAYS.map((day) => {
+                const setting = settingsByDay.get(day.key) || closedSetting(day.key);
+                const services = normalizeServices(setting);
+                const isActive = day.key === activeDay;
+                return (
+                  <button
+                    key={day.key}
+                    type="button"
+                    onClick={() => setActiveDay(day.key)}
+                    className={`w-full rounded-xl border px-3 py-2 text-left transition ${
+                      isActive
+                        ? "border-saffron bg-saffron/15"
+                        : "border-white/15 bg-black/20 hover:bg-white/10"
+                    }`}
+                  >
+                    <p className={`text-sm font-semibold ${isActive ? "text-saffron" : "text-stone-100"}`}>
+                      {tr(day.labelFr, day.labelEn)}
+                    </p>
+                    <p className={`text-xs ${services.length > 0 ? "text-emerald-300" : "text-stone-400"}`}>
+                      {services.length > 0
+                        ? tr(
+                            `${services.length} service(s)`,
+                            `${services.length} service(s)`
+                          )
+                        : tr("Ferme", "Closed")}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+            <h4 className="text-sm font-semibold uppercase tracking-wide text-saffron">
+              {tr("Dates de fermeture camion", "Truck closure dates")}
+            </h4>
+
+            <form onSubmit={handleAddClosure} className="mt-3 space-y-3">
+              <label className="text-sm text-stone-300">
+                {tr("Camion", "Truck")}
+                <select
+                  value={closureForm.agentId}
+                  onChange={(event) =>
+                    setClosureForm((prev) => ({ ...prev, agentId: event.target.value }))
+                  }
+                  required
+                  className="mt-1 w-full rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-white"
                 >
-                  <p className={`text-sm font-semibold ${isActive ? "text-saffron" : "text-stone-100"}`}>
-                    {tr(day.labelFr, day.labelEn)}
-                  </p>
-                  <p className={`text-xs ${services.length > 0 ? "text-emerald-300" : "text-stone-400"}`}>
-                    {services.length > 0
-                      ? tr(
-                          `${services.length} service(s)`,
-                          `${services.length} service(s)`
-                        )
-                      : tr("Ferme", "Closed")}
-                  </p>
-                </button>
-              );
-            })}
+                  <option value="">{tr("Choisir un camion", "Choose a truck")}</option>
+                  {agents.map((agent) => (
+                    <option key={agent.id} value={agent.id}>
+                      {agent.name} ({agent.code})
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="text-sm text-stone-300">
+                  {tr("Du", "From")}
+                  <input
+                    type="date"
+                    value={closureForm.startDate}
+                    onChange={(event) =>
+                      setClosureForm((prev) => ({ ...prev, startDate: event.target.value }))
+                    }
+                    required
+                    className="mt-1 w-full rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-white"
+                  />
+                </label>
+
+                <label className="text-sm text-stone-300">
+                  {tr("Au", "To")}
+                  <input
+                    type="date"
+                    value={closureForm.endDate}
+                    onChange={(event) =>
+                      setClosureForm((prev) => ({ ...prev, endDate: event.target.value }))
+                    }
+                    required
+                    className="mt-1 w-full rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-white"
+                  />
+                </label>
+              </div>
+
+              <label className="text-sm text-stone-300">
+                {tr("Motif (optionnel)", "Reason (optional)")}
+                <input
+                  type="text"
+                  value={closureForm.reason}
+                  onChange={(event) =>
+                    setClosureForm((prev) => ({ ...prev, reason: event.target.value }))
+                  }
+                  maxLength={500}
+                  className="mt-1 w-full rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-white"
+                />
+              </label>
+
+              <button
+                type="submit"
+                disabled={saving}
+                className="rounded-full bg-saffron px-5 py-2 text-sm font-bold uppercase tracking-wide text-charcoal transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {tr("Ajouter fermeture", "Add closure")}
+              </button>
+            </form>
+
+            <div className="mt-4 space-y-2">
+              {sortedClosures.length === 0 ? (
+                <p className="text-sm text-stone-400">{tr("Aucune fermeture", "No closure")}</p>
+              ) : (
+                sortedClosures.map((closure) => (
+                  <div
+                    key={closure.id}
+                    className="rounded-xl border border-white/10 bg-charcoal/45 px-3 py-2 text-sm text-stone-200"
+                  >
+                    <p className="font-semibold text-white">
+                      {closure.agent?.name || tr("Camion", "Truck")} ({closure.agent?.code || "?"})
+                    </p>
+                    <p className="text-xs text-stone-300">
+                      {tr("Du", "From")} {formatDateValue(closure.startDate)} {tr("au", "to")}{" "}
+                      {formatDateValue(closure.endDate)}
+                    </p>
+                    {closure.reason ? <p className="text-xs text-stone-300">{closure.reason}</p> : null}
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteClosure(closure.id)}
+                      className="mt-2 rounded-lg border border-red-400/40 bg-red-500/10 px-3 py-1 text-xs font-semibold text-red-200 transition hover:bg-red-500/20"
+                    >
+                      {tr("Supprimer fermeture", "Delete closure")}
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </aside>
 
@@ -354,8 +461,8 @@ export default function TimeslotsAdmin() {
           {loading ? (
             <p className="text-sm text-stone-300">{tr("Chargement...", "Loading...")}</p>
           ) : (
-            <div className="space-y-5">
-              <form onSubmit={handleAddService} className="space-y-4">
+            <div className="space-y-6">
+              <div className="rounded-2xl border border-white/10 bg-black/20 p-4 sm:p-5">
                 <h3 className="text-lg font-bold text-white">
                   {tr(
                     `Ajouter un service - ${WEEK_DAYS.find((day) => day.key === activeDay)?.labelFr || ""}`,
@@ -363,127 +470,129 @@ export default function TimeslotsAdmin() {
                   )}
                 </h3>
 
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <label className="text-sm text-stone-300">
-                    {tr("Heure ouverture", "Opening time")}
-                    <input
-                      type="time"
-                      value={form.startTime}
-                      onChange={(event) =>
-                        setForm((prev) => ({ ...prev, startTime: event.target.value }))
-                      }
-                      required
-                      className="mt-1 w-full rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-white"
-                    />
-                  </label>
+                <form onSubmit={handleAddService} className="mt-4 space-y-4">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="text-sm text-stone-300">
+                      {tr("Heure ouverture", "Opening time")}
+                      <input
+                        type="time"
+                        value={form.startTime}
+                        onChange={(event) =>
+                          setForm((prev) => ({ ...prev, startTime: event.target.value }))
+                        }
+                        required
+                        className="mt-1 w-full rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-white"
+                      />
+                    </label>
 
-                  <label className="text-sm text-stone-300">
-                    {tr("Heure fermeture", "Closing time")}
-                    <input
-                      type="time"
-                      value={form.endTime}
-                      onChange={(event) =>
-                        setForm((prev) => ({ ...prev, endTime: event.target.value }))
-                      }
-                      required
-                      className="mt-1 w-full rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-white"
-                    />
-                  </label>
+                    <label className="text-sm text-stone-300">
+                      {tr("Heure fermeture", "Closing time")}
+                      <input
+                        type="time"
+                        value={form.endTime}
+                        onChange={(event) =>
+                          setForm((prev) => ({ ...prev, endTime: event.target.value }))
+                        }
+                        required
+                        className="mt-1 w-full rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-white"
+                      />
+                    </label>
 
-                  <label className="text-sm text-stone-300">
-                    {tr("Duree d'un creneau (min)", "Slot duration (min)")}
-                    <input
-                      type="number"
-                      min="5"
-                      step="5"
-                      value={form.slotDuration}
-                      onChange={(event) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          slotDuration: Number(event.target.value || DEFAULT_FORM.slotDuration),
-                        }))
-                      }
-                      required
-                      className="mt-1 w-full rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-white"
-                    />
-                  </label>
+                    <label className="text-sm text-stone-300">
+                      {tr("Duree d'un creneau (min)", "Slot duration (min)")}
+                      <input
+                        type="number"
+                        min="5"
+                        step="5"
+                        value={form.slotDuration}
+                        onChange={(event) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            slotDuration: Number(event.target.value || DEFAULT_FORM.slotDuration),
+                          }))
+                        }
+                        required
+                        className="mt-1 w-full rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-white"
+                      />
+                    </label>
 
-                  <label className="text-sm text-stone-300">
-                    {tr("Max pizzas par creneau", "Max pizzas per slot")}
-                    <input
-                      type="number"
-                      min="1"
-                      value={form.maxPizzas}
-                      onChange={(event) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          maxPizzas: Number(event.target.value || DEFAULT_FORM.maxPizzas),
-                        }))
-                      }
-                      required
-                      className="mt-1 w-full rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-white"
-                    />
-                  </label>
+                    <label className="text-sm text-stone-300">
+                      {tr("Max pizzas par creneau", "Max pizzas per slot")}
+                      <input
+                        type="number"
+                        min="1"
+                        value={form.maxPizzas}
+                        onChange={(event) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            maxPizzas: Number(event.target.value || DEFAULT_FORM.maxPizzas),
+                          }))
+                        }
+                        required
+                        className="mt-1 w-full rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-white"
+                      />
+                    </label>
 
-                  <label className="text-sm text-stone-300 sm:col-span-2">
-                    {tr("Emplacement", "Location")}
-                    <select
-                      value={form.locationId}
-                      onChange={(event) =>
-                        setForm((prev) => ({ ...prev, locationId: event.target.value }))
-                      }
-                      required
-                      className="mt-1 w-full rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-white"
+                    <label className="text-sm text-stone-300 sm:col-span-2">
+                      {tr("Emplacement", "Location")}
+                      <select
+                        value={form.locationId}
+                        onChange={(event) =>
+                          setForm((prev) => ({ ...prev, locationId: event.target.value }))
+                        }
+                        required
+                        className="mt-1 w-full rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-white"
+                      >
+                        <option value="">{tr("Choisir un emplacement", "Choose a location")}</option>
+                        {locations.map((location) => (
+                          <option key={location.id} value={location.id}>
+                            {formatLocation(location, tr)}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="text-sm text-stone-300 sm:col-span-2">
+                      {tr("Camion lie", "Linked truck")}
+                      <select
+                        value={form.agentId}
+                        onChange={(event) =>
+                          setForm((prev) => ({ ...prev, agentId: event.target.value }))
+                        }
+                        className="mt-1 w-full rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-white"
+                      >
+                        <option value="">{tr("Aucun camion", "No truck")}</option>
+                        {agents.map((agent) => (
+                          <option key={agent.id} value={agent.id}>
+                            {agent.name} ({agent.code})
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    <button
+                      type="submit"
+                      disabled={saving}
+                      className="rounded-full bg-saffron px-5 py-2 text-sm font-bold uppercase tracking-wide text-charcoal transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      <option value="">{tr("Choisir un emplacement", "Choose a location")}</option>
-                      {locations.map((location) => (
-                        <option key={location.id} value={location.id}>
-                          {formatLocation(location, tr)}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                      {saving
+                        ? tr("Enregistrement...", "Saving...")
+                        : tr("Ajouter ce service", "Add this service")}
+                    </button>
 
-                  <label className="text-sm text-stone-300 sm:col-span-2">
-                    {tr("Camion lie", "Linked truck")}
-                    <select
-                      value={form.agentId}
-                      onChange={(event) =>
-                        setForm((prev) => ({ ...prev, agentId: event.target.value }))
-                      }
-                      className="mt-1 w-full rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-white"
+                    <button
+                      type="button"
+                      disabled={saving}
+                      onClick={handleCloseDay}
+                      className="rounded-full border border-white/25 px-5 py-2 text-sm font-semibold text-stone-100 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      <option value="">{tr("Aucun camion", "No truck")}</option>
-                      {agents.map((agent) => (
-                        <option key={agent.id} value={agent.id}>
-                          {agent.name} ({agent.code})
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="submit"
-                    disabled={saving}
-                    className="rounded-full bg-saffron px-5 py-2 text-sm font-bold uppercase tracking-wide text-charcoal transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {saving
-                      ? tr("Enregistrement...", "Saving...")
-                      : tr("Ajouter ce service", "Add this service")}
-                  </button>
-
-                  <button
-                    type="button"
-                    disabled={saving}
-                    onClick={handleCloseDay}
-                    className="rounded-full border border-white/25 px-5 py-2 text-sm font-semibold text-stone-100 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {tr("Fermer ce jour", "Close this day")}
-                  </button>
-                </div>
-              </form>
+                      {tr("Fermer ce jour", "Close this day")}
+                    </button>
+                  </div>
+                </form>
+              </div>
 
               <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
                 <h4 className="text-sm font-semibold uppercase tracking-wide text-saffron">
@@ -523,111 +632,6 @@ export default function TimeslotsAdmin() {
                     ))}
                   </div>
                 )}
-              </div>
-
-              <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-                <h4 className="text-sm font-semibold uppercase tracking-wide text-saffron">
-                  {tr("Dates de fermeture camion", "Truck closure dates")}
-                </h4>
-
-                <form onSubmit={handleAddClosure} className="mt-3 grid gap-3 sm:grid-cols-2">
-                  <label className="text-sm text-stone-300 sm:col-span-2">
-                    {tr("Camion", "Truck")}
-                    <select
-                      value={closureForm.agentId}
-                      onChange={(event) =>
-                        setClosureForm((prev) => ({ ...prev, agentId: event.target.value }))
-                      }
-                      required
-                      className="mt-1 w-full rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-white"
-                    >
-                      <option value="">{tr("Choisir un camion", "Choose a truck")}</option>
-                      {agents.map((agent) => (
-                        <option key={agent.id} value={agent.id}>
-                          {agent.name} ({agent.code})
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <label className="text-sm text-stone-300">
-                    {tr("Du", "From")}
-                    <input
-                      type="date"
-                      value={closureForm.startDate}
-                      onChange={(event) =>
-                        setClosureForm((prev) => ({ ...prev, startDate: event.target.value }))
-                      }
-                      required
-                      className="mt-1 w-full rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-white"
-                    />
-                  </label>
-
-                  <label className="text-sm text-stone-300">
-                    {tr("Au", "To")}
-                    <input
-                      type="date"
-                      value={closureForm.endDate}
-                      onChange={(event) =>
-                        setClosureForm((prev) => ({ ...prev, endDate: event.target.value }))
-                      }
-                      required
-                      className="mt-1 w-full rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-white"
-                    />
-                  </label>
-
-                  <label className="text-sm text-stone-300 sm:col-span-2">
-                    {tr("Motif (optionnel)", "Reason (optional)")}
-                    <input
-                      type="text"
-                      value={closureForm.reason}
-                      onChange={(event) =>
-                        setClosureForm((prev) => ({ ...prev, reason: event.target.value }))
-                      }
-                      maxLength={500}
-                      className="mt-1 w-full rounded-lg border border-white/20 bg-charcoal/70 px-3 py-2 text-white"
-                    />
-                  </label>
-
-                  <div className="sm:col-span-2">
-                    <button
-                      type="submit"
-                      disabled={saving}
-                      className="rounded-full bg-saffron px-5 py-2 text-sm font-bold uppercase tracking-wide text-charcoal transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {tr("Ajouter fermeture", "Add closure")}
-                    </button>
-                  </div>
-                </form>
-
-                <div className="mt-4 space-y-2">
-                  {sortedClosures.length === 0 ? (
-                    <p className="text-sm text-stone-400">{tr("Aucune fermeture", "No closure")}</p>
-                  ) : (
-                    sortedClosures.map((closure) => (
-                      <div
-                        key={closure.id}
-                        className="rounded-xl border border-white/10 bg-charcoal/45 px-3 py-2 text-sm text-stone-200"
-                      >
-                        <p className="font-semibold text-white">
-                          {closure.agent?.name || tr("Camion", "Truck")} ({closure.agent?.code || "?"})
-                        </p>
-                        <p className="text-xs text-stone-300">
-                          {tr("Du", "From")} {formatDateValue(closure.startDate)} {tr("au", "to")}{" "}
-                          {formatDateValue(closure.endDate)}
-                        </p>
-                        {closure.reason ? <p className="text-xs text-stone-300">{closure.reason}</p> : null}
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteClosure(closure.id)}
-                          className="mt-2 rounded-lg border border-red-400/40 bg-red-500/10 px-3 py-1 text-xs font-semibold text-red-200 transition hover:bg-red-500/20"
-                        >
-                          {tr("Supprimer fermeture", "Delete closure")}
-                        </button>
-                      </div>
-                    ))
-                  )}
-                </div>
               </div>
             </div>
           )}
